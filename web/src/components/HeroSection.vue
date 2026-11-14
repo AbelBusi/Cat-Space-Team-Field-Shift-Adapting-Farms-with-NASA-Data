@@ -49,7 +49,7 @@ function pick(k) { state.layer = k; go('.map-stage') }
         <button type="button" class="btn-line" @click="go('#how')">{{ t('How it works') }}</button>
       </div>
       <Reveal :at="1">
-        <div class="signals" role="group" aria-label="Satellite signals">
+        <div class="signals" role="group" :aria-label="t('Satellite signals')">
           <button v-for="k in LAYER_KEYS" :key="k" type="button" class="signal-chip" :aria-pressed="state.layer === k" @click="pick(k)">
             <PixelIcon :name="SIGNAL_ICON[k]" :size="1" />{{ t(LAYERS[k].name) }}<small v-if="LAYERS[k].pending"> {{ t('(soon)') }}</small>
           </button>

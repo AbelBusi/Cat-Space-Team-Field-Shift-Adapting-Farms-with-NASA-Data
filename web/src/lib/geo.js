@@ -1,3 +1,4 @@
+import { lang } from '../i18n.js'
 // Geometry helpers for the parcel tool and the search box (ported from the team's React map, geo.ts).
 const EARTH_RADIUS_M = 6_371_008.8
 const toRad = deg => deg * Math.PI / 180
@@ -45,4 +46,4 @@ export function formatArea(m2) {
 export const formatLength = m => m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toLocaleString('en-US', { maximumFractionDigits: 2 })} km`
 
 // "2026-10-24" -> "Oct 24"
-export const formatShortDate = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-US', { day: 'numeric', month: 'short', timeZone: 'UTC' })
+export const formatShortDate = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString(lang.value === 'en' ? 'en-US' : 'es-PE', { day: 'numeric', month: 'short', timeZone: 'UTC' })

@@ -68,14 +68,14 @@ function listen() {
     <div class="place-row">
     <PixelGlobe :lat="state.point?.lat" :lon="state.point?.lon" :size="96" />
     <div class="place">
-      <span class="tag">{{ climate?.label || t(db.error ? 'No data' : 'Reading the climate…') }}</span>
+      <span class="tag">{{ climate?.label() || t(db.error ? 'No data' : 'Reading the climate…') }}</span>
       <Transition name="flip" mode="out-in"><h3 :key="state.point ? placeLabel(state.point) : ''">{{ state.point ? placeLabel(state.point) : t('Pick a place') }}</h3></Transition>
       <span v-if="state.point" class="muted small">{{ state.point.lat }}, {{ state.point.lon }} · {{ t(state.scen === 'nino' ? 'El Niño years' : 'typical year (2001–2024)') }}</span>
     </div>
     </div>
     <p v-if="db.recent" class="recent small">
       <b>{{ t('Last 30 days') }}</b> ({{ formatShortDate(db.recent.from) }} – {{ formatShortDate(db.recent.to) }}):
-      {{ db.recent.rainMm.toFixed(1) }} mm of rain on {{ db.recent.rainyDays }} days, {{ db.recent.tempC.toFixed(1) }} °C on average.
+      {{ t('{mm} mm of rain on {days} days, {c} °C on average.', { mm: db.recent.rainMm.toFixed(1), days: db.recent.rainyDays, c: db.recent.tempC.toFixed(1) }) }}
     </p>
     <p v-else-if="!db.recentError && db.loading" class="recent small muted">{{ t('Reading the last 30 days…') }}</p>
     <p v-if="db.error" class="say err" role="alert">Could not load NASA POWER: {{ db.error }}</p>
@@ -100,7 +100,7 @@ function listen() {
       <PixelIcon :name="cell.slope < 2 ? 'soil_moist' : cell.slope < 6 ? 'soil_dry' : 'up'" :size="2" />
       <div>
         <span class="k">{{ t('Ground · NASADEM 30 m, cell mean') }}</span>
-        <b v-if="state.mode === 'pro'">{{ cell.elev }} m above sea · slope {{ cell.slope }}°</b>
+        <b v-if="state.mode === 'pro'">{{ t('{m} m above sea · slope {deg}°', { m: cell.elev, deg: cell.slope }) }}</b>
         <b v-else>{{ t(cell.slope < 2 ? 'Flat ground' : cell.slope < 6 ? 'Gentle slope' : 'Steep ground') }}</b>
         <span>{{ t(cell.slope < 2 ? 'Low erosion risk.' : cell.slope < 6 ? 'Bare soil can wash away in heavy rain.' : 'High erosion risk when the soil is bare: keep it covered.') }}</span>
       </div>

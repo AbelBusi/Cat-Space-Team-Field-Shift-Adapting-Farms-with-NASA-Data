@@ -28,7 +28,7 @@ function bump(k) {
       <Reveal :at="1">
         <div class="prio-grid">
           <button v-for="c in CRIT" :key="c.k" type="button" class="prio" :data-level="state.prio[c.k]"
-                  :aria-label="`${c.label}: importance ${LEVELS[state.prio[c.k]]}. Tap to change.`" @click="bump(c.k)">
+                  :aria-label="t('{name}: importance {level}. Tap to change.', { name: t(c.label), level: t(LEVELS[state.prio[c.k]]) })" @click="bump(c.k)">
             <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" v-html="ICON[c.icon]" /></span>
             <span class="ptitle">{{ t(c.label) }}</span>
             <span class="muted small">{{ t(c.hint) }}</span>

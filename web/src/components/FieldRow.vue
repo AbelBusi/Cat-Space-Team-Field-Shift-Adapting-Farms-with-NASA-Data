@@ -4,6 +4,7 @@ import PixelIcon from './PixelIcon.vue'
 import { CROP, MONTHS, M1, fitWord } from '../content.js'
 import { state as app } from '../store.js'
 import { useTween } from '../lib/tween.js'
+import { t } from '../i18n.js'
 
 // A year as a row of 12 plants, January to December: what a farmer would see walking along the furrow.
 const props = defineProps({ cal: String, score: Number, risks: Array, month: Number, floods: Boolean })
@@ -22,7 +23,7 @@ const cols = computed(() => props.cal.split('').map((k, i, all) => {
 }))
 const shown = useTween(() => props.score, 800)
 const state = computed(() => props.score >= 70 ? 'plant_ok' : props.score >= 45 ? 'plant_thirsty' : 'plant_dead')
-const summary = computed(() => `Fit ${props.score} out of 100. ` + cols.value.map(c => `${MONTHS[c.i]}: ${c.crop.name}`).join(', '))
+const summary = computed(() => t('Fit {n} out of 100.', { n: props.score }) + ' ' + cols.value.map(c => `${t(MONTHS[c.i])}: ${t(c.crop.name)}`).join(', '))
 </script>
 
 <template>

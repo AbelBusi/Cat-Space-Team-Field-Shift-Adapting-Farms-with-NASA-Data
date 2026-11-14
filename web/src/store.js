@@ -119,7 +119,7 @@ export const climate = computed(() => {
   const rain = sum(series('rain', 'normal')), ninoRain = sum(series('rain', 'nino'))   // IMERG inside Lambayeque, else POWER
   const tmax = p.heat.reduce((a, b) => a + (b ?? 0), 0) / 12
   const dry = rain < 250 ? 'dry' : rain < 600 ? 'semi-dry' : 'wet'
-  return { rain, ninoRain, cool: tmax < 18, dry, label: `${tmax < 18 ? 'Cool' : 'Warm'}, ${dry} climate · ${rain} mm of rain a year` }
+  return { rain, ninoRain, cool: tmax < 18, dry, label: () => t(`${tmax < 18 ? 'Cool' : 'Warm'}, ${dry} climate`) + ' · ' + t('{n} mm of rain a year', { n: rain }) }
 })
 
 export const ranking = computed(() => {

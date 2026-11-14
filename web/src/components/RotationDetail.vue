@@ -19,7 +19,7 @@ const conf = computed(() => {
   c += (state.checks.soil ? 15 : 0) + (state.checks.water ? 12 : 0) + (state.checks.tried ? 10 : 0) - (nino ? 10 : 0) + (r.id === 'current' ? 8 : 0)
   return Math.max(10, Math.min(95, c))
 })
-const powerSize = computed(() => state.point ? gridCells(state.point.lat, state.point.lon)[0].size : 'about 55 km')
+const powerSize = computed(() => state.point ? gridCells(state.point.lat, state.point.lon)[0].size : t('about 55 km'))
 const level = computed(() => conf.value < 45 ? 'Low' : conf.value < 70 ? 'Medium' : 'High')
 const reasons = computed(() => [
   t('Climate comes in NASA POWER cells of {size}: it describes the region, not your plot.', { size: powerSize.value }),
@@ -59,7 +59,7 @@ function toggle(k, on) {
       <div class="card">
         <h3>{{ t('How sure are we?') }}</h3>
         <div class="conf-head"><span class="muted">{{ t('Confidence') }}</span><b>{{ t(level) }}</b></div>
-        <div class="meter" role="img" :aria-label="`Confidence ${conf} out of 100`"><i v-for="i in 10" :key="i" :class="{ on: i <= Math.round(conf / 10) }" :style="{ '--i': i }" /></div>
+        <div class="meter" role="img" :aria-label="t('Confidence {n} out of 100', { n: conf })"><i v-for="i in 10" :key="i" :class="{ on: i <= Math.round(conf / 10) }" :style="{ '--i': i }" /></div>
         <TransitionGroup tag="ul" name="list" class="reasons"><li v-for="x in reasons" :key="x">{{ x }}</li></TransitionGroup>
         <p class="small"><b>{{ t('What you know about your field raises the confidence.') }}</b> {{ t('Check what you already have:') }}</p>
         <div class="checks">

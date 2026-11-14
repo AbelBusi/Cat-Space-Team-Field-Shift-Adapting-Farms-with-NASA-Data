@@ -64,5 +64,5 @@ onBeforeUnmount(() => cancelAnimationFrame(raf))
 
 <template>
   <canvas ref="canvas" class="pixel-globe" :width="RES" :height="RES" :style="{ width: size + 'px', height: size + 'px' }"
-          role="img" :aria-label="lat != null ? `Pixel globe turned to ${lat.toFixed(1)}, ${lon.toFixed(1)}` : 'Pixel globe'" />
+          role="img" :aria-label="lat != null ? t('Pixel globe turned to {pos}', { pos: `${lat.toFixed(1)}, ${lon.toFixed(1)}` }) : t('Pixel globe')" />
 </template>

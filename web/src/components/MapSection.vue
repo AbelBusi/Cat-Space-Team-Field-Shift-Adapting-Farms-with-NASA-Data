@@ -226,11 +226,11 @@ function togglePlay() {
         <Reveal :at="0">
           <div class="card map-card">
             <div class="map-toolbar">
-              <div class="places" role="group" aria-label="Example places">
+              <div class="places" role="group" :aria-label="t('Example places')">
                 <button v-for="p in PLACES" :key="p.name" type="button" class="place-chip" :aria-pressed="state.point?.name === p.name" @click="pickPoint(p.lat, p.lon, p.name)">{{ p.name }}</button>
               </div>
               <form class="coords" role="search" @submit.prevent="search">
-                <label for="place-q" class="sr-only">Search a place or coordinates</label>
+                <label for="place-q" class="sr-only">{{ t('Search a place or coordinates') }}</label>
                 <input id="place-q" v-model="query" :placeholder="t('Town, district or lat, lon')" autocomplete="off" enterkeyhint="search" @keydown.esc="results = []">
                 <button type="submit" class="mini-btn" :disabled="!query.trim() || searchState === 'loading'">{{ t(searchState === 'loading' ? 'Searching…' : 'Search') }}</button>
                 <button type="button" class="mini-btn" @click="myLocation">{{ t('My location') }}</button>
@@ -242,12 +242,12 @@ function togglePlay() {
               </ul>
             </div>
             <div class="map-stage" :class="{ loading: db.loading }">
-              <div ref="mapEl" class="leaflet-host" role="application" aria-label="World map. Click to choose a place." />
+              <div ref="mapEl" class="leaflet-host" role="application" :aria-label="t('World map. Click to choose a place.')" />
               <div v-if="drawing" class="map-status">{{ t('Tap each corner of your field') }}</div>
               <div v-else-if="db.loading" class="map-status">{{ t('Listening to NASA POWER…') }}</div>
             </div>
             <div class="map-tools">
-              <section class="tool" aria-label="My field">
+              <section class="tool" :aria-label="t('My field')">
                 <template v-if="drawing">
                   <p class="small">{{ corners.length < 3 ? t('Tap at least 3 corners (you have {n}).', { n: corners.length }) : t('{n} corners. Press Finish when done.', { n: corners.length }) }}</p>
                   <div class="tool-row">
@@ -268,8 +268,8 @@ function togglePlay() {
                   <button type="button" class="mini-btn solid" @click="startOutline">{{ t('Outline my field') }}</button>
                 </template>
               </section>
-              <section class="tool" aria-label="NASA image layers">
-                <div class="seg small-seg" role="group" aria-label="Paint NASA images on the map">
+              <section class="tool" :aria-label="t('NASA image layers')">
+                <div class="seg small-seg" role="group" :aria-label="t('Paint NASA images on the map')">
                   <button type="button" :aria-pressed="!activeData" @click="activeData = null">{{ t('Satellite only') }}</button>
                   <button v-for="d in dataLayers" :key="d.id" type="button" :aria-pressed="activeData === d.id" @click="activeData = d.id">{{ t(d.label) }}</button>
                 </div>
@@ -283,28 +283,28 @@ function togglePlay() {
               <ul class="cells">
                 <li v-for="c in cells" :key="c.id">
                   <button type="button" class="cell-btn" @click="zoomTo(c)">
-                    <i :style="{ borderColor: c.color }" /><b>{{ c.name }}</b><span>{{ c.size }}</span><span class="muted">{{ c.what }}</span>
+                    <i :style="{ borderColor: c.color }" /><b>{{ c.name }}</b><span>{{ c.size }}</span><span class="muted">{{ t(c.what) }}</span>
                   </button>
                 </li>
               </ul>
             </Reveal>
             <Reveal :at="2">
               <div class="legend">
-                <div class="seg" role="group" aria-label="Kind of year">
+                <div class="seg" role="group" :aria-label="t('Kind of year')">
                   <button type="button" :aria-pressed="state.scen === 'normal'" @click="setScen('normal')">{{ t('Typical year') }}</button>
                   <button type="button" :aria-pressed="state.scen === 'nino'" @click="setScen('nino')">{{ t('El Niño years') }}</button>
                 </div>
                 <span>{{ t('Less') }}</span>
                 <span class="bar" :style="{ background: `linear-gradient(90deg, ${legendStops})` }" />
                 <span>{{ t('More') }}</span>
-                <span class="src">{{ t('Source:') }} {{ L_.ds }}</span>
+                <span class="src">{{ t('Source:') }} {{ t(L_.ds) }}</span>
               </div>
               <div class="timeline">
-                <button type="button" class="play" :aria-label="playing ? 'Pause' : 'Play the 12 months'" @click="togglePlay">
+                <button type="button" class="play" :aria-label="t(playing ? 'Pause' : 'Play the 12 months')" @click="togglePlay">
                   <svg viewBox="0 0 24 24" aria-hidden="true" v-html="playing ? ICON.pause : ICON.play" />
                 </button>
                 <div class="months">
-                  <input type="range" min="0" max="11" step="1" :value="state.month" aria-label="Month"
+                  <input type="range" min="0" max="11" step="1" :value="state.month" :aria-label="t('Month')"
                          @input="state.month = +$event.target.value; playing && togglePlay()">
                   <div class="month-ticks" aria-hidden="true"><span v-for="(m, i) in MONTHS.map(x => t(x)[0])" :key="i">{{ m }}</span></div>
                 </div>

@@ -57,7 +57,7 @@ onBeforeUnmount(() => { clearInterval(talkTimer); clearTimeout(blinkTimer) })
 
 <template>
   <svg class="cat" :class="{ talking }" :width="size" :height="size" viewBox="0 -1 32 33"
-       shape-rendering="crispEdges" role="img" :aria-label="`Sprout the alien cat, looking ${mood}`">
+       shape-rendering="crispEdges" role="img" :aria-label="t('Sprout the alien cat, looking ' + mood)">
     <g class="cat-ant"><rect v-for="r in ant" :key="`${r.x},${r.y}`" :x="r.x" :y="r.y" :width="r.w" height="1" :fill="r.fill" /></g>
     <g class="cat-body" :key="mood">
       <rect v-for="r in BASE_RUNS" :key="`b${r.x},${r.y}`" :x="r.x" :y="r.y" :width="r.w" height="1" :fill="r.fill" />

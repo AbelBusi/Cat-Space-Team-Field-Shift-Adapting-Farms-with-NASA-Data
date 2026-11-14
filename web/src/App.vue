@@ -1,4 +1,6 @@
 <script setup>
+// Footer credits: HTML strings we write ourselves, translated in i18n.js.
+const FOOT = ["<b>Live data:</b> heat, rain and soil wetness from <a href=\"https://power.larc.nasa.gov\">NASA POWER</a> (monthly, 2001–2024); plant greenness from MODIS MOD13Q1 via the <a href=\"https://modis.ornl.gov\">ORNL DAAC</a> (2024). Map imagery: NASA GIBS, Blue Marble.", "<b>Still hypothetical:</b> the rotation scores (1–5 per topic) and the confidence meter. Coming during the hackathon: GPM IMERG, SMAP, HLS, GRACE-FO, SoilGrids and FAO-56 crop water use.", "These data were obtained from the NASA Langley Research Center (LaRC) POWER Project funded through the NASA Earth Science/Applied Science Program. Made for NASA Space Apps Chiclayo 2026."]
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import HeroSection from './components/HeroSection.vue'
 import MapSection from './components/MapSection.vue'
@@ -64,13 +66,13 @@ function toggleTheme() {
         <div class="seg mode-seg" role="group" :aria-label="t('Language')">
           <button v-for="[code, label, name] in LANGS" :key="code" type="button" :aria-pressed="lang === code" :title="name" @click="setLang(code)">{{ label }}</button>
         </div>
-        <div class="seg mode-seg" role="group" aria-label="View mode">
+        <div class="seg mode-seg" role="group" :aria-label="t('View mode')">
           <button type="button" :aria-pressed="state.mode === 'farmer'" @click="setMode('farmer')">{{ t('Farmer') }}</button>
           <button type="button" :aria-pressed="state.mode === 'pro'" @click="setMode('pro')">{{ t('Pro') }}</button>
         </div>
         <span class="badge wide-only">{{ t(state.demo ? 'Demo · saved NASA data' : 'Prototype · live NASA data') }}</span>
-        <button type="button" class="demo-btn" :aria-pressed="state.demo" title="Load saved NASA data for Chiclayo, Iowa and Punjab instantly and show every section" @click="toggleDemo">{{ t(state.demo ? '[ demo on ]' : '[ demo data ]') }}</button>
-        <button type="button" class="theme-btn" :aria-label="dark ? 'Switch to light mode' : 'Switch to dark mode'" @click="toggleTheme">
+        <button type="button" class="demo-btn" :aria-pressed="state.demo" :title="t('Load saved NASA data for Chiclayo, Iowa and Punjab instantly and show every section')" @click="toggleDemo">{{ t(state.demo ? '[ demo on ]' : '[ demo data ]') }}</button>
+        <button type="button" class="theme-btn" :aria-label="t(dark ? 'Switch to light mode' : 'Switch to dark mode')" @click="toggleTheme">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" v-html="dark ? ICON.sun : ICON.moon" />
           <span class="wide-only" aria-hidden="true">{{ t(dark ? 'Light mode' : 'Dark mode') }}</span>
         </button>
@@ -88,9 +90,9 @@ function toggleTheme() {
   </main>
   <footer>
     <div class="wrap">
-      <div><b>Live data:</b> heat, rain and soil wetness from <a href="https://power.larc.nasa.gov">NASA POWER</a> (monthly, 2001–2024); plant greenness from MODIS MOD13Q1 via the <a href="https://modis.ornl.gov">ORNL DAAC</a> (2024). Map imagery: NASA GIBS, Blue Marble.</div>
-      <div><b>Still hypothetical:</b> the rotation scores (1–5 per topic) and the confidence meter. Coming during the hackathon: GPM IMERG, SMAP, HLS, GRACE-FO, SoilGrids and FAO-56 crop water use.</div>
-      <div>These data were obtained from the NASA Langley Research Center (LaRC) POWER Project funded through the NASA Earth Science/Applied Science Program. Made for NASA Space Apps Chiclayo 2026.</div>
+      <div v-html="t(FOOT[0])" />
+      <div v-html="t(FOOT[1])" />
+      <div v-html="t(FOOT[2])" />
     </div>
   </footer>
   <CatDialogue />

@@ -57,7 +57,7 @@ function toggleSound() { unlock(); guide.muted = !guide.muted }
         <span class="dlg-tag"><span class="dlg-name">Sprout</span> · {{ t('translator') }}</span>
         <span class="dlg-ctrl">
           <button v-if="!guide.showAll" type="button" class="dlg-btn" @click="showEverything">{{ t('[ show all ]') }}</button>
-          <button type="button" class="dlg-btn" :aria-pressed="!guide.muted" :aria-label="guide.muted ? 'Turn voice sound on' : 'Turn voice sound off'" @click="toggleSound">{{ t(guide.muted ? '[ sound off ]' : '[ sound on ]') }}</button>
+          <button type="button" class="dlg-btn" :aria-pressed="!guide.muted" :aria-label="t(guide.muted ? 'Turn voice sound on' : 'Turn voice sound off')" @click="toggleSound">{{ t(guide.muted ? '[ sound off ]' : '[ sound on ]') }}</button>
           <button type="button" class="dlg-btn" :aria-label="t('Minimize Sprout')" @click="guide.open = false">[ _ ]</button>
         </span>
       </div>
