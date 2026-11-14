@@ -8,6 +8,8 @@ farmers anywhere can compare crop rotations. Team from Chiclayo, Peru. Read this
 1. **Design:** follow [`DESIGN.md`](DESIGN.md) exactly. Only its colors (as CSS variables), square corners, its fonts and
    the pixel icons. Do not invent colors, rounded cards, pills, gradients, shadows or giant headings.
 2. **Language:** everything users see (UI text, Sprout's lines), commit messages and repo docs are in **English** (Space Apps rule).
+   UI text is written in English and wrapped with `t()`; add its Spanish (and if possible Quechua) translation in
+   `web/src/i18n.js` (see `docs/LANGUAGES.md`).
 3. **Data honesty:** never invent numbers and present them as real. Hypothetical values must be labeled. State the pixel size
    of each dataset (a 55 km climate cell is not "your field"). Cite every source in `docs/DATA_SOURCES.md`.
 4. **Keep it small:** reuse what exists (`web/src/lib/`, `content.js`, `store.js`), no new dependencies for a few lines of code,

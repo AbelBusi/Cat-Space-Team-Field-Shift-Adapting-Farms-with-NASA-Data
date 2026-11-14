@@ -94,6 +94,7 @@ click on the map ──► grid cells around the point (lib/nasa.js → gridCell
 | `pipeline/` | Python for datasets that need a login (GPM, SMAP, HLS, GRACE-FO) and `fetch_power.py` for quick checks |
 | `data/` | Downloaded open data for 10 places, and **the list of login-only datasets with step-by-step routes** (`data/README.md`) |
 | `pipeline/fetch_open_data.py` | Re-downloads all open data (POWER, MODIS NDVI, SoilGrids, NOAA ONI) for `data/places.csv` |
+| `docs/LANGUAGES.md` | English / Spanish / Quechua switch: how translations work and the Quechua review status |
 | `docs/STACK.md` | Every technology with its version, the architecture, where each on-screen number comes from, scripts and troubleshooting |
 | `docs/LAMBAYEQUE_RISKS.md` | Phase 1 focus: coastal El Niño (in the app) and soil salinity (plan) |
 | `pipeline/build_lambayeque.py` | Builds `web/public/data/lambayeque.json`, the Lambayeque 0.1° grid (IMERG rain, NASADEM terrain, GRACE water) |
