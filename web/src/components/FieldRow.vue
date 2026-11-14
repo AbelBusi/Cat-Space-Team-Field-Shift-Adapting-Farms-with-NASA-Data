@@ -27,13 +27,13 @@ const summary = computed(() => `Fit ${props.score} out of 100. ` + cols.value.ma
 
 <template>
   <div class="field-row" role="img" :aria-label="summary">
-    <div class="fr-score"><PixelIcon :name="state" :size="2" /><template v-if="app.mode === 'pro'"><b>{{ Math.round(shown) }}</b><span>/100 fit</span></template><b v-else class="fit-word">{{ fitWord(score) }}</b></div>
+    <div class="fr-score"><PixelIcon :name="state" :size="2" /><template v-if="app.mode === 'pro'"><b>{{ Math.round(shown) }}</b><span>/100</span></template><b v-else class="fit-word">{{ t(fitWord(score)) }}</b></div>
     <div class="fr-grid">
       <div v-for="c in cols" :key="c.i" class="fr-col" :class="{ now: c.i === month }" :style="{ '--i': c.i }">
         <span class="fr-marks"><PixelIcon v-for="m in c.marks" :key="m" :name="m" :size="1" /></span>
         <PixelIcon :name="c.icon" :size="2" />
         <span class="fr-band" :style="{ background: c.crop.color }" />
-        <span class="fr-m">{{ M1[c.i] }}</span>
+        <span class="fr-m">{{ t(MONTHS[c.i])[0] }}</span>
       </div>
     </div>
   </div>

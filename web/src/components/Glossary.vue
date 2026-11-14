@@ -13,11 +13,11 @@ useScript('gloss', el)
     <div class="wrap">
       <div class="step-head">
         <span class="step-num">5</span>
-        <h2>Satellite words, made simple</h2>
+        <h2>{{ t('Satellite words, made simple') }}</h2>
       </div>
       <Reveal :at="0">
         <div class="gloss">
-          <details v-for="([term, text], i) in GLOSSARY" :key="term" class="card" :open="i === 0"><summary>{{ term }}</summary><p>{{ text }}</p></details>
+          <details v-for="([term, text], i) in GLOSSARY" :key="term" class="card" :open="i === 0"><summary>{{ t(term) }}</summary><p>{{ t(text) }}</p></details>
         </div>
       </Reveal>
     </div>

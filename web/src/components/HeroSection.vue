@@ -36,22 +36,22 @@ function pick(k) { state.layer = k; go('.map-stage') }
       </g>
     </svg>
     <div class="campfire" aria-hidden="true"><i /><i /><i /></div>
-    <button type="button" class="hero-cat" aria-label="Pet Sprout" @click="pet">
+    <button type="button" class="hero-cat" :aria-label="t('Pet Sprout')" @click="pet">
       <CatSprite :mood="line?.[1] || 'happy'" :talking="guide.talking" :size="96" />
     </button>
 
     <div class="hero-copy wrap">
       <div class="eyebrow">NASA Space Apps 2026 · Field Shift</div>
-      <h1>Your field is already talking.<br>Let's learn to listen.</h1>
-      <p class="lead">NASA satellites measure heat, rain, soil wetness and plant greenness for every field on Earth. Sprout translates them so you can choose what to plant next.</p>
+      <h1>{{ t('Your field is already talking.') }}<br>{{ t("Let's learn to listen.") }}</h1>
+      <p class="lead">{{ t('NASA satellites measure heat, rain, soil wetness and plant greenness for every field on Earth. Sprout translates them so you can choose what to plant next.') }}</p>
       <div class="hero-actions">
-        <button type="button" class="btn-fire" @click="go('.map-stage')">Explore your field</button>
-        <button type="button" class="btn-line" @click="go('#how')">How it works</button>
+        <button type="button" class="btn-fire" @click="go('.map-stage')">{{ t('Explore your field') }}</button>
+        <button type="button" class="btn-line" @click="go('#how')">{{ t('How it works') }}</button>
       </div>
       <Reveal :at="1">
         <div class="signals" role="group" aria-label="Satellite signals">
           <button v-for="k in LAYER_KEYS" :key="k" type="button" class="signal-chip" :aria-pressed="state.layer === k" @click="pick(k)">
-            <PixelIcon :name="SIGNAL_ICON[k]" :size="1" />{{ LAYERS[k].name }}<small v-if="LAYERS[k].pending"> (soon)</small>
+            <PixelIcon :name="SIGNAL_ICON[k]" :size="1" />{{ t(LAYERS[k].name) }}<small v-if="LAYERS[k].pending"> {{ t('(soon)') }}</small>
           </button>
         </div>
       </Reveal>

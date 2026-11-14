@@ -9,6 +9,7 @@ import { LAYERS, MONTHS, M1, ICON, PLACES } from '../content.js'
 import { state, db, valueAt, selectPoint, local, series } from '../store.js'
 import { RAMP } from '../lib/palette.js'
 import { useScript, say } from '../guide.js'
+import { t } from '../i18n.js'
 import { gridCells, gibsDataLayers, searchPlaces } from '../lib/nasa.js'
 import { PAL } from '../lib/palette.js'
 import { parseCoordinates, polygonAreaM2, ringPerimeterM, vertexCenter, formatArea, formatLength, formatShortDate } from '../lib/geo.js'
@@ -107,7 +108,7 @@ function choose(place) {
 }
 
 function myLocation() {
-  if (!navigator.geolocation) return say('This browser can\'t share its location. You can tap the map instead.', 'sad')
+  if (!navigator.geolocation) return say(() => t('This browser can\'t share its location. You can tap the map instead.'), 'sad')
   navigator.geolocation.getCurrentPosition(
     p => pickPoint(p.coords.latitude, p.coords.longitude, 'Your location'),
     e => say(e.code === 1
@@ -140,7 +141,7 @@ function startOutline() {
   state.parcel = null
   setDrawing(true)
   if (state.point && map.getZoom() < 15) map.flyTo([state.point.lat, state.point.lon], 16, { duration: 1 })
-  say('Tap each corner of your field on the map. When you have at least three, press Finish.', 'happy')
+  say(() => t('Tap each corner of your field on the map. When you have at least three, press Finish.'), 'happy')
 }
 function addCorner(ll) { corners.value = [...corners.value, [ll.lat, ll.lng]]; drawParcel() }
 function undoCorner() { corners.value = corners.value.slice(0, -1); drawParcel() }
@@ -196,10 +197,10 @@ const activeInfo = computed(() => dataLayers.value.find(x => x.id === activeData
 function setScen(s) {
   state.scen = s
   const coast = !!local.value && state.point && series('rain') && LAYERS.rain.px === 11
-  say(s === 'nino'
+  say(() => t(s === 'nino'
     ? (coast ? 'Coastal El Niño years! On this coast I use the Niño 1+2 index: 1983, 1998, 2016, 2017 and 2023, the years that flooded Lambayeque.'
       : 'El Niño years! Now every month is the average of the El Niño years only. Watch how the colors change.')
-    : 'Back to the typical year: the average of 2001 to 2024.', s === 'nino' ? 'surprised' : 'neutral')
+    : 'Back to the typical year: the average of 2001 to 2024.'), s === 'nino' ? 'surprised' : 'neutral')
 }
 
 const playing = ref(false)
@@ -218,8 +219,8 @@ function togglePlay() {
     <div class="wrap">
       <div class="step-head">
         <span class="step-num">1</span>
-        <h2>Find your field, anywhere on Earth</h2>
-        <p>Search a place, tap the map or try an example. You can also outline your own field. We fetch real NASA data for that spot and show the grid cells each satellite uses.</p>
+        <h2>{{ t('Find your field, anywhere on Earth') }}</h2>
+        <p>{{ t('Search a place, tap the map or try an example. You can also outline your own field. We fetch real NASA data for that spot and show the grid cells each satellite uses.') }}</p>
       </div>
       <div class="map-grid">
         <Reveal :at="0">
@@ -230,51 +231,51 @@ function togglePlay() {
               </div>
               <form class="coords" role="search" @submit.prevent="search">
                 <label for="place-q" class="sr-only">Search a place or coordinates</label>
-                <input id="place-q" v-model="query" placeholder="Town, district or lat, lon" autocomplete="off" enterkeyhint="search" @keydown.esc="results = []">
-                <button type="submit" class="mini-btn" :disabled="!query.trim() || searchState === 'loading'">{{ searchState === 'loading' ? 'Searching…' : 'Search' }}</button>
-                <button type="button" class="mini-btn" @click="myLocation">My location</button>
+                <input id="place-q" v-model="query" :placeholder="t('Town, district or lat, lon')" autocomplete="off" enterkeyhint="search" @keydown.esc="results = []">
+                <button type="submit" class="mini-btn" :disabled="!query.trim() || searchState === 'loading'">{{ t(searchState === 'loading' ? 'Searching…' : 'Search') }}</button>
+                <button type="button" class="mini-btn" @click="myLocation">{{ t('My location') }}</button>
               </form>
-              <p v-if="searchState === 'empty'" class="coords-err">No place found. Try another name, or coordinates like -6.77, -79.84</p>
-              <p v-if="searchState === 'error'" class="coords-err" role="alert">Search is not available right now. Check the connection and try again.</p>
+              <p v-if="searchState === 'empty'" class="coords-err">{{ t('No place found. Try another name, or coordinates like -6.77, -79.84') }}</p>
+              <p v-if="searchState === 'error'" class="coords-err" role="alert">{{ t('Search is not available right now. Check the connection and try again.') }}</p>
               <ul v-if="results.length" class="results">
                 <li v-for="r in results" :key="r.id"><button type="button" @click="choose(r)"><b>{{ r.title }}</b><span>{{ r.detail }}</span></button></li>
               </ul>
             </div>
             <div class="map-stage" :class="{ loading: db.loading }">
               <div ref="mapEl" class="leaflet-host" role="application" aria-label="World map. Click to choose a place." />
-              <div v-if="drawing" class="map-status">Tap each corner of your field</div>
-              <div v-else-if="db.loading" class="map-status">Listening to NASA POWER…</div>
+              <div v-if="drawing" class="map-status">{{ t('Tap each corner of your field') }}</div>
+              <div v-else-if="db.loading" class="map-status">{{ t('Listening to NASA POWER…') }}</div>
             </div>
             <div class="map-tools">
               <section class="tool" aria-label="My field">
                 <template v-if="drawing">
-                  <p class="small">{{ corners.length < 3 ? `Tap at least 3 corners (you have ${corners.length}).` : `${corners.length} corners. Press Finish when done.` }}</p>
+                  <p class="small">{{ corners.length < 3 ? t('Tap at least 3 corners (you have {n}).', { n: corners.length }) : t('{n} corners. Press Finish when done.', { n: corners.length }) }}</p>
                   <div class="tool-row">
-                    <button type="button" class="mini-btn" :disabled="!corners.length" @click="undoCorner">Undo</button>
-                    <button type="button" class="mini-btn solid" :disabled="corners.length < 3" @click="finishOutline">Finish</button>
-                    <button type="button" class="link-btn" @click="clearOutline">Cancel</button>
+                    <button type="button" class="mini-btn" :disabled="!corners.length" @click="undoCorner">{{ t('Undo') }}</button>
+                    <button type="button" class="mini-btn solid" :disabled="corners.length < 3" @click="finishOutline">{{ t('Finish') }}</button>
+                    <button type="button" class="link-btn" @click="clearOutline">{{ t('Cancel') }}</button>
                   </div>
                 </template>
                 <template v-else-if="state.parcel">
-                  <p class="small"><b>Your field:</b> {{ formatArea(state.parcel.areaM2) }} · perimeter {{ formatLength(state.parcel.perimeterM) }}</p>
+                  <p class="small"><b>{{ t('Your field:') }}</b> {{ formatArea(state.parcel.areaM2) }} · {{ t('perimeter') }} {{ formatLength(state.parcel.perimeterM) }}</p>
                   <div class="tool-row">
-                    <button type="button" class="mini-btn" @click="editOutline">Edit outline</button>
-                    <button type="button" class="link-btn" @click="clearOutline">Delete</button>
+                    <button type="button" class="mini-btn" @click="editOutline">{{ t('Edit outline') }}</button>
+                    <button type="button" class="link-btn" @click="clearOutline">{{ t('Delete') }}</button>
                   </div>
                 </template>
                 <template v-else>
-                  <p class="small muted">Outline your land to get its size and read NASA data at its center.</p>
-                  <button type="button" class="mini-btn solid" @click="startOutline">Outline my field</button>
+                  <p class="small muted">{{ t('Outline your land to get its size and read NASA data at its center.') }}</p>
+                  <button type="button" class="mini-btn solid" @click="startOutline">{{ t('Outline my field') }}</button>
                 </template>
               </section>
               <section class="tool" aria-label="NASA image layers">
                 <div class="seg small-seg" role="group" aria-label="Paint NASA images on the map">
-                  <button type="button" :aria-pressed="!activeData" @click="activeData = null">Satellite only</button>
-                  <button v-for="d in dataLayers" :key="d.id" type="button" :aria-pressed="activeData === d.id" @click="activeData = d.id">{{ d.label }}</button>
+                  <button type="button" :aria-pressed="!activeData" @click="activeData = null">{{ t('Satellite only') }}</button>
+                  <button v-for="d in dataLayers" :key="d.id" type="button" :aria-pressed="activeData === d.id" @click="activeData = d.id">{{ t(d.label) }}</button>
                 </div>
                 <template v-if="activeInfo">
-                  <p class="small muted">{{ activeInfo.hint }} {{ activeInfo.resolution }}<template v-if="activeInfo.date"> · NASA, {{ formatShortDate(activeInfo.date) }}</template></p>
-                  <label class="intensity small">Intensity <input v-model.number="intensity" type="range" min="0.3" max="1" step="0.05"></label>
+                  <p class="small muted">{{ t(activeInfo.hint) }} {{ activeInfo.resolution }}<template v-if="activeInfo.date"> · NASA, {{ formatShortDate(activeInfo.date) }}</template></p>
+                  <label class="intensity small">{{ t('Intensity') }} <input v-model.number="intensity" type="range" min="0.3" max="1" step="0.05"></label>
                 </template>
               </section>
             </div>
@@ -290,13 +291,13 @@ function togglePlay() {
             <Reveal :at="2">
               <div class="legend">
                 <div class="seg" role="group" aria-label="Kind of year">
-                  <button type="button" :aria-pressed="state.scen === 'normal'" @click="setScen('normal')">Typical year</button>
-                  <button type="button" :aria-pressed="state.scen === 'nino'" @click="setScen('nino')">El Niño years</button>
+                  <button type="button" :aria-pressed="state.scen === 'normal'" @click="setScen('normal')">{{ t('Typical year') }}</button>
+                  <button type="button" :aria-pressed="state.scen === 'nino'" @click="setScen('nino')">{{ t('El Niño years') }}</button>
                 </div>
-                <span>Less</span>
+                <span>{{ t('Less') }}</span>
                 <span class="bar" :style="{ background: `linear-gradient(90deg, ${legendStops})` }" />
-                <span>More</span>
-                <span class="src">Source: {{ L_.ds }}</span>
+                <span>{{ t('More') }}</span>
+                <span class="src">{{ t('Source:') }} {{ L_.ds }}</span>
               </div>
               <div class="timeline">
                 <button type="button" class="play" :aria-label="playing ? 'Pause' : 'Play the 12 months'" @click="togglePlay">
@@ -305,10 +306,10 @@ function togglePlay() {
                 <div class="months">
                   <input type="range" min="0" max="11" step="1" :value="state.month" aria-label="Month"
                          @input="state.month = +$event.target.value; playing && togglePlay()">
-                  <div class="month-ticks" aria-hidden="true"><span v-for="(m, i) in M1" :key="i">{{ m }}</span></div>
+                  <div class="month-ticks" aria-hidden="true"><span v-for="(m, i) in MONTHS.map(x => t(x)[0])" :key="i">{{ m }}</span></div>
                 </div>
                 <Transition name="flip" mode="out-in">
-                  <div :key="state.month" class="month-name">{{ MONTHS[state.month] }}</div>
+                  <div :key="state.month" class="month-name">{{ t(MONTHS[state.month]) }}</div>
                 </Transition>
               </div>
             </Reveal>

@@ -6,6 +6,7 @@ import Instrument from './Instrument.vue'
 import PixelIcon from './PixelIcon.vue'
 import { state, db, history, placeLabel } from '../store.js'
 import { useScript } from '../guide.js'
+import { t } from '../i18n.js'
 import { PAL, RAMP } from '../lib/palette.js'
 
 const el = ref(null)
@@ -30,37 +31,37 @@ const times = computed(() => H.value ? Math.max(1, Math.round(H.value.wettest.ra
     <div class="wrap">
       <div class="step-head">
         <span class="step-num">2</span>
-        <h2>Your place, year by year</h2>
+        <h2>{{ t('Your place, year by year') }}</h2>
         <p>44 years of NASA POWER data at {{ state.point ? placeLabel(state.point) : 'this spot' }} (1981–2024): which years were hard, and how the climate is shifting.</p>
       </div>
-      <p v-if="!H" class="muted">{{ db.error ? 'No NASA POWER data for this spot.' : 'Reading 44 years of NASA data…' }}</p>
+      <p v-if="!H" class="muted">{{ t(db.error ? 'No NASA POWER data for this spot.' : 'Reading 44 years of NASA data…') }}</p>
       <template v-else>
         <Reveal :at="0">
           <div class="card years-card">
             <div class="stripes" role="img" :aria-label="`Warming stripes 1981 to 2024. Recent afternoons are ${H.warming} degrees warmer than in 1981 to 2000.`">
               <i v-for="(d, i) in H.years" :key="d.y" :style="{ background: stripeColor(d.heat - H.heatMean), '--i': i }" :title="`${d.y}: ${d.heat.toFixed(1)} °C`" />
             </div>
-            <div class="axis"><span>{{ H.years[0].y }}</span><span>Each stripe is one year · turquoise = cooler afternoons · campfire = hotter</span><span>{{ H.years[H.years.length - 1].y }}</span></div>
+            <div class="axis"><span>{{ H.years[0].y }}</span><span>{{ t('Each stripe is one year · turquoise = cooler afternoons · campfire = hotter') }}</span><span>{{ H.years[H.years.length - 1].y }}</span></div>
           </div>
         </Reveal>
         <Reveal :at="1">
           <div class="facts">
             <div class="card fact">
               <Instrument kind="rain" :value="H.wettest.rain" :domain="[0, H.wettest.rain]" :size="2" />
-              <div><span class="k">Wettest year</span><b>{{ H.wettest.y }}</b>
-                <span v-if="state.mode === 'farmer'">About {{ times }}× the rain of a normal year</span>
+              <div><span class="k">{{ t('Wettest year') }}</span><b>{{ H.wettest.y }}</b>
+                <span v-if="state.mode === 'farmer'">{{ t('About {n}× the rain of a normal year', { n: times }) }}</span>
                 <span v-else>{{ H.wettest.rain }} mm · average {{ H.meanRain }} mm</span></div>
             </div>
             <div class="card fact">
               <PixelIcon name="soil_dry" :size="3" />
-              <div><span class="k">Driest year</span><b>{{ H.driest.y }}</b>
-                <span v-if="state.mode === 'farmer'">The ground was at its thirstiest</span>
+              <div><span class="k">{{ t('Driest year') }}</span><b>{{ H.driest.y }}</b>
+                <span v-if="state.mode === 'farmer'">{{ t('The ground was at its thirstiest') }}</span>
                 <span v-else>{{ H.driest.rain }} mm of rain</span></div>
             </div>
             <div class="card fact">
               <PixelIcon :name="H.warming > 0.1 ? 'up' : H.warming < -0.1 ? 'down' : 'flat'" :color="H.warming > 0.1 ? PAL.ember : PAL.teal" :size="3" />
-              <div><span class="k">Afternoons now vs 1981–2000</span><b>{{ H.warming > 0 ? '+' : '' }}{{ H.warming }} °C</b>
-                <span v-if="state.mode === 'farmer'">{{ H.warming > 0.3 ? 'Noticeably hotter than in your parents\' time' : H.warming > 0.1 ? 'A little hotter than before' : H.warming < -0.3 ? 'Noticeably cooler than before' : H.warming < -0.1 ? 'A little cooler than before' : 'About the same as before' }}</span>
+              <div><span class="k">{{ t('Afternoons now vs 1981–2000') }}</span><b>{{ H.warming > 0 ? '+' : '' }}{{ H.warming }} °C</b>
+                <span v-if="state.mode === 'farmer'">{{ t(H.warming > 0.3 ? 'Noticeably hotter than in your parents\' time' : H.warming > 0.1 ? 'A little hotter than before' : H.warming < -0.3 ? 'Noticeably cooler than before' : H.warming < -0.1 ? 'A little cooler than before' : 'About the same as before') }}</span>
                 <span v-else>Rain {{ H.rainChange > 0 ? '+' : '' }}{{ H.rainChange }} % over the same periods</span></div>
             </div>
           </div>

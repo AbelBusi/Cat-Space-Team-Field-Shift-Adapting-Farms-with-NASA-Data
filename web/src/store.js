@@ -3,6 +3,7 @@ import { reactive, computed, shallowRef, watch } from 'vue'
 import { CRIT, ROTS, LAYERS } from './content.js'
 import { fetchPower, fetchNdvi, fetchRecentClimate, NINO_COASTAL } from './lib/nasa.js'
 import { say } from './guide.js'
+import { t } from './i18n.js'
 import { PLACES as DEMO_PLACES } from './demoPlaces.js'
 
 export const state = reactive({
@@ -69,7 +70,7 @@ export async function selectPoint(lat, lon, name = null) {
   if (inside) loadLocal()
   state.point = { lat: +lat.toFixed(4), lon: +lon.toFixed(4), name }
   Object.assign(db, { power: null, ndvi: null, recent: null, loading: true, ndviLoading: true, error: null, ndviError: null, recentError: null })
-  say(`Listening to the satellites over ${placeLabel(state.point)}...`, 'thinking')
+  say(() => t('Listening to the satellites over {place}...', { place: placeLabel(state.point) }), 'thinking')
 
   // Demo data: a saved snapshot of the same NASA requests, loaded instantly (see scripts/make-demo.mjs).
   const demo = state.demo && DEMO_PLACES.find(p => Math.abs(p.lat - lat) < 0.05 && Math.abs(p.lon - lon) < 0.05)
@@ -81,7 +82,7 @@ export async function selectPoint(lat, lon, name = null) {
       if (id !== request) return
       Object.assign(db, { power: d.power, ndvi: d.ndvi, recent: d.recent, loading: false, ndviLoading: false })
       const [text, mood] = LAYERS[state.layer].say(valueAt(state.layer))
-      say(`${placeLabel(state.point)} (saved NASA data). ${LAYERS[state.layer].name}: ${text}`, mood)
+      say(() => t('{place} (saved NASA data). {layer}: {text}', { place: placeLabel(state.point), layer: t(LAYERS[state.layer].name), text: t(text) }), mood)
       return
     } catch (e) {
       console.warn('Demo data failed, using live NASA data:', e)
@@ -100,11 +101,11 @@ export async function selectPoint(lat, lon, name = null) {
     if (id !== request) return
     db.power = power
     const [text, mood] = LAYERS[state.layer].say(valueAt(state.layer))
-    say(`${placeLabel(state.point)}. ${LAYERS[state.layer].name}: ${text}`, mood)
+    say(() => t('{place}. {layer}: {text}', { place: placeLabel(state.point), layer: t(LAYERS[state.layer].name), text: t(text) }), mood)
   } catch (e) {
     if (id !== request) return
     db.error = e.message
-    say(`Oh no... I couldn't reach NASA POWER (${e.message}). Check the internet connection and tap the map again.`, 'sad')
+    say(() => t("Oh no... I couldn't reach NASA POWER ({error}). Check the internet connection and tap the map again.", { error: e.message }), 'sad')
   } finally {
     if (id === request) db.loading = false
   }
@@ -128,9 +129,9 @@ export const ranking = computed(() => {
     const sc = { ...r.s, ...(nino && { climate: r.nino }) }
     let score = CRIT.reduce((s, k) => s + (total ? state.prio[k.k] : 1) * sc[k.k], 0) / (5 * (total || CRIT.length)) * 100
     const flags = []
-    if (c?.dry === 'dry' && sc.water <= 2) { score *= 0.8; flags.push(`Dry climate here (${c.rain} mm a year): a thirsty crop needs reliable irrigation.`) }
-    if (c && nino && r.floods && c.ninoRain > c.rain * 1.25) flags.push(`In El Niño years rain here goes up ${Math.round((c.ninoRain / c.rain - 1) * 100)}%: maize may flood.`)
-    if (c?.cool) flags.push('Cool climate: these warm-season example crops may not fit. Local rotations will differ.')
+    if (c?.dry === 'dry' && sc.water <= 2) { score *= 0.8; flags.push(t('Dry climate here ({n} mm a year): a thirsty crop needs reliable irrigation.', { n: c.rain })) }
+    if (c && nino && r.floods && c.ninoRain > c.rain * 1.25) flags.push(t('In El Niño years rain here goes up {n}%: maize may flood.', { n: Math.round((c.ninoRain / c.rain - 1) * 100) }))
+    if (c?.cool) flags.push(t('Cool climate: these warm-season example crops may not fit. Local rotations will differ.'))
     return { r, sc, score: Math.round(Math.min(100, score)), flags }
   }).sort((a, b) => b.score - a.score)
 })

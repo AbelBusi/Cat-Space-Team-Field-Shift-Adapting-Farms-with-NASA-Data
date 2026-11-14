@@ -10,6 +10,7 @@ import CatDialogue from './cat/CatDialogue.vue'
 import { ICON, PLACES } from './content.js'
 import { selectPoint, state } from './store.js'
 import { say, showEverything } from './guide.js'
+import { t, lang, setLang, LANGS } from './i18n.js'
 import { PLACES as DEMO_PLACES } from './demoPlaces.js'
 
 onMounted(() => selectPoint(PLACES[0].lat, PLACES[0].lon, PLACES[0].name))
@@ -33,8 +34,8 @@ const dark = ref(root.dataset.theme !== 'light')   // night is the default look
 function setMode(m) {
   state.mode = m
   try { localStorage.setItem('fs-mode', m) } catch {}
-  say(m === 'farmer' ? 'Farmer mode: I\'ll show you tools you know, like a thermometer and a rain gauge, and tell you what they mean.'
-    : 'Pro mode: numbers, units and charts. Same NASA data, more detail.', m === 'farmer' ? 'happy' : 'thinking')
+  say(() => t(m === 'farmer' ? 'Farmer mode: I\'ll show you tools you know, like a thermometer and a rain gauge, and tell you what they mean.'
+    : 'Pro mode: numbers, units and charts. Same NASA data, more detail.'), m === 'farmer' ? 'happy' : 'thinking')
 }
 // Demo data: instant saved NASA snapshots for a few places, and every section shown at once.
 function toggleDemo() {
@@ -58,17 +59,20 @@ function toggleTheme() {
   <div class="atmos" aria-hidden="true"><i class="glow-teal" /><i class="glow-teal2" /><i class="glow-fire" /><i class="glow-ghost" /><i class="stars" /></div>
   <div class="topbar">
     <div class="wrap">
-      <div class="brand"><span class="brand-dot" aria-hidden="true" /><span>Field Shift<span class="wide-only"> · Listen to your field</span></span></div>
+      <div class="brand"><span class="brand-dot" aria-hidden="true" /><span>Field Shift<span class="wide-only"> · {{ t('Listen to your field') }}</span></span></div>
       <div class="top-right">
-        <div class="seg mode-seg" role="group" aria-label="View mode">
-          <button type="button" :aria-pressed="state.mode === 'farmer'" @click="setMode('farmer')">Farmer</button>
-          <button type="button" :aria-pressed="state.mode === 'pro'" @click="setMode('pro')">Pro</button>
+        <div class="seg mode-seg" role="group" :aria-label="t('Language')">
+          <button v-for="[code, label, name] in LANGS" :key="code" type="button" :aria-pressed="lang === code" :title="name" @click="setLang(code)">{{ label }}</button>
         </div>
-        <span class="badge wide-only">{{ state.demo ? 'Demo · saved NASA data' : 'Prototype · live NASA data' }}</span>
-        <button type="button" class="demo-btn" :aria-pressed="state.demo" title="Load saved NASA data for Chiclayo, Iowa and Punjab instantly and show every section" @click="toggleDemo">{{ state.demo ? '[ demo on ]' : '[ demo data ]' }}</button>
+        <div class="seg mode-seg" role="group" aria-label="View mode">
+          <button type="button" :aria-pressed="state.mode === 'farmer'" @click="setMode('farmer')">{{ t('Farmer') }}</button>
+          <button type="button" :aria-pressed="state.mode === 'pro'" @click="setMode('pro')">{{ t('Pro') }}</button>
+        </div>
+        <span class="badge wide-only">{{ t(state.demo ? 'Demo · saved NASA data' : 'Prototype · live NASA data') }}</span>
+        <button type="button" class="demo-btn" :aria-pressed="state.demo" title="Load saved NASA data for Chiclayo, Iowa and Punjab instantly and show every section" @click="toggleDemo">{{ t(state.demo ? '[ demo on ]' : '[ demo data ]') }}</button>
         <button type="button" class="theme-btn" :aria-label="dark ? 'Switch to light mode' : 'Switch to dark mode'" @click="toggleTheme">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" v-html="dark ? ICON.sun : ICON.moon" />
-          <span class="wide-only" aria-hidden="true">{{ dark ? 'Light mode' : 'Dark mode' }}</span>
+          <span class="wide-only" aria-hidden="true">{{ t(dark ? 'Light mode' : 'Dark mode') }}</span>
         </button>
       </div>
     </div>
