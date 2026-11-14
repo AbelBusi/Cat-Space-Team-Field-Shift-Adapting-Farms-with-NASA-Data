@@ -47,10 +47,11 @@ function draw(t) {
   ctx.fillStyle = PAL.teal; ctx.fillRect(-14, -2, 9, 4); ctx.fillRect(5, -2, 9, 4)
   ctx.restore()
 }
-function loop(t) { draw(t); if (!reduce) raf = requestAnimationFrame(loop) }
+let odd = false
+function loop(t) { if ((odd = !odd)) draw(t); if (!reduce) raf = requestAnimationFrame(loop) }
 const redraw = () => draw(performance.now())
-onMounted(() => { raf = requestAnimationFrame(loop); addEventListener('resize', redraw) })
+onMounted(() => { redraw(); raf = requestAnimationFrame(loop); addEventListener('resize', redraw) })
 onBeforeUnmount(() => { cancelAnimationFrame(raf); removeEventListener('resize', redraw) })
 </script>
 
-<template><canvas ref="canvas" class="sky" aria-hidden="true" /></template>
+<template><canvas ref="canvas" class="block" aria-hidden="true" /></template>

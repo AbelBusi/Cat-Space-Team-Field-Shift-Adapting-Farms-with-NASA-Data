@@ -1,87 +1,91 @@
-// Sprout's dialogue: which lines are playing and how much of each section is revealed.
-import { reactive, computed, provide, onMounted, onBeforeUnmount } from 'vue'
+// Sprout's dialogue. Sprout never hides data: every screen shows its content at once, and Sprout only talks about it.
+// With the guide ON, Sprout explains each screen the first time you open it. With the guide OFF, Sprout waits in a
+// corner, raises a small flag when there is something worth saying, and answers when you tap.
+import { reactive, computed } from 'vue'
 import { SCRIPTS } from './content.js'
+import { ask } from './lib/ask.js'
 
+const saved = (() => { try { return localStorage.getItem('fs-guide') } catch { return null } })()
 export const guide = reactive({
-  section: null, lines: [], i: 0,
-  steps: {},        // section -> highest revealed line (Infinity = everything)
-  seen: {},         // sections whose script already played
-  queue: [],        // sections waiting for the current script to end
-  showAll: false, muted: false, open: true, talking: false,
+  on: saved !== 'off',
+  lines: [], i: 0,      // what Sprout is saying: [[English text or function, mood], ...]
+  choices: null,        // answers the user can pick after the last line: [{ label, run }]
+  open: false,          // the dialogue panel is on screen
+  unread: false,        // guide off: Sprout has something to say
+  asking: false,        // the question box is open
+  screen: null,         // id of the screen on show (a key of SCRIPTS)
+  seen: {},             // screens already explained
+  muted: false, talking: false,
 })
-const visible = reactive(new Set())  // sections currently on screen
+let pending = null
 
 export const line = computed(() => guide.lines[guide.i] || null)
 export const hasNext = computed(() => guide.i < guide.lines.length - 1)
-export const canAdvance = computed(() => hasNext.value || guide.queue.some(s => visible.has(s)))
 
-function finishSection() { if (guide.section) guide.steps[guide.section] = Infinity }
-
-function start(section) {
-  finishSection()
-  guide.seen[section] = true
-  guide.queue = guide.queue.filter(s => s !== section)
-  Object.assign(guide, { section, lines: SCRIPTS[section], i: 0 })
-  guide.steps[section] = 0
+function show(lines, choices = null) {
+  pending = null
+  Object.assign(guide, { lines, i: 0, choices, open: true, unread: false, asking: false })
 }
 
-// Sections take turns: a new one waits while the current script is unfinished and still on screen.
-function request(section) {
-  if (guide.seen[section] || guide.showAll) return
-  if (guide.section && hasNext.value && visible.has(guide.section)) {
-    if (!guide.queue.includes(section)) guide.queue.push(section)
-  } else start(section)
+// level 'info': a passing remark, dropped while the guide is off or a script is unfinished.
+// level 'note': worth knowing; with the guide off it raises Sprout's flag. level 'force': always shown (errors, answers).
+export function tell(lines, { choices = null, level = 'info' } = {}) {
+  if (level === 'force' || guide.on) {
+    if (level === 'info' && guide.open && (hasNext.value || guide.choices || guide.asking)) return
+    return show(lines, choices)
+  }
+  if (level === 'note') { pending = { lines, choices }; guide.unread = true }
+}
+export const say = (text, mood = 'neutral', more = [], opts) => tell([[text, mood], ...more], opts)
+
+export function next() { if (hasNext.value) guide.i++ }
+export function close() { guide.open = false; guide.asking = false }
+
+// A screen came into view: explain it once if the guide is on.
+export function enter(id) {
+  guide.screen = id
+  if (!guide.on || guide.seen[id] || !SCRIPTS[id]) return
+  guide.seen[id] = true
+  show(SCRIPTS[id])
+}
+export function explain() {
+  if (SCRIPTS[guide.screen]) show(SCRIPTS[guide.screen])
+  else show([["There's nothing tricky on this screen. You're doing great!", 'happy']])
 }
 
-function startQueued() {
-  const q = guide.queue.find(s => visible.has(s) && !guide.seen[s])
-  guide.queue = guide.queue.filter(s => visible.has(s) && s !== q)
-  if (q) start(q)
-}
-
-export function next() {
-  if (hasNext.value) {
-    guide.i++
-    if (guide.section) guide.steps[guide.section] = guide.i
+export function setGuide(on) {
+  guide.on = on
+  try { localStorage.setItem('fs-guide', on ? 'on' : 'off') } catch {}
+  if (on) {
+    guide.seen[guide.screen] = true
+    show([["Yay! I'll explain each screen as we go. I'll do my very best!", 'happy'], ...(SCRIPTS[guide.screen] || [])])
   } else {
-    finishSection()
-    startQueued()
+    show([["Oh... okay! That's totally fine. I'll wait quietly right here. Tap me whenever you need me, I'd be so happy to help.", 'shy']])
   }
 }
 
-// A one-line reaction to something the user did. It never cuts a script in the middle.
-export function say(text, mood = 'neutral', more = []) {
-  if (guide.section && hasNext.value) return
-  finishSection()
-  guide.section = null
-  startQueued()
-  if (guide.section) return
-  Object.assign(guide, { section: null, lines: [[text, mood], ...more], i: 0 })
+function menu(first) {
+  show([[first, 'happy']], [
+    { label: 'Explain this screen', run: explain },
+    guide.on ? { label: "Stop explaining, I'll call you", run: () => setGuide(false) } : { label: 'Guide me from now on', run: () => setGuide(true) },
+    { label: 'I want to ask something else', run: openAsk },
+    { label: 'Never mind', run: close },
+  ])
 }
-
-export function showEverything() {
-  finishSection()
-  guide.showAll = true
-  guide.queue = []
-  Object.assign(guide, { section: null, lines: [['Okay! Everything is out now. Explore at your own pace, and tap things if you want me to explain them.', 'happy']], i: 0 })
+// The user tapped Sprout.
+export function summon() {
+  if (pending) return show(pending.lines, pending.choices)
+  menu("Here I am! What do you need?")
 }
-
-// Call from a section component: plays its script when it scrolls into view and
-// provides `step` to the <Reveal> blocks inside it.
-export function useScript(section, el) {
-  const step = computed(() => guide.showAll ? Infinity : (guide.steps[section] ?? -1))
-  const now = computed(() => guide.section === section ? guide.i : -1)
-  provide('step', step)
-  provide('now', now)
-  let io
-  onMounted(() => {
-    io = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) { visible.add(section); request(section); return }
-      visible.delete(section)
-      if (guide.section === section && hasNext.value) startQueued()
-    }, { rootMargin: '0px 0px -40% 0px' })
-    io.observe(el.value)
-  })
-  onBeforeUnmount(() => io?.disconnect())
-  return step
+export function openAsk() {
+  show([['Of course! What would you like to know?', 'happy']])
+  guide.asking = true
+}
+export async function submitQuestion(question, context) {
+  show([['Hmm, let me think...', 'thinking']])
+  const lines = await ask(question, context)
+  show(lines, [
+    { label: 'Ask another thing', run: openAsk },
+    { label: "Thanks, that's all", run: close },
+  ])
 }

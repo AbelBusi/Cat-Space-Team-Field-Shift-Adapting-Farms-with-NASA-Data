@@ -92,16 +92,6 @@ export function levelWord(k, v) {
 }
 export const fitWord = score => score >= 70 ? 'Good fit' : score >= 45 ? 'Could work' : 'Poor fit'
 
-// Example places across continents, so anyone can try the tool in one tap.
-export const PLACES = [   // phase 1: Lambayeque only
-  { name: 'Chiclayo', lat: -6.77, lon: -79.84 },
-  { name: 'Lambayeque', lat: -6.70, lon: -79.91 },
-  { name: 'Ferreñafe', lat: -6.64, lon: -79.79 },
-  { name: 'Mórrope', lat: -6.54, lon: -80.01 },
-  { name: 'Motupe', lat: -6.15, lon: -79.71 },
-  { name: 'Olmos', lat: -5.98, lon: -79.75 },
-]
-
 export const CROP = {
   A: { name: 'Rice', color: PAL.teal },
   M: { name: 'Yellow maize', color: PAL.fire },
@@ -154,36 +144,53 @@ export const GLOSSARY = [
   ['Satellite or soil test?', 'A satellite sees the whole valley every few days, but it averages big areas. A soil test is exact, but only at one spot. Together they correct each other.'],
 ]
 
-// Sprout's lines per section. Line i reveals every <Reveal :at="i"> in that section.
+// The topics of the map screen, in order. One topic on screen at a time: little to read, arrows to move on.
+export const SLIDES = [
+  { id: 'signals', title: 'What the satellites see' },
+  { id: 'ground', title: 'Your ground and recent weather' },
+  { id: 'years', title: 'Your place, year by year' },
+  { id: 'prio', title: 'What matters most to you?' },
+  { id: 'rots', title: 'How your year could look' },
+  { id: 'detail', title: 'Compare with today' },
+  { id: 'report', title: 'Your report' },
+]
+
+// What Sprout says the first time each screen opens (only with the guide on). Sprout is gentle, a little shy and
+// always encouraging. Keep it to one or two short lines: the screen already shows the data.
 export const SCRIPTS = {
-  hero: [
-    ['Oh! Hello there! I\'m Sprout. I came down from orbit to help you read what the satellites see.', 'happy'],
-    ['From up there, NASA satellites measure signals about any field on Earth. They\'re these little buttons.', 'neutral'],
-    ['I know it sounds like a lot... but don\'t worry! We\'ll go one step at a time, together. Scroll down whenever you\'re ready.', 'shy'],
+  intro: [
+    ['H-hello! I\'m Sprout. I came down from orbit to help you read what NASA\'s satellites see over your land.', 'happy'],
+    ['Heat, rain, soil, plants... I turn them into plain words, so you can choose what to plant next. Would you like me to guide you?', 'shy'],
   ],
-  map: [
-    ['This is the whole Earth! Search a town, tap the map, or try an example place. You can even outline your own field with the yellow tool.', 'happy'],
-    ['NASA data comes in squares called grid cells, and every satellite uses a different size. Here they are, nested around your point. Tap one to zoom in.', 'thinking'],
-    ['Press play to watch a whole year go by. The big square takes the color of the signal you picked.', 'happy'],
-    ['Over here I translate the numbers into plain words. They are real NASA numbers for that spot, averaged over 2001 to 2024!', 'surprised'],
-    ['One honest thing, though: the climate cell is about 50 km wide. It describes your region, not your exact field. Greenness comes at 250 meters, much closer.', 'worried'],
+  where: [
+    ['First, tell me where you farm! This is Lambayeque: tap your province. Or press the location button and I\'ll find you.', 'happy'],
+  ],
+  province: [
+    ['Now tap your district. If it is a tiny one, the list on the side is easier.', 'neutral'],
+  ],
+  signals: [
+    ['Here it is from space! The bright shape is your district. Tap anywhere inside to move to your field, or outline it with the tools on top.', 'happy'],
+    ['Pick a signal on the left and a month on the right. When you are ready, the arrows on the sides take you to the next topic.', 'thinking'],
+  ],
+  ground: [
+    ['One honest thing: every satellite sees in squares of a different size. The climate square is about 55 km wide, so it describes your region, not your exact field.', 'worried'],
   ],
   years: [
     ['Now let\'s travel back in time. Each stripe is one year at your spot, from 1981 to 2024. Turquoise years had cooler afternoons, campfire years hotter ones.', 'thinking'],
-    ['And these are the hard years: the wettest and the driest. They can come back, so it\'s good to plan for them.', 'worried'],
   ],
   prio: [
     ['Every farm is different, so I\'d love to know what matters to you.', 'neutral'],
-    ['Tap a card to make it more important. The rotations below will reorder themselves. It\'s your call!', 'happy'],
+    ['Tap a row to make it more important. The rotations will reorder themselves. It\'s your call!', 'happy'],
   ],
   rots: [
     ['Each row is one year, like walking along a furrow from January to December. A seed is sowing, a golden plant is harvest, empty soil is bare land.', 'thinking'],
     ['See the little icons above some months? Those are risky months at your spot: heat, heavy rain, dry soil or frost. A plant growing then looks thirsty.', 'worried'],
-    ['Pick any rotation and I\'ll compare it with what you grow today, point by point.', 'neutral'],
+  ],
+  detail: [
     ['I\'m not always sure, and that\'s okay. If you tell me what you know about your field, I get more confident.', 'shy'],
     ['And remember: I\'m only a helper. You and your local agronomist always have the final word.', 'happy'],
   ],
-  gloss: [
-    ['Satellite words can sound scary. Here they are in plain words. You\'ve got this!', 'happy'],
+  report: [
+    ['You did it! Here is everything together. You can print it or save it as a PDF and share it with your agronomist.', 'happy'],
   ],
 }

@@ -1,12 +1,18 @@
 // Page state and the live NASA data for the chosen point.
 import { reactive, computed, shallowRef, watch } from 'vue'
-import { CRIT, ROTS, LAYERS } from './content.js'
+import { CRIT, ROTS, LAYERS, MONTHS } from './content.js'
 import { fetchPower, fetchNdvi, fetchRecentClimate, NINO_COASTAL } from './lib/nasa.js'
-import { say } from './guide.js'
+import { say, tell } from './guide.js'
+import { DEPARTMENT, locate } from './lib/admin.js'
+import { gridCells } from './lib/nasa.js'
 import { samplePoints } from './lib/geo.js'
 import { t } from './i18n.js'
 
 export const state = reactive({
+  stage: 'intro',   // intro (Sprout says hello) → where (pick province and district) → explore (map and slides)
+  area: null,       // the territory on the map: { kind: 'district' | 'department', name, province, rings }
+  slide: 0,         // index in SLIDES
+  province: null,   // province open in the place picker
   layer: 'heat', month: 2, scen: 'normal',
   mode: (() => { try { return localStorage.getItem('fs-mode') || 'farmer' } catch { return 'farmer' } })(),   // farmer | pro
   point: null,      // { lat, lon, name }
@@ -117,12 +123,12 @@ export async function selectPoint(lat, lon, name = null) {
     db.power = power
     if (inside) await loadLocal()
     if (id !== request) return
-    const [text, mood] = LAYERS[state.layer].say(valueAt(state.layer))
-    say(() => t('{place}. {layer}: {text}', { place: placeLabel(state.point), layer: t(LAYERS[state.layer].name), text: t(text) }), mood, coverLines())
+    const [text, mood] = LAYERS[state.layer].say(valueAt(state.layer)), notes = coverLines()
+    tell([[() => t('{place}. {layer}: {text}', { place: placeLabel(state.point), layer: t(LAYERS[state.layer].name), text: t(text) }), mood], ...notes], { level: notes.length ? 'note' : 'info' })
   } catch (e) {
     if (id !== request) return
     db.error = e.message
-    say(() => t("Oh no... I couldn't reach NASA POWER ({error}). Check the internet connection and tap the map again.", { error: e.message }), 'sad')
+    say(() => t("Oh no... I couldn't reach NASA POWER ({error}). Check the internet connection and tap the map again.", { error: e.message }), 'sad', [], { level: 'force' })
   } finally {
     if (id === request) db.loading = false
   }
@@ -173,3 +179,57 @@ export const risks = computed(() => {
   if (!T || !R || !S || !C) return []
   return T.map((_, i) => ({ heat: T[i] >= 30, rain: R[i] >= 60, dry: S[i] < 20, frost: C[i] != null && C[i] < 0 }))
 })
+
+// The rotation on show (the user's pick, or the best fit) and today's rotation to compare with.
+export const chosen = computed(() => ranking.value.find(x => x.r.id === state.rot) || ranking.value[0])
+export const baseline = computed(() => ranking.value.find(x => x.r.id === 'current'))
+
+// Hypothetical confidence: what the data can see here, plus what the farmer already knows.
+export const confidence = computed(() => {
+  const nino = state.scen === 'nino', r = chosen.value.r
+  const score = Math.max(10, Math.min(95, 45 + (db.ndvi ? 10 : 0) + (state.checks.soil ? 15 : 0) + (state.checks.water ? 12 : 0) + (state.checks.tried ? 10 : 0) - (nino ? 10 : 0) + (r.id === 'current' ? 8 : 0)))
+  const size = state.point ? gridCells(state.point.lat, state.point.lon)[0].size : t('about 55 km')
+  return {
+    score, level: score < 45 ? 'Low' : score < 70 ? 'Medium' : 'High',
+    reasons: [
+      t('Climate comes in NASA POWER cells of {size}: it describes the region, not your plot.', { size }),
+      t(db.ndvi ? 'Greenness comes from 250 m MODIS pixels: much closer to your field.' : 'Greenness is not loaded for this spot yet.'),
+      t(state.checks.soil ? 'With your soil test, the suggestion is more precise.' : 'Your plot\'s soil test is missing.'),
+      t(state.checks.water ? 'You know how much water you get, so fewer surprises.' : 'We don\'t know how much water you get per season.'),
+      ...(!state.checks.tried && r.id !== 'current' ? [t('You have never grown this here: try it on a small plot first.')] : []),
+      ...(nino ? [t('An El Niño year is harder to predict.')] : []),
+    ],
+  }
+})
+
+// A reading as text: the number with its unit (Pro), and the small note under it.
+export function formatValue(k, v) {
+  if (LAYERS[k].pending) return t('Coming soon')
+  if (v == null) return k === 'veg' && db.ndviError ? t('Not available') : '…'
+  if (k === 'veg') return v.toFixed(2)
+  return (k === 'heat' || k === 'water' ? (k === 'water' && v > 0 ? '+' : '') + v.toFixed(1) : Math.round(v)) + ' ' + LAYERS[k].unit
+}
+export function readingNote(k) {
+  if (k === 'veg') return t(db.ndviLoading ? 'MODIS is slow, about a minute…' : db.ndviError ? 'MODIS service did not answer' : 'in {month} 2024', { month: t(MONTHS[state.month]) })
+  if (LAYERS[k].pending) return t('needs Earthdata login')
+  if (k === 'water') return t('trend 2002–2026, regional')
+  return t(state.scen === 'nino' ? 'in {month}, El Niño years' : 'in {month}, typical year', { month: t(MONTHS[state.month]) })
+}
+
+// Map tools shared between the map and the HUD buttons. The map fills `mapApi` with its actions when it mounts.
+export const mapUi = reactive({ drawing: false, corners: 0, data: null, intensity: 0.7 })
+export const mapApi = {}
+
+// Entering the map: one district (only its territory shows) or free mode (the whole department).
+function open(area, lat, lon, name) {
+  Object.assign(state, { area, parcel: null, slide: 0, stage: 'explore' })
+  selectPoint(lat, lon, name)
+}
+export function enterDistrict(province, district, at = null) {
+  const [lon, lat] = district.center
+  open({ kind: 'district', name: district.name, province: province.name, rings: district.rings }, at?.lat ?? lat, at?.lon ?? lon, district.name)
+}
+export function enterFree(at = null) {
+  const lat = at?.lat ?? state.point?.lat ?? -6.77, lon = at?.lon ?? state.point?.lon ?? -79.84
+  open({ kind: 'department', name: DEPARTMENT.name, province: null, rings: DEPARTMENT.rings }, lat, lon, locate(lat, lon)?.district.name ?? null)
+}

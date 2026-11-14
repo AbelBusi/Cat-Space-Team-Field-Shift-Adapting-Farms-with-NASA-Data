@@ -1,3 +1,4 @@
+import './dev-frames.js'
 import '@fontsource/atkinson-hyperlegible/400.css'
 import '@fontsource/atkinson-hyperlegible/700.css'
 import '@fontsource-variable/bricolage-grotesque/opsz.css'
