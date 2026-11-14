@@ -46,7 +46,7 @@
 html, body { margin: 0; }
 body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; transition: background .3s, color .3s; padding-bottom: 210px; }
 h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; margin: 0; line-height: 1.15; }
-.mono, .eyebrow, .tag, .badge, .step-num, .k, .legend, .month-ticks, .ring-of { font-family: var(--font-mono); }
+.mono, .eyebrow, .tag, .step-num, .k, .legend, .month-ticks, .ring-of { font-family: var(--font-mono); }
 button { font: inherit; color: inherit; }
 button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 a { color: var(--accent); }
@@ -67,7 +67,6 @@ svg { flex: none; }
 .brand-dot { width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, var(--accent) 0 30%, transparent 31%), conic-gradient(var(--accent) 0 25%, transparent 0 50%, var(--accent) 0 75%, transparent 0); animation: spin 12s linear infinite; }
 @keyframes spin { to { transform: rotate(1turn); } }
 .top-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.badge { font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 999px; background: var(--warn-bg); color: var(--warn-ink); }
 .theme-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 700; }
 .theme-btn svg { width: 20px; height: 20px; }
 
@@ -270,8 +269,6 @@ section.step { padding: 40px 0 8px; }
 .pill.best { background: var(--accent); color: var(--accent-ink); animation: rise .4s var(--ease-out); }
 .pill.now { background: var(--fallow); color: var(--fallow-ink); }
 /* Farmer / Pro switch */
-.demo-btn { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; min-height: 36px; padding: 0 10px; background: transparent; color: var(--fire); border: 1px solid var(--fire); cursor: pointer; }
-.demo-btn[aria-pressed="true"] { background: var(--fire); color: var(--on-accent); }
 .mode-seg { padding: 2px; }
 .mode-seg button { min-height: 32px; font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; padding: 0 12px; }
 .mode-seg button[aria-pressed="true"] { background: var(--teal); color: var(--on-accent); box-shadow: none; }

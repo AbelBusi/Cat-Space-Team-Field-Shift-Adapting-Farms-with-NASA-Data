@@ -18,7 +18,7 @@ farmers anywhere can compare crop rotations. Team from Chiclayo, Peru. Read this
 6. **Current phase: Lambayeque first.** Make everything work well for Lambayeque, Peru (bbox W −80.7, S −7.2, E −78.8, N −5.4).
    All of Peru only if time allows; the rest of the world keeps working with live APIs but is not polished.
 7. **APIs first, datasets as backup.** Use live keyless APIs (NASA POWER, GIBS, ORNL MODIS) when they exist. Downloaded files in
-   `data/` are the emergency backup (demo snapshots) or the only source when NASA offers no keyless API (IMERG, GRACE, NASADEM, SMAP).
+   `data/` are the backup (the Lambayeque grid file) or the only source when NASA offers no keyless API (IMERG, GRACE, NASADEM, SMAP).
 8. **Licenses:** only NASA / partner-agency data, or third-party material that is free and openly licensed. Ask before adding any.
 
 ## Map of the repo

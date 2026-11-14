@@ -41,10 +41,8 @@ npm run dev          # http://localhost:5173
 npm run build        # static site in web/dist (fonts included; the NASA data needs internet)
 ```
 
-**Demo data button.** The `[ DEMO DATA ]` button in the top bar loads a saved snapshot of the same NASA requests for
-Chiclayo, Iowa and Punjab instantly and shows every section at once. Use it to review the design, and as a backup at the
-event if the internet is slow. Refresh the snapshot with `cd web && node scripts/make-demo.mjs`
-(places in `web/src/demoPlaces.js`).
+**Example places.** The map offers six places in Lambayeque (Chiclayo, Lambayeque, Ferreñafe, Mórrope, Motupe, Olmos),
+set in `PLACES` in `web/src/content.js`. Search still works anywhere, but phase 1 polishes Lambayeque only.
 
 **3. Python (datasets that need an Earthdata login, hackathon work):**
 

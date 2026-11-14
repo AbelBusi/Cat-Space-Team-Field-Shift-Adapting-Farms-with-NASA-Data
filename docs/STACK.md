@@ -15,7 +15,6 @@ Everything the project uses, why, and how the pieces connect. Versions are the o
                     │                               │   guide.js (Sprout's script)                               │
  public/data/       │                               │                                                            │
   lambayeque.json ──┼──► store.js local / cell ─────┤   ◄── built offline by pipeline/build_lambayeque.py        │
- public/demo/*.json ┼──► "Demo data" button ────────┘   ◄── built by web/scripts/make-demo.mjs                    │
                     └────────────────────────────────────────────────────────────────────────────────────────────┘
 
  Offline (Python, run by a person with an Earthdata login):
@@ -26,7 +25,7 @@ Everything the project uses, why, and how the pieces connect. Versions are the o
 - **No backend.** Every live API used accepts browser calls without a key (CORS `*`). The site is static and can be hosted
   anywhere (GitHub Pages, Netlify, Vercel) with `npm run build`.
 - **APIs first, files as backup** (AGENTS.md rule 7): live APIs for anywhere on Earth; pre-built files when NASA has no keyless
-  API (IMERG numbers, GRACE, NASADEM) and as an emergency snapshot (Demo data) when a service is down.
+  API (IMERG numbers, GRACE, NASADEM) and for Lambayeque, which loads from the grid file.
 
 ## 2. Web app (`web/`)
 
@@ -48,7 +47,7 @@ Node 20+ (tested on 24.21). No CSS framework: plain CSS with the variables of `D
 
 | File | Role |
 |---|---|
-| `src/main.js` · `src/App.vue` | Entry, top bar (Farmer/Pro, Demo data, theme), section order, page atmosphere |
+| `src/main.js` · `src/App.vue` | Entry, top bar (language, Farmer/Pro, theme), section order, page atmosphere |
 | `src/content.js` | **All text**: layers and their plain-language readings, Farmer words (`levelWord`), crops, rotations, glossary, Sprout's `SCRIPTS` |
 | `src/store.js` | State, live data loading (`selectPoint`), the Lambayeque grid (`local`, `cell`), rotation `ranking`, `risks`, `history` |
 | `src/guide.js` | Sprout's dialogue queue, which section is talking, what each `<Reveal>` shows |
@@ -59,7 +58,6 @@ Node 20+ (tested on 24.21). No CSS framework: plain CSS with the variables of `D
 | `src/lib/sound.js` · `src/lib/tween.js` | Synthesized meows and melody · number/array tweening |
 | `src/cat/` | Sprout's sprites (`sprites.js`), `CatSprite.vue`, the translator panel `CatDialogue.vue` |
 | `src/components/` | One component per section (`HeroSection`, `MapSection`, `SignalPanel`, `YearsSection`, `Priorities`, `Rotations`, `RotationDetail`, `Glossary`) plus building blocks (`Reveal`, `PixelIcon`, `Instrument`, `PixelGlobe`, `FieldRow`, `TradeOffs`, `Sparkline`, `OrbitSky`) |
-| `src/demoPlaces.js` · `scripts/make-demo.mjs` · `public/demo/` | Demo snapshots (Chiclayo, Iowa, Punjab) |
 | `public/data/lambayeque.json` | The Lambayeque 0.1° grid (IMERG, NASADEM, GRACE) |
 
 ### Performance rules (why it does not lag)
@@ -92,14 +90,14 @@ Python 3.11+ (tested on 3.14) in `pipeline/.venv`.
 
 | On screen | Inside Lambayeque | Anywhere else | If the service is down |
 |---|---|---|---|
-| Daytime heat, frost, soil wetness | NASA POWER (live, ~55 km) | Same | Demo snapshot |
-| Rain (monthly) | **GPM IMERG 0.1°** (downloaded, 2001–2024) | NASA POWER (live) | Demo snapshot / grid file |
+| Daytime heat, frost, soil wetness | NASA POWER (live, ~55 km) | Same | — |
+| Rain (monthly) | **GPM IMERG 0.1°** (downloaded, 2001–2024) | NASA POWER (live) | Grid file (Lambayeque) |
 | El Niño scenario | **Coastal**: Niño 1+2 years 1983, 1998, 2016, 2017, 2023 | ONI years | — |
-| Plant greenness | MODIS via ORNL (live, 250 m, cached) | Same | Demo snapshot (ORNL often answers 503/504) |
+| Plant greenness | MODIS via ORNL (live, 250 m, cached) | Same | Browser cache (ORNL often answers 503/504) |
 | Underground water | **GRACE-FO** regional trend (downloaded) | "Coming soon" | — |
 | Ground (elevation, slope, erosion) | **NASADEM** cell mean (downloaded) | Not shown | — |
-| Last 30 days | NASA POWER daily (live) | Same | Demo snapshot |
-| Year by year (1981–2024) | NASA POWER monthly (live) | Same | Demo snapshot |
+| Last 30 days | NASA POWER daily (live) | Same | — |
+| Year by year (1981–2024) | NASA POWER monthly (live) | Same | — |
 | Map images | GIBS: NDVI, ground heat, **IMERG rain, SMAP soil moisture** (live); **rain grid 0.1°** (downloaded) | GIBS layers | — |
 | Rotation scores, confidence | **Hypothetical expert rules** (labelled) | Same | — |
 
@@ -109,7 +107,6 @@ Python 3.11+ (tested on 3.14) in `pipeline/.venv`.
 ./setup.sh                                   # install web + Python
 cd web && npm run dev                        # http://localhost:5173
 cd web && npm run build                      # static site in web/dist
-cd web && node scripts/make-demo.mjs         # refresh demo snapshots
 pipeline/.venv/bin/python pipeline/build_lambayeque.py   # rebuild the Lambayeque grid
 ```
 
@@ -118,7 +115,7 @@ pipeline/.venv/bin/python pipeline/build_lambayeque.py   # rebuild the Lambayequ
 | Symptom | Cause | Fix |
 |---|---|---|
 | `sh: vite: Permission denied` | `node_modules` came from git without exec permissions | `rm -rf web/node_modules && cd web && npm ci` |
-| Plant greenness stuck on "Listening…" | ORNL MODIS service slow or down (503/504) | Wait, or use **Demo data** |
+| Plant greenness stuck on "Listening…" | ORNL MODIS service slow or down (503/504) | Wait and tap the place again (results are cached in the browser) |
 | Earthdata download 401/403 | The data center's app is not authorized | urs.earthdata.nasa.gov → Applications → Authorized Apps: approve GES DISC, LP DAAC, PO.DAAC, NSIDC |
 | AppEEARS files return 503 | AppEEARS storage outage | Retry later; nothing in the app depends on it yet |
 | `xarray` "unable to decode time units … julian" | IMERG files use a julian calendar | `open_dataset(..., decode_times=False)` |

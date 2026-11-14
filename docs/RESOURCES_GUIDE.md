@@ -28,7 +28,7 @@ Usefulness: ★★★ core for our goal · ★★ helps · ★ nice to have · �
 | **GPM IMERG** | ★★★ rain, extremes, El Niño | Global | Data: Earthdata login. Images: ✅ GIBS layer `IMERG_Precipitation_Rate` works with CORS | Downloaded for Lambayeque (288 months). **Add the GIBS layer to the map** |
 | **SMAP** | ★★★ real soil moisture | Global (9–36 km) | Data: Earthdata login (raw = 228 GB/yr). Images: ✅ GIBS `SMAP_L3_Passive_Enhanced_Day_Soil_Moisture` works | Harmony subset already ordered (job `46f7d1a1…`). **Add the GIBS layer now**; numbers from the subset or AppEEARS |
 | **Landsat / HLS** | ★★★ field-level NDVI, bare months | Global (30 m) | Earthdata login; AppEEARS task already ordered | Precompute per place (AppEEARS points) |
-| **MODIS** | ★★★ NDVI 250 m | Global | ✅ ORNL DAAC REST, no login, CORS | **In the app.** ⚠️ Slow (~40 s) and **was down (HTTP 503) during this check** → keep the demo snapshots and the browser cache |
+| **MODIS** | ★★★ NDVI 250 m | Global | ✅ ORNL DAAC REST, no login, CORS | **In the app.** ⚠️ Slow (~40 s) and **was down (HTTP 503) during this check** → rely on the browser cache |
 | **VIIRS** | ★★ MODIS successor | Global | ORNL `VNP13A1` same API, but 503 during the check; else Earthdata login | Swap in when MODIS ends; same code path |
 | **SRTM / NASADEM** | ★★ slope, erosion risk | Global (60°N–56°S) | Earthdata login | Downloaded for Lambayeque (8 tiles). Precompute slope per place |
 | **ECOSTRESS** | ★★ heat stress, real ET, 70 m | Global, irregular dates | Earthdata login; AppEEARS task already ordered | Precompute monthly means per place |
@@ -79,4 +79,4 @@ Keys must never sit in the browser. If a keyed API is needed live later, add a t
 2. **Download FAO GAEZ suitability** for the example crops and use it for the "Withstand" and fit scores.
 3. **Download the pending jobs**: SMAP (Harmony), ECOSTRESS and HLS (AppEEARS), and fold them into the 0.1° grid.
 4. **US bonus**: when the chosen point is in the US, read SSURGO soil live and show it in the panel.
-5. Keep the **demo snapshots**: MODIS was unavailable (503) during this check.
+5. Rely on the browser cache for MODIS: it was unavailable (503) during this check.

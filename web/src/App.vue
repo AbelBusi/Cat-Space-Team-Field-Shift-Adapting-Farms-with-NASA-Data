@@ -11,9 +11,8 @@ import Glossary from './components/Glossary.vue'
 import CatDialogue from './cat/CatDialogue.vue'
 import { ICON, PLACES } from './content.js'
 import { selectPoint, state } from './store.js'
-import { say, showEverything } from './guide.js'
+import { say } from './guide.js'
 import { t, lang, setLang, LANGS } from './i18n.js'
-import { PLACES as DEMO_PLACES } from './demoPlaces.js'
 
 onMounted(() => selectPoint(PLACES[0].lat, PLACES[0].lon, PLACES[0].name))
 
@@ -39,17 +38,6 @@ function setMode(m) {
   say(() => t(m === 'farmer' ? 'Farmer mode: I\'ll show you tools you know, like a thermometer and a rain gauge, and tell you what they mean.'
     : 'Pro mode: numbers, units and charts. Same NASA data, more detail.'), m === 'farmer' ? 'happy' : 'thinking')
 }
-// Demo data: instant saved NASA snapshots for a few places, and every section shown at once.
-function toggleDemo() {
-  state.demo = !state.demo
-  if (state.demo) {
-    showEverything()
-    const p = DEMO_PLACES[0]
-    selectPoint(p.lat, p.lon, p.name)
-  } else if (state.point) {
-    selectPoint(state.point.lat, state.point.lon, state.point.name)
-  }
-}
 function toggleTheme() {
   dark.value = !dark.value
   root.dataset.theme = dark.value ? 'dark' : 'light'
@@ -70,8 +58,6 @@ function toggleTheme() {
           <button type="button" :aria-pressed="state.mode === 'farmer'" @click="setMode('farmer')">{{ t('Farmer') }}</button>
           <button type="button" :aria-pressed="state.mode === 'pro'" @click="setMode('pro')">{{ t('Pro') }}</button>
         </div>
-        <span class="badge wide-only">{{ t(state.demo ? 'Demo · saved NASA data' : 'Prototype · live NASA data') }}</span>
-        <button type="button" class="demo-btn" :aria-pressed="state.demo" :title="t('Load saved NASA data for Chiclayo, Iowa and Punjab instantly and show every section')" @click="toggleDemo">{{ t(state.demo ? '[ demo on ]' : '[ demo data ]') }}</button>
         <button type="button" class="theme-btn" :aria-label="t(dark ? 'Switch to light mode' : 'Switch to dark mode')" @click="toggleTheme">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" v-html="dark ? ICON.sun : ICON.moon" />
           <span class="wide-only" aria-hidden="true">{{ t(dark ? 'Light mode' : 'Dark mode') }}</span>

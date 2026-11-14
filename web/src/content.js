@@ -93,13 +93,13 @@ export function levelWord(k, v) {
 export const fitWord = score => score >= 70 ? 'Good fit' : score >= 45 ? 'Could work' : 'Poor fit'
 
 // Example places across continents, so anyone can try the tool in one tap.
-export const PLACES = [
-  { name: 'Chiclayo, Peru', lat: -6.77, lon: -79.84 },
-  { name: 'Iowa, USA', lat: 42.0, lon: -93.6 },
-  { name: 'Punjab, India', lat: 30.9, lon: 75.85 },
-  { name: 'Nile Delta, Egypt', lat: 30.8, lon: 31.0 },
-  { name: 'Mato Grosso, Brazil', lat: -12.6, lon: -55.7 },
-  { name: 'Nakuru, Kenya', lat: -0.3, lon: 36.1 },
+export const PLACES = [   // phase 1: Lambayeque only
+  { name: 'Chiclayo', lat: -6.77, lon: -79.84 },
+  { name: 'Lambayeque', lat: -6.70, lon: -79.91 },
+  { name: 'Ferreñafe', lat: -6.64, lon: -79.79 },
+  { name: 'Mórrope', lat: -6.54, lon: -80.01 },
+  { name: 'Motupe', lat: -6.15, lon: -79.71 },
+  { name: 'Olmos', lat: -5.98, lon: -79.75 },
 ]
 
 export const CROP = {
