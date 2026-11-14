@@ -101,6 +101,12 @@ Python 3.11+ (tested on 3.14) in `pipeline/.venv`.
 | Map images | GIBS: NDVI, ground heat, **IMERG rain, SMAP soil moisture** (live); **rain grid 0.1°** (downloaded) | GIBS layers | — |
 | Rotation scores, confidence | **Hypothetical expert rules** (labelled) | Same | — |
 
+**Big outlined fields.** A field can be bigger than one data square (e.g. the Olmos project). Inside Lambayeque, rain
+(IMERG) and ground (NASADEM) become the **area-weighted average** of every 0.1° square the field touches: a 40 × 40 net of points
+over the outline counts how much of the field falls in each square (`cover` and `cell` in `store.js`). The squares are drawn
+dashed on the map, and Sprout says how many there are and the range of yearly rain between them. NASA POWER (55 km) and MODIS
+(250 m) are still read at the field's center; Sprout warns when the field crosses several POWER squares or is over 25 ha.
+
 ## 5. Commands
 
 ```bash

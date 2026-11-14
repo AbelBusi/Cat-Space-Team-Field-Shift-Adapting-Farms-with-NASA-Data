@@ -34,6 +34,29 @@ function distanceM([lat1, lon1], [lat2, lon2]) {
 
 export const ringPerimeterM = ring => ring.reduce((t, p, i) => t + distanceM(p, ring[(i + 1) % ring.length]), 0)
 
+// Is [lat, lon] inside the outline? Ray casting, fine for field-sized polygons.
+export function insideRing([y, x], ring) {
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [yi, xi] = ring[i], [yj, xj] = ring[j]
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside
+  }
+  return inside
+}
+
+// An even n × n net of points over the field's bounding box, keeping the ones inside the outline.
+// Counting points per grid square tells how much of the field falls in each square.
+export function samplePoints(ring, n = 40) {
+  const lats = ring.map(p => p[0]), lons = ring.map(p => p[1])
+  const [s, w] = [Math.min(...lats), Math.min(...lons)], dy = (Math.max(...lats) - s) / n, dx = (Math.max(...lons) - w) / n
+  const pts = []
+  for (let a = 0; a < n; a++) for (let b = 0; b < n; b++) {
+    const p = [s + (a + 0.5) * dy, w + (b + 0.5) * dx]
+    if (insideRing(p, ring)) pts.push(p)
+  }
+  return pts
+}
+
 // Average of the corners: good enough as the parcel's reference point.
 export const vertexCenter = ring => [ring.reduce((s, p) => s + p[0], 0) / ring.length, ring.reduce((s, p) => s + p[1], 0) / ring.length]
 

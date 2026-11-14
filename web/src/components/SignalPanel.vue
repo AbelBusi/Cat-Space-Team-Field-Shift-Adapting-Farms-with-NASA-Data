@@ -99,7 +99,7 @@ function listen() {
     <div v-if="cell && cell.land > 0" class="ground">
       <PixelIcon :name="cell.slope < 2 ? 'soil_moist' : cell.slope < 6 ? 'soil_dry' : 'up'" :size="2" />
       <div>
-        <span class="k">{{ t('Ground · NASADEM 30 m, cell mean') }}</span>
+        <span class="k">{{ cell.n > 1 ? t('Ground · NASADEM 30 m, average of {n} squares', { n: cell.n }) : t('Ground · NASADEM 30 m, cell mean') }}</span>
         <b v-if="state.mode === 'pro'">{{ t('{m} m above sea · slope {deg}°', { m: cell.elev, deg: cell.slope }) }}</b>
         <b v-else>{{ t(cell.slope < 2 ? 'Flat ground' : cell.slope < 6 ? 'Gentle slope' : 'Steep ground') }}</b>
         <span>{{ t(cell.slope < 2 ? 'Low erosion risk.' : cell.slope < 6 ? 'Bare soil can wash away in heavy rain.' : 'High erosion risk when the soil is bare: keep it covered.') }}</span>

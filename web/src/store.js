@@ -3,6 +3,7 @@ import { reactive, computed, shallowRef, watch } from 'vue'
 import { CRIT, ROTS, LAYERS } from './content.js'
 import { fetchPower, fetchNdvi, fetchRecentClimate, NINO_COASTAL } from './lib/nasa.js'
 import { say } from './guide.js'
+import { samplePoints } from './lib/geo.js'
 import { t } from './i18n.js'
 
 export const state = reactive({
@@ -29,25 +30,58 @@ function loadLocal() {
   return localLoad
 }
 
-// The grid cell under the chosen point (0.1°, ~11 km), or null outside Lambayeque.
+// An outlined field can be bigger than one grid square. Points spread over it say which squares it touches
+// and how much of the field falls in each (its share). `power` counts the NASA POWER squares (0.5° × 0.625°).
+export const cover = computed(() => {
+  const ring = state.parcel?.ring
+  if (!ring) return null
+  const pts = samplePoints(ring)
+  return { pts, power: new Set(pts.map(([la, lo]) => `${Math.round(la / 0.5)},${Math.round((lo + 180) / 0.625)}`)).size }
+})
+
+// The Lambayeque grid square under the chosen point (0.1°, ~11 km), or null outside Lambayeque. With an outlined
+// field it is the average of every square the field touches, weighted by the share of the field in each one.
 export const cell = computed(() => {
   const g = local.value, p = state.point
   if (!g || !p || !inLambayeque(p.lat, p.lon)) return null
   const { lat, lon } = g.meta.grid
   const near = (arr, v) => arr.reduce((best, x, k) => Math.abs(x - v) < Math.abs(arr[best] - v) ? k : best, 0)
-  const i = near(lat, p.lat), j = near(lon, p.lon), c = i * lon.length + j
+  const weight = new Map()   // grid index → number of field points in it
+  for (const [la, lo] of cover.value?.pts.length ? cover.value.pts : [[p.lat, p.lon]]) {
+    const c = near(lat, la) * lon.length + near(lon, lo)
+    weight.set(c, (weight.get(c) || 0) + 1)
+  }
+  const ids = [...weight.keys()]
+  const avg = (get, digits = 0) => {
+    let sum = 0, n = 0
+    for (const c of ids) { const v = get(c); if (v != null) { sum += v * weight.get(c); n += weight.get(c) } }
+    return n ? +(sum / n).toFixed(digits) : null
+  }
+  const months = arr => Array.from({ length: 12 }, (_, m) => avg(c => arr[c]?.[m]))
+  const typicalYear = ids.map(c => g.rain.typical[c]).filter(Boolean).map(r => r.reduce((x, y) => x + (y ?? 0), 0))   // mm a year per square
   return {
-    lat: lat[i], lon: lon[j], rain: { normal: g.rain.typical[c], nino: g.rain.nino[c] }, annual: g.rain.annual[c],
-    elev: g.terrain.elev_m[c], slope: g.terrain.slope_deg[c], land: g.terrain.land_share[c], water: g.water,
+    n: ids.length, squares: ids.map(c => [lat[Math.floor(c / lon.length)], lon[c % lon.length]]),
+    rain: { normal: months(g.rain.typical), nino: months(g.rain.nino) }, annual: g.rain.annual_years.map((_, y) => avg(c => g.rain.annual[c]?.[y])),
+    range: [Math.round(Math.min(...typicalYear)), Math.round(Math.max(...typicalYear))],
+    elev: avg(c => g.terrain.elev_m[c]), slope: avg(c => g.terrain.slope_deg[c], 1), land: avg(c => g.terrain.land_share[c], 2), water: g.water,
   }
 })
+
+// What Sprout adds when the outlined field is bigger than the data squares.
+function coverLines() {
+  const c = cell.value, out = []
+  if (c?.n > 1) out.push([() => t('Your field is big: it covers {n} rain squares of 11 km. I averaged them by how much of your field falls in each one. Between them, yearly rain goes from {min} to {max} mm.', { n: c.n, min: c.range[0], max: c.range[1] }), 'thinking'])
+  if (cover.value?.power > 1) out.push([() => t('It also crosses {n} NASA POWER climate squares (about 55 km). Heat and soil wetness come from the square at its center, so read them as a regional value.', { n: cover.value.power }), 'worried'])
+  if (state.parcel?.areaM2 > 250_000) out.push([() => t('Greenness is still read at one 250 m pixel in the middle of your field, not across the whole field.'), 'neutral'])
+  return out
+}
 // Inside Lambayeque, rain comes from IMERG (11 km) instead of POWER (55 km), and underground water from GRACE.
 watch(cell, c => {
   Object.assign(LAYERS.rain, c ? { ds: 'GPM IMERG V07 (0.1°, 2001–2024)', px: 11 } : { ds: 'NASA POWER', px: 55 })
   Object.assign(LAYERS.water, c ? { ds: 'GRACE-FO mascon (regional, 2002–2026)', pending: false } : { ds: 'GRACE-FO (coming)', pending: true })
 })
 
-export const placeLabel = p => p.name || `${Math.abs(p.lat).toFixed(2)}° ${p.lat < 0 ? 'S' : 'N'}, ${Math.abs(p.lon).toFixed(2)}° ${p.lon < 0 ? 'W' : 'E'}`
+export const placeLabel = p => (p.name && t(p.name)) || `${Math.abs(p.lat).toFixed(2)}° ${p.lat < 0 ? 'S' : 'N'}, ${Math.abs(p.lon).toFixed(2)}° ${p.lon < 0 ? 'W' : 'E'}`
 
 // 12 monthly values for a layer, or null while it loads (or if it is not connected yet).
 export function series(layer, scen = state.scen) {
@@ -81,8 +115,10 @@ export async function selectPoint(lat, lon, name = null) {
     const power = await fetchPower(state.point.lat, state.point.lon, inside ? NINO_COASTAL : undefined)   // coastal El Niño on the Peruvian coast
     if (id !== request) return
     db.power = power
+    if (inside) await loadLocal()
+    if (id !== request) return
     const [text, mood] = LAYERS[state.layer].say(valueAt(state.layer))
-    say(() => t('{place}. {layer}: {text}', { place: placeLabel(state.point), layer: t(LAYERS[state.layer].name), text: t(text) }), mood)
+    say(() => t('{place}. {layer}: {text}', { place: placeLabel(state.point), layer: t(LAYERS[state.layer].name), text: t(text) }), mood, coverLines())
   } catch (e) {
     if (id !== request) return
     db.error = e.message

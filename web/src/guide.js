@@ -50,13 +50,13 @@ export function next() {
 }
 
 // A one-line reaction to something the user did. It never cuts a script in the middle.
-export function say(text, mood = 'neutral') {
+export function say(text, mood = 'neutral', more = []) {
   if (guide.section && hasNext.value) return
   finishSection()
   guide.section = null
   startQueued()
   if (guide.section) return
-  Object.assign(guide, { section: null, lines: [[text, mood]], i: 0 })
+  Object.assign(guide, { section: null, lines: [[text, mood], ...more], i: 0 })
 }
 
 export function showEverything() {

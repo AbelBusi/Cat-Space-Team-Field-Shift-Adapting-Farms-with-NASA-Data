@@ -23,6 +23,14 @@ export function t(s, params) {
 }
 
 const ES = {
+  "Your field": "Tu terreno",
+  "Your location": "Tu ubicación",
+  "I don't have permission to see your location. You can allow it in the browser settings, or just tap the map.": "No tengo permiso para ver tu ubicación. Puedes darlo en la configuración del navegador, o simplemente tocar el mapa.",
+  "I couldn't find your location. Try again, ideally outdoors, or tap the map.": "No pude encontrar tu ubicación. Inténtalo de nuevo, mejor al aire libre, o toca el mapa.",
+  "Your field is big: it covers {n} rain squares of 11 km. I averaged them by how much of your field falls in each one. Between them, yearly rain goes from {min} to {max} mm.": "Tu terreno es grande: cubre {n} cuadrantes de lluvia de 11 km. Los promedié según cuánto de tu terreno cae en cada uno. Entre ellos, la lluvia del año va de {min} a {max} mm.",
+  "It also crosses {n} NASA POWER climate squares (about 55 km). Heat and soil wetness come from the square at its center, so read them as a regional value.": "También cruza {n} cuadrantes de clima de NASA POWER (unos 55 km). El calor y la humedad del suelo vienen del cuadrante de su centro: tómalos como un valor regional.",
+  "Greenness is still read at one 250 m pixel in the middle of your field, not across the whole field.": "El verdor todavía se lee en un solo píxel de 250 m en el centro de tu terreno, no en todo el terreno.",
+  "Ground · NASADEM 30 m, average of {n} squares": "Suelo · NASADEM 30 m, promedio de {n} cuadrantes",
   "Fit {n} out of 100.": "Encaje {n} de 100.",
   "NASA image layers": "Capas de imágenes de la NASA",
   "Paint NASA images on the map": "Pintar imágenes de la NASA en el mapa",
@@ -279,6 +287,14 @@ const ES = {
 }
 
 const QU = {
+  "Your field": "Chakrayki",
+  "Your location": "Maypi kasqayki",
+  "I don't have permission to see your location. You can allow it in the browser settings, or just tap the map.": "Manam saqiwankichu maypi kasqaykita rikunaypaq. Navegadorpa configuraciónninpi saqiyta atinki, utaq mapata llamiyllay.",
+  "I couldn't find your location. Try again, ideally outdoors, or tap the map.": "Manam tariyta atinichu maypi kasqaykita. Watiqmanta pruebay, aswan allin hawapi, utaq mapata llamiy.",
+  "Your field is big: it covers {n} rain squares of 11 km. I averaged them by how much of your field falls in each one. Between them, yearly rain goes from {min} to {max} mm.": "Chakraykiqa hatunmi: 11 km {n} para tawa k'uchukunatam hap'in. Sapankapi chakraykip hayk'an kasqanman hina chawpinchani. Paykunapura, watap paranqa {min} mm manta {max} mm kama.",
+  "It also crosses {n} NASA POWER climate squares (about 55 km). Heat and soil wetness come from the square at its center, so read them as a regional value.": "{n} NASA POWER pacha tawa k'uchukunatapas chimpan (55 km hina). Rupay, allpa huquyninpas chawpinpi kaq tawa k'uchumantam hamun: suyup yupayninta hina ñawinchay.",
+  "Greenness is still read at one 250 m pixel in the middle of your field, not across the whole field.": "Q'umir kayqa chakraykip chawpinpi huk 250 m píxelllapiraqmi ñawinchakun, manam llapan chakraykipichu.",
+  "Ground · NASADEM 30 m, average of {n} squares": "Allpa · NASADEM 30 m, {n} tawa k'uchup chawpinchasqan",
   "Fit {n} out of 100.": "100manta {n} allin.",
   "NASA image layers": "NASA rikch'akuna",
   "Paint NASA images on the map": "Mapapi NASA rikch'akunata llimpiy",

@@ -6,7 +6,7 @@ import * as d3 from 'd3'
 import Reveal from './Reveal.vue'
 import SignalPanel from './SignalPanel.vue'
 import { LAYERS, MONTHS, M1, ICON, PLACES } from '../content.js'
-import { state, db, valueAt, selectPoint, local, series } from '../store.js'
+import { state, db, valueAt, selectPoint, local, series, cell } from '../store.js'
 import { RAMP } from '../lib/palette.js'
 import { useScript, say } from '../guide.js'
 import { t } from '../i18n.js'
@@ -19,7 +19,7 @@ useScript('map', el)
 
 const gibs = (layer, matrix, ext) => `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${layer}/default/default/${matrix}/{z}/{y}/{x}.${ext}`
 const mapEl = ref(null)
-let map, cellLayer, powerRect, parcelLayer, dataLayer
+let map, cellLayer, powerRect, parcelLayer, dataLayer, coverLayer
 const rects = {}
 
 const L_ = computed(() => LAYERS[state.layer])
@@ -67,11 +67,18 @@ onMounted(() => {
   L.control.scale({ imperial: false }).addTo(map)
   cellLayer = L.layerGroup().addTo(map)
   parcelLayer = L.layerGroup().addTo(map)
+  coverLayer = L.layerGroup().addTo(map)
   map.on('click', e => drawing.value ? addCorner(e.latlng) : pickPoint(e.latlng.lat, e.latlng.lng))
   drawCells()
 })
 onBeforeUnmount(() => { clearInterval(playTimer); map?.remove() })
 watch(() => state.point, drawCells)
+// The rain squares an outlined field touches (dashed), so it is clear the field is read as their average.
+watch(() => cell.value?.squares, sq => {
+  coverLayer?.clearLayers()
+  if (!sq || sq.length < 2) return
+  sq.forEach(([la, lo]) => L.rectangle([[la - 0.05, lo - 0.05], [la + 0.05, lo + 0.05]], { color: PAL.teal, weight: 1, dashArray: '4 4', fill: false, interactive: false }).addTo(coverLayer))
+})
 watch(() => [state.layer, state.month, state.scen, db.power, db.ndvi], paintCell)
 
 // Any new place forgets the outlined field.
