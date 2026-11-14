@@ -3,9 +3,12 @@ import { reactive, computed } from 'vue'
 import { CRIT, ROTS, LAYERS } from './content.js'
 import { fetchPower, fetchNdvi, fetchRecentClimate } from './lib/nasa.js'
 import { say } from './guide.js'
+import { PLACES as DEMO_PLACES } from './demoPlaces.js'
 
 export const state = reactive({
   layer: 'heat', month: 2, scen: 'normal',
+  mode: (() => { try { return localStorage.getItem('fs-mode') || 'farmer' } catch { return 'farmer' } })(),   // farmer | pro
+  demo: false,      // true = use the saved NASA snapshots in public/demo instead of live requests
   point: null,      // { lat, lon, name }
   parcel: null,     // { ring: [[lat, lon], ...], areaM2, perimeterM } when the farmer outlines a field
   prio: { water: 3, income: 2, soil: 2, pests: 1, climate: 2 },
@@ -31,6 +34,23 @@ export async function selectPoint(lat, lon, name = null) {
   state.point = { lat: +lat.toFixed(4), lon: +lon.toFixed(4), name }
   Object.assign(db, { power: null, ndvi: null, recent: null, loading: true, ndviLoading: true, error: null, ndviError: null, recentError: null })
   say(`Listening to the satellites over ${placeLabel(state.point)}...`, 'thinking')
+
+  // Demo data: a saved snapshot of the same NASA requests, loaded instantly (see scripts/make-demo.mjs).
+  const demo = state.demo && DEMO_PLACES.find(p => Math.abs(p.lat - lat) < 0.05 && Math.abs(p.lon - lon) < 0.05)
+  if (demo) {
+    try {
+      const r = await fetch(`${import.meta.env.BASE_URL}demo/${demo.id}.json`)
+      if (!r.ok) throw new Error(`demo file ${r.status}`)
+      const d = await r.json()
+      if (id !== request) return
+      Object.assign(db, { power: d.power, ndvi: d.ndvi, recent: d.recent, loading: false, ndviLoading: false })
+      const [text, mood] = LAYERS[state.layer].say(valueAt(state.layer))
+      say(`${placeLabel(state.point)} (saved NASA data). ${LAYERS[state.layer].name}: ${text}`, mood)
+      return
+    } catch (e) {
+      console.warn('Demo data failed, using live NASA data:', e)
+    }
+  }
 
   fetchRecentClimate(state.point.lat, state.point.lon)
     .then(v => { if (id === request) db.recent = v })
@@ -77,6 +97,21 @@ export const ranking = computed(() => {
     if (c?.cool) flags.push('Cool climate: these warm-season example crops may not fit. Local rotations will differ.')
     return { r, sc, score: Math.round(Math.min(100, score)), flags }
   }).sort((a, b) => b.score - a.score)
+})
+
+// Year by year at this spot: wettest and driest years, and how much warmer the last 20 years are than the 1980s-90s.
+export const history = computed(() => {
+  const ys = db.power?.years
+  if (!ys?.length) return null
+  const mean = a => a.reduce((s, x) => s + x, 0) / a.length
+  const old = ys.filter(x => x.y <= 2000), recent = ys.filter(x => x.y >= 2005)
+  const byRain = [...ys].sort((a, b) => b.rain - a.rain)
+  return {
+    years: ys, wettest: byRain[0], driest: byRain[byRain.length - 1], meanRain: Math.round(mean(ys.map(x => x.rain))),
+    warming: +(mean(recent.map(x => x.heat)) - mean(old.map(x => x.heat))).toFixed(1),
+    rainChange: Math.round((mean(recent.map(x => x.rain)) / mean(old.map(x => x.rain)) - 1) * 100),
+    heatMean: mean(ys.map(x => x.heat)),
+  }
 })
 
 export const risks = computed(() => {

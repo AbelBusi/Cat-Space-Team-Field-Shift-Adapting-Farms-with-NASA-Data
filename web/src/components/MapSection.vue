@@ -9,6 +9,7 @@ import { LAYERS, MONTHS, M1, ICON, PLACES } from '../content.js'
 import { state, db, valueAt, selectPoint } from '../store.js'
 import { useScript, say } from '../guide.js'
 import { gridCells, gibsDataLayers, searchPlaces } from '../lib/nasa.js'
+import { PAL } from '../lib/palette.js'
 import { parseCoordinates, polygonAreaM2, ringPerimeterM, vertexCenter, formatArea, formatLength, formatShortDate } from '../lib/geo.js'
 
 const el = ref(null)
@@ -34,7 +35,7 @@ function drawCells() {
     rects[c.id] = r
   })
   powerRect = rects.power
-  L.circleMarker([state.point.lat, state.point.lon], { radius: 6, color: '#0A0B0D', weight: 2, fillColor: '#FFFFFF', fillOpacity: 1, className: 'pt' }).addTo(cellLayer)
+  L.circleMarker([state.point.lat, state.point.lon], { radius: 5, color: PAL.bg, weight: 2, fillColor: PAL.ink, fillOpacity: 1, className: 'pt' }).addTo(cellLayer)
   paintCell()
   // With an outlined field, keep the view on the field; otherwise show the whole climate cell.
   if (state.parcel) map.flyToBounds(L.latLngBounds(state.parcel.ring).pad(0.6), { duration: 1, maxZoom: 17 })
@@ -43,7 +44,7 @@ function drawCells() {
 // The POWER square takes the color of the chosen signal and month.
 function paintCell() {
   const v = valueAt(state.layer)
-  powerRect?.setStyle({ fillColor: v == null ? '#888' : L_.value.scale()(v), fillOpacity: v == null ? 0.15 : 0.45 })
+  powerRect?.setStyle({ fillColor: v == null ? PAL.muted : L_.value.scale()(v), fillOpacity: v == null ? 0.15 : 0.45 })
 }
 function zoomTo(c) { map?.flyToBounds(L.latLngBounds(c.bounds).pad(1.5), { duration: 1, maxZoom: 18 }) }
 
@@ -118,14 +119,14 @@ function myLocation() {
 // Outline my field: each tap adds a corner. The finished outline gives area, perimeter and a center point.
 const drawing = ref(false)
 const corners = ref([])
-const C = '#FDE047'
+const C = PAL.fire   // the outlined field is the one thing to look at
 function drawParcel() {
   if (!parcelLayer) return
   parcelLayer.clearLayers()
   const pts = corners.value
   if (pts.length >= 3) L.polygon(pts, { color: C, weight: 3, fillColor: C, fillOpacity: 0.18, interactive: false }).addTo(parcelLayer)
   else if (pts.length === 2) L.polyline(pts, { color: C, weight: 3, interactive: false }).addTo(parcelLayer)
-  if (drawing.value) pts.forEach(p => L.circleMarker(p, { radius: 6, color: '#A16207', weight: 2.5, fillColor: '#FFFFFF', fillOpacity: 1, interactive: false }).addTo(parcelLayer))
+  if (drawing.value) pts.forEach(p => L.circleMarker(p, { radius: 5, color: PAL.bg, weight: 2, fillColor: PAL.fire, fillOpacity: 1, interactive: false }).addTo(parcelLayer))
 }
 function setDrawing(on) {
   drawing.value = on

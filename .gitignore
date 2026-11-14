@@ -1,0 +1,15 @@
+pipeline/.venv/
+pipeline/out/
+web/node_modules/
+web/dist/
+# raw NASA downloads (big); small CSV/JSON results in data/manual can be committed
+data/manual/**/*.nc
+data/manual/**/*.nc4
+data/manual/**/*.h5
+data/manual/**/*.HDF5
+data/manual/**/*.tif
+data/manual/**/*.zip
+# editors
+.idea/
+.vscode/
+*.log

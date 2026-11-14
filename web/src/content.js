@@ -1,5 +1,8 @@
 // All the words on the page live here, so the team can edit text without touching components.
 import * as d3 from 'd3'
+import { PAL, RAMP } from './lib/palette.js'
+
+const ramp = (stops, domain) => d3.scaleLinear().domain(stops.map((_, i) => domain[0] + i * (domain[1] - domain[0]) / (stops.length - 1))).range(stops).clamp(true)
 
 export const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 export const M1 = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
@@ -26,7 +29,7 @@ export const ICON = {
 export const LAYERS = {
   rain: {
     name: 'Rain', unit: 'mm', ds: 'NASA POWER', px: 55, icon: 'rain', domain: [0, 200],
-    scale: () => d3.scaleSequentialSqrt(d3.interpolateBlues).domain([0, 200]),
+    scale: () => ramp(RAMP.amount, [0, 200]),
     say: v => v < 5 ? ['It barely rains. Your crop depends completely on irrigation.', 'neutral']
       : v < 40 ? ['A little rain. It helps, but it is not enough for the crop.', 'thinking']
       : v < 100 ? ['Moderate rain. Watch out for waterlogged fields.', 'worried']
@@ -34,7 +37,7 @@ export const LAYERS = {
   },
   soil: {
     name: 'Soil wetness', unit: '%', ds: 'NASA POWER (GWETTOP)', px: 55, icon: 'soil', domain: [0, 100],
-    scale: () => d3.scaleSequential(d3.interpolateRgbBasis(['#B98A55', '#E8DDB5', '#6CB8A5', '#1C6E8C'])).domain([0, 100]),
+    scale: () => ramp(RAMP.amount, [0, 100]),
     say: v => v < 20 ? ['The topsoil is dry. With nothing growing on it, wind can blow it away.', 'worried']
       : v < 40 ? ['Low wetness. Plants start to suffer without irrigation.', 'thinking']
       : v < 70 ? ['Good wetness for most crops.', 'happy']
@@ -42,7 +45,7 @@ export const LAYERS = {
   },
   heat: {
     name: 'Daytime heat', unit: '°C', ds: 'NASA POWER (typical afternoon high)', px: 55, icon: 'heat', domain: [0, 40],
-    scale: () => d3.scaleSequential(d3.interpolateYlOrRd).domain([0, 40]),
+    scale: () => ramp(RAMP.temp, [0, 40]),
     say: v => v >= 31 ? ['Strong heat. At midday plants get stressed and drink more water.', 'worried']
       : v >= 27 ? ['Hot days. Good for growing, as long as there is water.', 'happy']
       : v >= 20 ? ['Mild temperature, comfortable for many crops.', 'happy']
@@ -51,7 +54,7 @@ export const LAYERS = {
   },
   veg: {
     name: 'Plant greenness', unit: 'NDVI', ds: 'MODIS MOD13Q1 (2024)', px: 0.25, icon: 'veg', domain: [0, 0.85],
-    scale: () => d3.scaleSequential(d3.interpolateYlGn).domain([0, 0.85]),
+    scale: () => ramp(RAMP.veg, [0, 0.85]),
     say: v => v < 0.2 ? ['It looks almost bare: open soil or desert.', 'sad']
       : v < 0.4 ? ['A little vegetation: scrub, or a crop that just started.', 'thinking']
       : v < 0.6 ? ['Medium vegetation.', 'neutral']
@@ -59,7 +62,7 @@ export const LAYERS = {
   },
   water: {
     name: 'Underground water', unit: 'cm/yr', ds: 'GRACE-FO (coming)', px: 300, icon: 'water', domain: [-2, 2], pending: true,
-    scale: () => d3.scaleDiverging(d3.interpolateRdBu).domain([-2, 0, 2]),
+    scale: () => ramp([PAL.ember, '#2A3A66', PAL.teal], [-2, 2]),
     say: v => v <= -1 ? ['Underground water keeps dropping, year after year. It needs care.', 'sad']
       : v < -0.3 ? ['Underground water is slowly going down.', 'worried']
       : ['Underground water is holding steady.', 'happy'],
@@ -74,6 +77,18 @@ export function reading(k, v) {
   return LAYERS[k].say(v)
 }
 
+// Farmer mode: a word instead of a number (DESIGN.md §9).
+export function levelWord(k, v) {
+  if (LAYERS[k].pending) return 'Coming soon'
+  if (v == null) return 'Listening…'
+  if (k === 'heat') return v < 8 ? 'Frosty' : v < 20 ? 'Cool' : v < 27 ? 'Mild' : v < 31 ? 'Hot' : 'Very hot'
+  if (k === 'rain') return v < 5 ? 'Dry month' : v < 40 ? 'A little rain' : v < 100 ? 'Rainy' : 'Very rainy'
+  if (k === 'soil') return v < 20 ? 'Dry soil' : v < 40 ? 'Slightly moist' : v < 70 ? 'Moist' : 'Wet'
+  if (k === 'veg') return v < 0.2 ? 'Bare' : v < 0.4 ? 'Sparse' : v < 0.6 ? 'Green' : 'Lush'
+  return ''
+}
+export const fitWord = score => score >= 70 ? 'Good fit' : score >= 45 ? 'Could work' : 'Poor fit'
+
 // Example places across continents, so anyone can try the tool in one tap.
 export const PLACES = [
   { name: 'Chiclayo, Peru', lat: -6.77, lon: -79.84 },
@@ -85,11 +100,11 @@ export const PLACES = [
 ]
 
 export const CROP = {
-  A: { name: 'Rice', color: '#2F6DB5' },
-  M: { name: 'Yellow maize', color: '#E0A631' },
-  S: { name: 'Sorghum', color: '#B5651D' },
-  L: { name: 'Cowpea', color: '#2E8B57' },
-  V: { name: 'Green manure', color: '#9ED3AE' },
+  A: { name: 'Rice', color: PAL.teal },
+  M: { name: 'Yellow maize', color: PAL.fire },
+  S: { name: 'Sorghum', color: PAL.sand },
+  L: { name: 'Cowpea', color: PAL.ghost },
+  V: { name: 'Green manure', color: PAL.sage },
   B: { name: 'Bare soil', color: 'var(--fallow)' },
 }
 export const CRIT = [
@@ -150,13 +165,17 @@ export const SCRIPTS = {
     ['Over here I translate the numbers into plain words. They are real NASA numbers for that spot, averaged over 2001 to 2024!', 'surprised'],
     ['One honest thing, though: the climate cell is about 50 km wide. It describes your region, not your exact field. Greenness comes at 250 meters, much closer.', 'worried'],
   ],
+  years: [
+    ['Now let\'s travel back in time. Each stripe is one year at your spot, from 1981 to 2024. Turquoise years had cooler afternoons, campfire years hotter ones.', 'thinking'],
+    ['And these are the hard years: the wettest and the driest. They can come back, so it\'s good to plan for them.', 'worried'],
+  ],
   prio: [
     ['Every farm is different, so I\'d love to know what matters to you.', 'neutral'],
     ['Tap a card to make it more important. The rotations below will reorder themselves. It\'s your call!', 'happy'],
   ],
   rots: [
-    ['Each ring is one year. January is at the top and it goes clockwise. Colors are crops, and beige is bare soil.', 'thinking'],
-    ['The dots outside a ring are risky months at your spot: strong heat, heavy rain, dry soil or frost. Crops growing then need extra care.', 'worried'],
+    ['Each row is one year, like walking along a furrow from January to December. A seed is sowing, a golden plant is harvest, empty soil is bare land.', 'thinking'],
+    ['See the little icons above some months? Those are risky months at your spot: heat, heavy rain, dry soil or frost. A plant growing then looks thirsty.', 'worried'],
     ['Pick any rotation and I\'ll compare it with what you grow today, point by point.', 'neutral'],
     ['I\'m not always sure, and that\'s okay. If you tell me what you know about your field, I get more confident.', 'shy'],
     ['And remember: I\'m only a helper. You and your local agronomist always have the final word.', 'happy'],

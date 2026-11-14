@@ -1,0 +1,9 @@
+# Data pipeline for Field Shift. build_data.py and fetch_power.py only need the standard library;
+# the rest is what the hackathon will need for real NASA files.
+earthaccess    # Earthdata login + search/download (GPM, SMAP, HLS, ECOSTRESS, GRACE-FO, SRTM)
+xarray         # gridded data (NetCDF/HDF5) as labeled arrays
+h5netcdf       # reader for GPM IMERG / SMAP / GRACE NetCDF-HDF5 files
+h5py           # the HDF5 engine h5netcdf needs
+pandas         # tables and monthly aggregation
+numpy
+scikit-learn   # optional: k-means zoning of grid cells

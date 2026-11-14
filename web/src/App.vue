@@ -1,18 +1,52 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import HeroSection from './components/HeroSection.vue'
 import MapSection from './components/MapSection.vue'
+import YearsSection from './components/YearsSection.vue'
 import Priorities from './components/Priorities.vue'
 import Rotations from './components/Rotations.vue'
 import Glossary from './components/Glossary.vue'
 import CatDialogue from './cat/CatDialogue.vue'
 import { ICON, PLACES } from './content.js'
-import { selectPoint } from './store.js'
+import { selectPoint, state } from './store.js'
+import { say, showEverything } from './guide.js'
+import { PLACES as DEMO_PLACES } from './demoPlaces.js'
 
 onMounted(() => selectPoint(PLACES[0].lat, PLACES[0].lon, PLACES[0].name))
 
+// The page sky warms up like a sunrise as you scroll down (drives --scroll, 0 at the top → 1 at the bottom).
+let ticking = false
+function onScroll() {
+  if (ticking) return
+  ticking = true
+  requestAnimationFrame(() => {
+    const max = document.documentElement.scrollHeight - innerHeight
+    document.documentElement.style.setProperty('--scroll', max > 0 ? (scrollY / max).toFixed(3) : '0')
+    ticking = false
+  })
+}
+onMounted(() => { addEventListener('scroll', onScroll, { passive: true }); onScroll() })
+onBeforeUnmount(() => removeEventListener('scroll', onScroll))
+
 const root = document.documentElement
-const dark = ref(root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches)
+const dark = ref(root.dataset.theme !== 'light')   // night is the default look
+function setMode(m) {
+  state.mode = m
+  try { localStorage.setItem('fs-mode', m) } catch {}
+  say(m === 'farmer' ? 'Farmer mode: I\'ll show you tools you know, like a thermometer and a rain gauge, and tell you what they mean.'
+    : 'Pro mode: numbers, units and charts. Same NASA data, more detail.', m === 'farmer' ? 'happy' : 'thinking')
+}
+// Demo data: instant saved NASA snapshots for a few places, and every section shown at once.
+function toggleDemo() {
+  state.demo = !state.demo
+  if (state.demo) {
+    showEverything()
+    const p = DEMO_PLACES[0]
+    selectPoint(p.lat, p.lon, p.name)
+  } else if (state.point) {
+    selectPoint(state.point.lat, state.point.lon, state.point.name)
+  }
+}
 function toggleTheme() {
   dark.value = !dark.value
   root.dataset.theme = dark.value ? 'dark' : 'light'
@@ -21,11 +55,17 @@ function toggleTheme() {
 </script>
 
 <template>
+  <div class="atmos" aria-hidden="true"><i class="glow-teal" /><i class="glow-teal2" /><i class="glow-fire" /><i class="glow-ghost" /><i class="stars" /></div>
   <div class="topbar">
     <div class="wrap">
       <div class="brand"><span class="brand-dot" aria-hidden="true" /><span>Field Shift<span class="wide-only"> · Listen to your field</span></span></div>
       <div class="top-right">
-        <span class="badge"><span class="wide-only">Prototype · </span>live NASA data</span>
+        <div class="seg mode-seg" role="group" aria-label="View mode">
+          <button type="button" :aria-pressed="state.mode === 'farmer'" @click="setMode('farmer')">Farmer</button>
+          <button type="button" :aria-pressed="state.mode === 'pro'" @click="setMode('pro')">Pro</button>
+        </div>
+        <span class="badge wide-only">{{ state.demo ? 'Demo · saved NASA data' : 'Prototype · live NASA data' }}</span>
+        <button type="button" class="demo-btn" :aria-pressed="state.demo" title="Load saved NASA data for Chiclayo, Iowa and Punjab instantly and show every section" @click="toggleDemo">{{ state.demo ? '[ demo on ]' : '[ demo data ]' }}</button>
         <button type="button" class="theme-btn" :aria-label="dark ? 'Switch to light mode' : 'Switch to dark mode'" @click="toggleTheme">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" v-html="dark ? ICON.sun : ICON.moon" />
           <span class="wide-only" aria-hidden="true">{{ dark ? 'Light mode' : 'Dark mode' }}</span>
@@ -37,6 +77,7 @@ function toggleTheme() {
   <HeroSection />
   <main>
     <MapSection />
+    <YearsSection />
     <Priorities />
     <Rotations />
     <Glossary />

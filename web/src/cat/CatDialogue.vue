@@ -3,7 +3,6 @@ import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import CatSprite from './CatSprite.vue'
 import { guide, line, hasNext, canAdvance, next, showEverything } from '../guide.js'
 import { blip, meow, meowLength, unlock } from '../lib/sound.js'
-import { ICON } from '../content.js'
 
 const PITCH = { happy: 1.15, surprised: 1.3, sad: 0.8, worried: 0.92, shy: 1.06, thinking: 0.96, neutral: 1 }
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -47,26 +46,24 @@ function toggleSound() { unlock(); guide.muted = !guide.muted }
 
 <template>
   <Transition name="dlg">
-    <aside v-if="guide.open && line" class="dlg" aria-label="Sprout, your guide">
-      <div class="dlg-box" @click="advance">
-        <div class="dlg-face"><CatSprite :mood="line[1]" :talking="guide.talking" :size="84" /></div>
-        <div class="dlg-body">
-          <div class="dlg-name">Sprout</div>
-          <p class="dlg-text" aria-hidden="true">{{ typed }}<span v-if="done && canAdvance" class="dlg-caret">▼</span></p>
-          <p class="sr-only" aria-live="polite">{{ line[0] }}</p>
-        </div>
+    <aside v-if="guide.open && line" class="dlg hud" aria-label="Sprout, your guide">
+      <div class="dlg-head">
+        <span class="dlg-tag"><span class="dlg-name">Sprout</span> · translator</span>
+        <span class="dlg-ctrl">
+          <button v-if="!guide.showAll" type="button" class="dlg-btn" @click="showEverything">[ show all ]</button>
+          <button type="button" class="dlg-btn" :aria-pressed="!guide.muted" :aria-label="guide.muted ? 'Turn voice sound on' : 'Turn voice sound off'" @click="toggleSound">[ {{ guide.muted ? 'sound off' : 'sound on' }} ]</button>
+          <button type="button" class="dlg-btn" aria-label="Minimize Sprout" @click="guide.open = false">[ _ ]</button>
+        </span>
       </div>
-      <div class="dlg-actions">
-        <button v-if="!done || canAdvance" type="button" class="dlg-btn main" @click="advance">{{ done ? 'Next ›' : 'Skip ›' }}</button>
-        <button v-if="!guide.showAll" type="button" class="dlg-btn" @click="showEverything">Show everything</button>
-        <button type="button" class="dlg-btn" :aria-pressed="!guide.muted" :aria-label="guide.muted ? 'Turn voice sound on' : 'Turn voice sound off'" @click="toggleSound">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" v-html="guide.muted ? ICON.mute : ICON.sound" />
-        </button>
-        <button type="button" class="dlg-btn" @click="guide.open = false">Hide</button>
+      <div class="dlg-body" @click="advance">
+        <div class="dlg-face"><CatSprite :mood="line[1]" :talking="guide.talking" :size="64" /></div>
+        <p class="dlg-text" aria-hidden="true">{{ typed }}<span v-if="!done" class="dlg-cursor">▌</span></p>
+        <p class="sr-only" aria-live="polite">{{ line[0] }}</p>
+        <button v-if="!done || canAdvance" type="button" class="dlg-next" @click.stop="advance">{{ done ? '[ next ]' : '[ skip ]' }}</button>
       </div>
     </aside>
   </Transition>
-  <button v-if="!guide.open" type="button" class="dlg-reopen" aria-label="Show Sprout, your guide" @click="guide.open = true">
-    <CatSprite :mood="line?.[1] || 'happy'" :size="56" />
+  <button v-if="!guide.open" type="button" class="dlg-reopen hud" aria-label="Show Sprout, your guide" @click="guide.open = true">
+    <CatSprite :mood="line?.[1] || 'happy'" :size="44" /><span>Sprout</span>
   </button>
 </template>

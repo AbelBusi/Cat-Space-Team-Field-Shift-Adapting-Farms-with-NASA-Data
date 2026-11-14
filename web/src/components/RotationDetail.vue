@@ -1,8 +1,9 @@
 <script setup>
 import { computed } from 'vue'
 import Reveal from './Reveal.vue'
-import Radar from './Radar.vue'
+import TradeOffs from './TradeOffs.vue'
 import { state, db, ranking } from '../store.js'
+import { fitWord } from '../content.js'
 import { gridCells } from '../lib/nasa.js'
 import { say } from '../guide.js'
 
@@ -37,7 +38,7 @@ function toggle(k, on) {
 <template>
   <div class="detail">
     <div class="card">
-      <span class="tag">Chosen strategy · {{ cur.score }} out of 100</span>
+      <span class="tag">Chosen strategy · {{ state.mode === 'pro' ? `${cur.score} out of 100` : fitWord(cur.score) }}</span>
       <Transition name="flip" mode="out-in"><h3 :key="cur.r.id" class="detail-title">{{ cur.r.name }}</h3></Transition>
       <p class="why">{{ cur.r.why }}</p>
       <div class="gl">
@@ -49,9 +50,9 @@ function toggle(k, on) {
     </div>
     <div class="card">
       <h3>Compared with what you do today</h3>
-      <Radar :base="base.sc" :pick="cur.sc" />
-      <div class="radar-key"><span><i class="k-base" />What you do today</span><span><i class="k-pick" />{{ cur.r.name }}</span></div>
-      <p class="muted small">The bigger the shape toward a corner, the better it does on that topic (0 to 5).</p>
+      <div v-if="state.mode === 'pro'" class="tr-head"><span /><span>Today</span><span>{{ cur.r.name }}</span><span /></div>
+      <TradeOffs :base="base.sc" :pick="cur.sc" />
+      <p class="muted small">{{ state.mode === 'pro' ? 'More filled squares = better on that topic (0 to 5). The arrow says if the change helps or hurts.' : 'Compared with what you grow today, topic by topic.' }}</p>
     </div>
     <Reveal :at="3">
       <div class="card">

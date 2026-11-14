@@ -20,7 +20,7 @@ function bump(k) {
   <section ref="el" class="step">
     <div class="wrap">
       <div class="step-head">
-        <span class="step-num">2</span>
+        <span class="step-num">3</span>
         <h2>What matters most to you?</h2>
         <p>Tap each card to raise its importance, from none to a lot. The rotations below reorder instantly.</p>
       </div>

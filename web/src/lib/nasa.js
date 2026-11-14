@@ -1,8 +1,11 @@
+import { PAL } from './palette.js'
+
 // Live NASA data for any point on Earth. Neither service needs a login, and both accept calls from the browser.
 
 // El Niño events by NOAA's Oceanic Niño Index, as the January of each event, within 2001–2024.
 export const NINO_YEARS = [2003, 2005, 2007, 2010, 2015, 2016, 2019, 2024]
-const YEARS = Array.from({ length: 24 }, (_, i) => 2001 + i)
+const YEARS = Array.from({ length: 24 }, (_, i) => 2001 + i)        // the "typical year"
+const ALL_YEARS = Array.from({ length: 44 }, (_, i) => 1981 + i)    // 1981-2024, for the year-by-year story
 const MM = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'))
 const daysIn = (y, m) => new Date(y, m, 0).getDate()
 
@@ -10,11 +13,11 @@ const daysIn = (y, m) => new Date(y, m, 0).getDate()
 // Careful: monthly T2M_MAX / T2M_MIN are the single hottest / coldest hour of the month, so the typical
 // afternoon high is estimated as mean temperature + half the average daily range.
 export async function fetchPower(lat, lon) {
-  const url = `https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M,T2M_RANGE,T2M_MIN,PRECTOTCORR,GWETTOP&community=AG&latitude=${lat}&longitude=${lon}&start=2001&end=2024&format=JSON`
+  const url = `https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M,T2M_RANGE,T2M_MIN,PRECTOTCORR,GWETTOP&community=AG&latitude=${lat}&longitude=${lon}&start=1981&end=2024&format=JSON`
   const r = await fetch(url)
   if (!r.ok) throw new Error(`NASA POWER answered ${r.status}`)
   const p = (await r.json()).properties.parameter
-  const get = (param, key) => { const v = p[param][key]; return v === -999 || v == null ? null : v }   // -999 = no data
+  const get = (param, key) => { const v = p[param][key]; return v === -999 || v == null ? null : v }   // -999 = no data   // -999 = no data
   const avg = (years, f) => MM.map((mm, i) => {
     const vals = years.map(y => f(`${y}${mm}`, y, i + 1)).filter(v => v != null && !Number.isNaN(v))
     return vals.length ? +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2) : null
@@ -25,7 +28,14 @@ export async function fetchPower(lat, lon) {
     soil: avg(years, k => get('GWETTOP', k) == null ? null : get('GWETTOP', k) * 100),                             // 0–1 wetness → %
     coldest: avg(years, k => get('T2M_MIN', k)),                                                                   // for frost risk
   })
-  return { normal: pick(YEARS), nino: pick(NINO_YEARS) }
+  // One value per year: total rain (mm) and the mean afternoon high (°C). Years with missing months are skipped.
+  const years = ALL_YEARS.map(y => {
+    const n = (param, mm) => get(param, `${y}${mm}`) ?? NaN
+    const r = MM.map((mm, i) => n('PRECTOTCORR', mm) * daysIn(y, i + 1))
+    const h = MM.map(mm => n('T2M', mm) + n('T2M_RANGE', mm) / 2)
+    return r.some(Number.isNaN) || h.some(Number.isNaN) ? null : { y, rain: Math.round(r.reduce((a, b) => a + b, 0)), heat: +(h.reduce((a, b) => a + b, 0) / 12).toFixed(2) }
+  }).filter(Boolean)
+  return { normal: pick(YEARS), nino: pick(NINO_YEARS), years }
 }
 
 // MODIS NDVI (MOD13Q1, 250 m) for 2024 through ORNL DAAC → 12 monthly means.
@@ -58,13 +68,13 @@ export function gridCells(lat, lon) {
   const pLat = Math.round(lat / 0.5) * 0.5, pLon = Math.round((lon + 180) / 0.625) * 0.625 - 180
   const iLat = Math.floor(lat * 10) / 10, iLon = Math.floor(lon * 10) / 10
   return [
-    { id: 'power', name: 'NASA POWER', what: 'climate: heat, rain, soil wetness', color: '#F2A93B',
+    { id: 'power', name: 'NASA POWER', what: 'climate: heat, rain, soil wetness', color: PAL.ink,
       bounds: [[pLat - 0.25, pLon - 0.3125], [pLat + 0.25, pLon + 0.3125]], size: `${Math.round(0.5 * KM_PER_DEG)} × ${Math.round(0.625 * kmLon)} km` },
-    { id: 'imerg', name: 'GPM IMERG', what: 'rain from space (planned)', color: '#5BA4F0',
+    { id: 'imerg', name: 'GPM IMERG', what: 'rain from space (planned)', color: PAL.teal,
       bounds: [[iLat, iLon], [iLat + 0.1, iLon + 0.1]], size: `${Math.round(0.1 * KM_PER_DEG)} × ${Math.round(0.1 * kmLon)} km` },
-    { id: 'smap', name: 'SMAP', what: 'soil moisture (planned)', color: '#9C7BEA', bounds: around(9), size: '≈ 9 × 9 km' },
-    { id: 'modis', name: 'MODIS', what: 'plant greenness (NDVI)', color: '#7FCF4A', bounds: around(0.25), size: '≈ 250 × 250 m' },
-    { id: 'hls', name: 'Landsat / Sentinel-2 (HLS)', what: 'field-level greenness (planned)', color: '#F5F2E8', bounds: around(0.03), size: '≈ 30 × 30 m' },
+    { id: 'smap', name: 'SMAP', what: 'soil moisture (planned)', color: PAL.ghost, bounds: around(9), size: '≈ 9 × 9 km' },
+    { id: 'modis', name: 'MODIS', what: 'plant greenness (NDVI)', color: PAL.sage, bounds: around(0.25), size: '≈ 250 × 250 m' },
+    { id: 'hls', name: 'Landsat / Sentinel-2 (HLS)', what: 'field-level greenness (planned)', color: PAL.sand, bounds: around(0.03), size: '≈ 30 × 30 m' },
   ]
 }
 

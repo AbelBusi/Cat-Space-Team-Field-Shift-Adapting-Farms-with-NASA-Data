@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 import Reveal from './Reveal.vue'
-import YearRing from './YearRing.vue'
+import FieldRow from './FieldRow.vue'
+import PixelIcon from './PixelIcon.vue'
 import RotationDetail from './RotationDetail.vue'
 import { CROP, ICON } from '../content.js'
 import { state, ranking, risks } from '../store.js'
@@ -22,9 +23,9 @@ function choose(r) {
   <section ref="el" class="step">
     <div class="wrap">
       <div class="step-head">
-        <span class="step-num">3</span>
+        <span class="step-num">4</span>
         <h2>How your year could look</h2>
-        <p>Each ring is one year, January at the top and moving clockwise. Colors are crops and beige is bare soil. Dots outside are risky months at your spot, from real NASA POWER data, and the dark mark is the month you picked. These four are example rotations from the Peruvian coast; the crop library can grow for other regions.</p>
+        <p>Each row is one year, January to December, like walking along a furrow. The color strip under each plant is the crop. Icons above mark risky months at your spot, from real NASA POWER data, and the framed column is the month you picked. These four are example rotations from the Peruvian coast; the crop library can grow for other regions.</p>
       </div>
       <Reveal :at="0">
         <TransitionGroup tag="div" name="rot" class="rot-grid">
@@ -33,7 +34,7 @@ function choose(r) {
               <span v-if="x === ranking[0]" class="pill best">Best fit for you</span>
               <span v-if="x.r.id === 'current'" class="pill now">What you do today</span>
             </span>
-            <YearRing :cal="x.r.cal" :score="x.score" :risks="risks" :month="state.month" :show-risks="step >= 1" />
+            <FieldRow :cal="x.r.cal" :score="x.score" :risks="step >= 1 ? risks : []" :month="state.month" :floods="!!x.r.floods" />
             <span class="ptitle">{{ x.r.name }}</span>
             <span class="trade">
               <span><b class="gain-ink">You gain:</b> {{ x.r.gain }}</span>
@@ -47,10 +48,14 @@ function choose(r) {
       <Reveal :at="1">
         <div class="crop-legend">
           <span v-for="(c, k) in CROP" :key="k"><i :style="{ background: c.color }" />{{ c.name }}</span>
-          <span><i class="dot" style="background:#D9480F" />Strong heat</span>
-          <span><i class="dot" style="background:#1D5FA8" />Heavy rain</span>
-          <span><i class="dot" style="background:#A9772E" />Dry soil</span>
-          <span><i class="dot" style="background:#7FC8F8" />Frost risk</span>
+          <span><PixelIcon name="seed" :size="1" />Sowing</span>
+          <span><PixelIcon name="plant_ok" :size="1" />Growing well</span>
+          <span><PixelIcon name="plant_thirsty" :size="1" />Stressed</span>
+          <span><PixelIcon name="harvest" :size="1" />Harvest</span>
+          <span><PixelIcon name="sun" :size="1" />Strong heat</span>
+          <span><PixelIcon name="rain" :size="1" />Heavy rain</span>
+          <span><PixelIcon name="bare" :size="1" />Bare soil</span>
+          <span><PixelIcon name="frost" :size="1" />Frost</span>
         </div>
       </Reveal>
       <Reveal :at="2"><RotationDetail :id="selected" /></Reveal>

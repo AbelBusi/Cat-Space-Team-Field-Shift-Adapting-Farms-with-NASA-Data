@@ -9,10 +9,10 @@ useScript('gloss', el)
 </script>
 
 <template>
-  <section ref="el" class="step">
+  <section id="how" ref="el" class="step">
     <div class="wrap">
       <div class="step-head">
-        <span class="step-num">4</span>
+        <span class="step-num">5</span>
         <h2>Satellite words, made simple</h2>
       </div>
       <Reveal :at="0">
