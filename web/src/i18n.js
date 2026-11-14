@@ -23,6 +23,7 @@ export function t(s, params) {
 }
 
 const ES = {
+  "rain from space (used in Lambayeque)": "lluvia desde el espacio (en uso en Lambayeque)",
   "Your field": "Tu terreno",
   "Your location": "Tu ubicación",
   "I don't have permission to see your location. You can allow it in the browser settings, or just tap the map.": "No tengo permiso para ver tu ubicación. Puedes darlo en la configuración del navegador, o simplemente tocar el mapa.",
@@ -287,6 +288,7 @@ const ES = {
 }
 
 const QU = {
+  "rain from space (used in Lambayeque)": "hanaq pachamanta para (Lambayequepi llamk'achkan)",
   "Your field": "Chakrayki",
   "Your location": "Maypi kasqayki",
   "I don't have permission to see your location. You can allow it in the browser settings, or just tap the map.": "Manam saqiwankichu maypi kasqaykita rikunaypaq. Navegadorpa configuraciónninpi saqiyta atinki, utaq mapata llamiyllay.",

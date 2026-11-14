@@ -73,7 +73,7 @@ export function gridCells(lat, lon) {
   return [
     { id: 'power', name: 'NASA POWER', what: 'climate: heat, rain, soil wetness', color: PAL.ink,
       bounds: [[pLat - 0.25, pLon - 0.3125], [pLat + 0.25, pLon + 0.3125]], size: `${Math.round(0.5 * KM_PER_DEG)} × ${Math.round(0.625 * kmLon)} km` },
-    { id: 'imerg', name: 'GPM IMERG', what: 'rain from space (planned)', color: PAL.teal,
+    { id: 'imerg', name: 'GPM IMERG', what: 'rain from space (used in Lambayeque)', color: PAL.teal,
       bounds: [[iLat, iLon], [iLat + 0.1, iLon + 0.1]], size: `${Math.round(0.1 * KM_PER_DEG)} × ${Math.round(0.1 * kmLon)} km` },
     { id: 'smap', name: 'SMAP', what: 'soil moisture (planned)', color: PAL.ghost, bounds: around(9), size: '≈ 9 × 9 km' },
     { id: 'modis', name: 'MODIS', what: 'plant greenness (NDVI)', color: PAL.sage, bounds: around(0.25), size: '≈ 250 × 250 m' },

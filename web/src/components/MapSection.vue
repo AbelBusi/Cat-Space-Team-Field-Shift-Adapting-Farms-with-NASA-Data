@@ -73,11 +73,18 @@ onMounted(() => {
 })
 onBeforeUnmount(() => { clearInterval(playTimer); map?.remove() })
 watch(() => state.point, drawCells)
-// The rain squares an outlined field touches (dashed), so it is clear the field is read as their average.
+// A big field is read as the average of every IMERG rain square it touches. Those squares replace the single
+// center square: the more of the field inside a square, the stronger its fill, with its share written in it.
 watch(() => cell.value?.squares, sq => {
-  coverLayer?.clearLayers()
-  if (!sq || sq.length < 2) return
-  sq.forEach(([la, lo]) => L.rectangle([[la - 0.05, lo - 0.05], [la + 0.05, lo + 0.05]], { color: PAL.teal, weight: 1, dashArray: '4 4', fill: false, interactive: false }).addTo(coverLayer))
+  if (!coverLayer) return
+  coverLayer.clearLayers()
+  const many = sq?.length > 1
+  rects.imerg?.setStyle({ opacity: many ? 0 : 1 })
+  if (!many) return
+  sq.forEach(([la, lo, share]) => {
+    L.rectangle([[la - 0.05, lo - 0.05], [la + 0.05, lo + 0.05]], { color: PAL.teal, weight: 2, fillColor: PAL.teal, fillOpacity: 0.06 + 0.3 * share, interactive: false }).addTo(coverLayer)
+    L.marker([la, lo], { interactive: false, keyboard: false, icon: L.divIcon({ className: 'share-label', html: `${Math.max(1, Math.round(share * 100))} %`, iconSize: [52, 20] }) }).addTo(coverLayer)
+  })
 })
 watch(() => [state.layer, state.month, state.scen, db.power, db.ndvi], paintCell)
 

@@ -170,6 +170,7 @@ section.step { padding: 40px 0 8px; }
 .leaflet-control-attribution { background: color-mix(in srgb, var(--panel) 85%, transparent) !important; color: var(--muted) !important; font-family: var(--font-mono); font-size: 10px; }
 .leaflet-container a { color: var(--accent); }
 .map-status { position: absolute; left: 12px; top: 12px; z-index: 500; background: var(--panel); color: var(--teal); font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; padding: 6px 10px; border: 1px solid var(--teal); animation: caret 1.2s steps(2) infinite; }
+.share-label { font-family: var(--font-mono); font-size: 12px; line-height: 18px; text-align: center; color: var(--ink); background: color-mix(in srgb, var(--panel) 85%, transparent); border: 1px solid var(--teal); }
 .grid-cell { animation: cell-in .7s var(--ease-out) both; }
 @keyframes cell-in { from { opacity: 0; stroke-width: 10; } }
 .map-stage.loading .grid-cell { animation: cell-wait 1s ease-in-out infinite alternate; }

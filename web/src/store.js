@@ -51,7 +51,7 @@ export const cell = computed(() => {
     const c = near(lat, la) * lon.length + near(lon, lo)
     weight.set(c, (weight.get(c) || 0) + 1)
   }
-  const ids = [...weight.keys()]
+  const ids = [...weight.keys()], total = [...weight.values()].reduce((a, b) => a + b, 0)
   const avg = (get, digits = 0) => {
     let sum = 0, n = 0
     for (const c of ids) { const v = get(c); if (v != null) { sum += v * weight.get(c); n += weight.get(c) } }
@@ -60,7 +60,7 @@ export const cell = computed(() => {
   const months = arr => Array.from({ length: 12 }, (_, m) => avg(c => arr[c]?.[m]))
   const typicalYear = ids.map(c => g.rain.typical[c]).filter(Boolean).map(r => r.reduce((x, y) => x + (y ?? 0), 0))   // mm a year per square
   return {
-    n: ids.length, squares: ids.map(c => [lat[Math.floor(c / lon.length)], lon[c % lon.length]]),
+    n: ids.length, squares: ids.map(c => [lat[Math.floor(c / lon.length)], lon[c % lon.length], weight.get(c) / total]),
     rain: { normal: months(g.rain.typical), nino: months(g.rain.nino) }, annual: g.rain.annual_years.map((_, y) => avg(c => g.rain.annual[c]?.[y])),
     range: [Math.round(Math.min(...typicalYear)), Math.round(Math.max(...typicalYear))],
     elev: avg(c => g.terrain.elev_m[c]), slope: avg(c => g.terrain.slope_deg[c], 1), land: avg(c => g.terrain.land_share[c], 2), water: g.water,
