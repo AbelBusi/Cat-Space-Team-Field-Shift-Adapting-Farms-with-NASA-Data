@@ -6,7 +6,8 @@ import Sparkline from './Sparkline.vue'
 import Instrument from './Instrument.vue'
 import PixelGlobe from './PixelGlobe.vue'
 import { LAYERS, LAYER_KEYS, MONTHS, ICON, reading, levelWord } from '../content.js'
-import { state, db, series, valueAt, climate, placeLabel } from '../store.js'
+import { state, db, series, valueAt, climate, placeLabel, cell } from '../store.js'
+import PixelIcon from './PixelIcon.vue'
 import { say } from '../guide.js'
 import { useTween } from '../lib/tween.js'
 import { melody } from '../lib/sound.js'
@@ -20,11 +21,12 @@ function fmt(k, v) {
   if (LAYERS[k].pending) return 'Coming soon'
   if (v == null) return k === 'veg' && db.ndviError ? 'Not available' : '…'
   if (k === 'veg') return v.toFixed(2)
-  return (k === 'heat' ? v.toFixed(1) : Math.round(v)) + ' ' + LAYERS[k].unit
+  return (k === 'heat' || k === 'water' ? (k === 'water' && v > 0 ? '+' : '') + v.toFixed(1) : Math.round(v)) + ' ' + LAYERS[k].unit
 }
 function note(k) {
   if (k === 'veg') return db.ndviLoading ? 'MODIS is slow, about a minute…' : db.ndviError ? 'MODIS service did not answer' : 'in ' + MONTHS[state.month] + ' 2024'
   if (LAYERS[k].pending) return 'needs Earthdata login'
+  if (k === 'water') return 'trend 2002–2026, regional'
   return 'in ' + MONTHS[state.month] + (state.scen === 'nino' ? ', El Niño years' : ', typical year')
 }
 function pick(k) {
@@ -92,6 +94,15 @@ function listen() {
         <Sparkline v-else-if="series(k)" :values="series(k)" :domain="LAYERS[k].domain" :at="state.month" />
         <span v-else class="spark-wait" aria-hidden="true" />
       </button>
+    </div>
+    <div v-if="cell && cell.land > 0" class="ground">
+      <PixelIcon :name="cell.slope < 2 ? 'soil_moist' : cell.slope < 6 ? 'soil_dry' : 'up'" :size="2" />
+      <div>
+        <span class="k">Ground · NASADEM 30 m, cell mean</span>
+        <b v-if="state.mode === 'pro'">{{ cell.elev }} m above sea · slope {{ cell.slope }}°</b>
+        <b v-else>{{ cell.slope < 2 ? 'Flat ground' : cell.slope < 6 ? 'Gentle slope' : 'Steep ground' }}</b>
+        <span>{{ cell.slope < 2 ? 'Low erosion risk.' : cell.slope < 6 ? 'Bare soil can wash away in heavy rain.' : 'High erosion risk when the soil is bare: keep it covered.' }}</span>
+      </div>
     </div>
     <Reveal :at="4">
       <div class="lens">

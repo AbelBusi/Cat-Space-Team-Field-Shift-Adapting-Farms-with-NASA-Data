@@ -32,5 +32,6 @@ const plantIcon = computed(() => props.value == null ? 'seed' : props.value < 0.
   </svg>
   <PixelIcon v-else-if="kind === 'soil'" :name="soilIcon" :size="size" />
   <PixelIcon v-else-if="kind === 'veg'" :name="plantIcon" :size="size" />
+  <PixelIcon v-else-if="kind === 'water'" :name="value > 0.3 ? 'up' : value < -0.3 ? 'down' : 'flat'" :color="value < -0.3 ? PAL.ember : PAL.teal" :size="size" />
   <PixelIcon v-else name="flat" :size="size" />
 </template>

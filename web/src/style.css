@@ -159,7 +159,12 @@ section.step { padding: 40px 0 8px; }
 .small-seg button { min-height: 32px; font-size: 13px; padding: 0 10px; }
 .intensity { display: flex; align-items: center; gap: 10px; }
 .intensity input { flex: 1; accent-color: var(--accent); }
+.ground { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); }
+.ground > div { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+.ground .k { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.ground b { font-family: var(--font-mono); font-weight: 500; }
 .recent { padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--line); }
+.grid-image { image-rendering: pixelated; }
 .map-stage { position: relative; isolation: isolate; z-index: 0; overflow: hidden; background: var(--bg); }
 .leaflet-host { height: min(62vh, 560px); background: var(--bg); font-family: var(--font-body); }
 .leaflet-bar a, .leaflet-control-scale-line { background: var(--panel) !important; color: var(--ink) !important; border-color: var(--line) !important; font-family: var(--font-mono); }

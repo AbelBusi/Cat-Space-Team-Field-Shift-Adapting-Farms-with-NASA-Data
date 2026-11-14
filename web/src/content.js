@@ -1,5 +1,6 @@
 // All the words on the page live here, so the team can edit text without touching components.
 import * as d3 from 'd3'
+import { reactive } from 'vue'
 import { PAL, RAMP } from './lib/palette.js'
 
 const ramp = (stops, domain) => d3.scaleLinear().domain(stops.map((_, i) => domain[0] + i * (domain[1] - domain[0]) / (stops.length - 1))).range(stops).clamp(true)
@@ -26,7 +27,8 @@ export const ICON = {
 }
 
 // say(v) returns [plain-language reading, Sprout's mood]
-export const LAYERS = {
+// Reactive so a layer's source can change by place (e.g. IMERG instead of POWER inside Lambayeque).
+export const LAYERS = reactive({
   rain: {
     name: 'Rain', unit: 'mm', ds: 'NASA POWER', px: 55, icon: 'rain', domain: [0, 200],
     scale: () => ramp(RAMP.amount, [0, 200]),
@@ -67,7 +69,7 @@ export const LAYERS = {
       : v < -0.3 ? ['Underground water is slowly going down.', 'worried']
       : ['Underground water is holding steady.', 'happy'],
   },
-}
+})
 export const LAYER_KEYS = ['heat', 'rain', 'soil', 'veg', 'water']
 
 // Plain-language reading for any layer and value, including "still loading" and "not connected yet".
@@ -85,6 +87,7 @@ export function levelWord(k, v) {
   if (k === 'rain') return v < 5 ? 'Dry month' : v < 40 ? 'A little rain' : v < 100 ? 'Rainy' : 'Very rainy'
   if (k === 'soil') return v < 20 ? 'Dry soil' : v < 40 ? 'Slightly moist' : v < 70 ? 'Moist' : 'Wet'
   if (k === 'veg') return v < 0.2 ? 'Bare' : v < 0.4 ? 'Sparse' : v < 0.6 ? 'Green' : 'Lush'
+  if (k === 'water') return v <= -1 ? 'Dropping fast' : v < -0.3 ? 'Slowly dropping' : v > 0.3 ? 'Slowly rising' : 'Steady'
   return ''
 }
 export const fitWord = score => score >= 70 ? 'Good fit' : score >= 45 ? 'Could work' : 'Poor fit'

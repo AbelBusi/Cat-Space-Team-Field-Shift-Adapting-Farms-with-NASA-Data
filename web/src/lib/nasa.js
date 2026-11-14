@@ -2,8 +2,11 @@ import { PAL } from './palette.js'
 
 // Live NASA data for any point on Earth. Neither service needs a login, and both accept calls from the browser.
 
-// El Niño events by NOAA's Oceanic Niño Index, as the January of each event, within 2001–2024.
+// El Niño events by NOAA's Oceanic Niño Index (central Pacific), as the January of each event, within 2001–2024.
 export const NINO_YEARS = [2003, 2005, 2007, 2010, 2015, 2016, 2019, 2024]
+// Coastal El Niño for the Peruvian coast: Jan-Apr NOAA Niño 1+2 anomaly >= 0.8 °C, 1981-2024.
+// These are the years that flood Lambayeque; the ONI list above misses them.
+export const NINO_COASTAL = [1983, 1998, 2016, 2017, 2023]
 const YEARS = Array.from({ length: 24 }, (_, i) => 2001 + i)        // the "typical year"
 const ALL_YEARS = Array.from({ length: 44 }, (_, i) => 1981 + i)    // 1981-2024, for the year-by-year story
 const MM = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'))
@@ -12,7 +15,7 @@ const daysIn = (y, m) => new Date(y, m, 0).getDate()
 // NASA POWER monthly values 2001–2024 → 12-month averages for all years and for El Niño years.
 // Careful: monthly T2M_MAX / T2M_MIN are the single hottest / coldest hour of the month, so the typical
 // afternoon high is estimated as mean temperature + half the average daily range.
-export async function fetchPower(lat, lon) {
+export async function fetchPower(lat, lon, ninoYears = NINO_YEARS) {
   const url = `https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M,T2M_RANGE,T2M_MIN,PRECTOTCORR,GWETTOP&community=AG&latitude=${lat}&longitude=${lon}&start=1981&end=2024&format=JSON`
   const r = await fetch(url)
   if (!r.ok) throw new Error(`NASA POWER answered ${r.status}`)
@@ -35,7 +38,7 @@ export async function fetchPower(lat, lon) {
     const h = MM.map(mm => n('T2M', mm) + n('T2M_RANGE', mm) / 2)
     return r.some(Number.isNaN) || h.some(Number.isNaN) ? null : { y, rain: Math.round(r.reduce((a, b) => a + b, 0)), heat: +(h.reduce((a, b) => a + b, 0) / 12).toFixed(2) }
   }).filter(Boolean)
-  return { normal: pick(YEARS), nino: pick(NINO_YEARS), years }
+  return { normal: pick(YEARS), nino: pick(ninoYears), years }
 }
 
 // MODIS NDVI (MOD13Q1, 250 m) for 2024 through ORNL DAAC → 12 monthly means.
@@ -110,6 +113,12 @@ export function gibsDataLayers(now = Date.now()) {
     { id: 'lst', label: 'Ground heat', date: heatDate, maxNativeZoom: 7, resolution: 'each square ≈ 100 ha',
       hint: 'Daytime temperature of the ground surface. Helps spot hotter, drier areas. No color = clouds.',
       tiles: `${gibs}/MODIS_Terra_Land_Surface_Temp_Day/default/${heatDate}/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png` },
+    { id: 'imerg', label: 'Rain (IMERG)', date: isoDate(now - 2 * DAY_MS), maxNativeZoom: 6, resolution: 'each square ≈ 11 km',
+      hint: 'Rain falling that day, from the GPM satellites. No color = no rain.',
+      tiles: `${gibs}/IMERG_Precipitation_Rate/default/${isoDate(now - 2 * DAY_MS)}/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png` },
+    { id: 'smap', label: 'Soil moisture (SMAP)', date: isoDate(now - 3 * DAY_MS), maxNativeZoom: 6, resolution: 'each square ≈ 9 km',
+      hint: 'Water in the top 5 cm of soil. SMAP passes every 2–3 days, so some stripes have no data.',
+      tiles: `${gibs}/SMAP_L3_Passive_Enhanced_Day_Soil_Moisture/default/${isoDate(now - 3 * DAY_MS)}/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png` },
   ]
 }
 
