@@ -6,7 +6,8 @@ import * as d3 from 'd3'
 import Reveal from './Reveal.vue'
 import SignalPanel from './SignalPanel.vue'
 import { LAYERS, MONTHS, M1, ICON, PLACES } from '../content.js'
-import { state, db, valueAt, selectPoint } from '../store.js'
+import { state, db, valueAt, selectPoint, local, series } from '../store.js'
+import { RAMP } from '../lib/palette.js'
 import { useScript, say } from '../guide.js'
 import { gridCells, gibsDataLayers, searchPlaces } from '../lib/nasa.js'
 import { PAL } from '../lib/palette.js'
@@ -155,21 +156,50 @@ function finishOutline() {
 }
 
 // One NASA image layer at a time: two color scales on top of each other are hard to read.
-const dataLayers = gibsDataLayers()
+// Live GIBS layers for anywhere, plus the downloaded Lambayeque rain grid when it is loaded.
+const GRID = { id: 'grid', label: 'Rain grid 0.1° (IMERG)', resolution: 'each square ≈ 11 km, 2001–2024 average',
+  hint: 'Typical rain for the chosen month in every IMERG cell of Lambayeque. Follows the month and the El Niño switch.' }
+const gibsLayers = gibsDataLayers()
+const dataLayers = computed(() => local.value ? [...gibsLayers, GRID] : gibsLayers)
 const activeData = ref(null)
 const intensity = ref(0.7)
-watch(activeData, id => {
+// The 420 cells are painted on a 21 × 20 canvas and shown as ONE image: fast, whatever the zoom.
+function gridImage() {
+  const g = local.value, { lat, lon } = g.meta.grid, cv = document.createElement('canvas')
+  cv.width = lon.length; cv.height = lat.length
+  const ctx = cv.getContext('2d'), color = d3.scaleLinear().domain([0, 20, 60, 150]).range(RAMP.amount).clamp(true)
+  const rows = g.rain[state.scen === 'nino' ? 'nino' : 'typical']
+  for (let i = 0; i < lat.length; i++) for (let j = 0; j < lon.length; j++) {
+    ctx.fillStyle = color(rows[i * lon.length + j][state.month] ?? 0)
+    ctx.fillRect(j, lat.length - 1 - i, 1, 1)                       // canvas row 0 = north
+  }
+  const h = 0.05
+  return { url: cv.toDataURL(), bounds: [[lat[0] - h, lon[0] - h], [lat[lat.length - 1] + h, lon[lon.length - 1] + h]] }
+}
+function showData() {
   dataLayer?.remove()
   dataLayer = null
-  const d = dataLayers.find(x => x.id === id)
+  const id = activeData.value
+  if (id === 'grid' && local.value) {
+    const { url, bounds } = gridImage()
+    dataLayer = L.imageOverlay(url, bounds, { pane: 'data', opacity: intensity.value, className: 'grid-image', attribution: 'Data: GPM IMERG (downloaded)' }).addTo(map)
+    return
+  }
+  const d = gibsLayers.find(x => x.id === id)
   if (d) dataLayer = L.tileLayer(d.tiles, { pane: 'data', maxNativeZoom: d.maxNativeZoom, maxZoom: 18, opacity: intensity.value, attribution: 'Data: NASA GIBS' }).addTo(map)
-})
+}
+watch(activeData, showData)
+watch(() => [state.month, state.scen], () => { if (activeData.value === 'grid') showData() })
 watch(intensity, v => dataLayer?.setOpacity(v))
-const activeInfo = computed(() => dataLayers.find(x => x.id === activeData.value))
+const activeInfo = computed(() => dataLayers.value.find(x => x.id === activeData.value))
 
 function setScen(s) {
   state.scen = s
-  say(s === 'nino' ? 'El Niño years! Now every month is the average of the El Niño years only. Watch how the colors change.' : 'Back to the typical year: the average of 2001 to 2024.', s === 'nino' ? 'surprised' : 'neutral')
+  const coast = !!local.value && state.point && series('rain') && LAYERS.rain.px === 11
+  say(s === 'nino'
+    ? (coast ? 'Coastal El Niño years! On this coast I use the Niño 1+2 index: 1983, 1998, 2016, 2017 and 2023, the years that flooded Lambayeque.'
+      : 'El Niño years! Now every month is the average of the El Niño years only. Watch how the colors change.')
+    : 'Back to the typical year: the average of 2001 to 2024.', s === 'nino' ? 'surprised' : 'neutral')
 }
 
 const playing = ref(false)
@@ -243,7 +273,7 @@ function togglePlay() {
                   <button v-for="d in dataLayers" :key="d.id" type="button" :aria-pressed="activeData === d.id" @click="activeData = d.id">{{ d.label }}</button>
                 </div>
                 <template v-if="activeInfo">
-                  <p class="small muted">{{ activeInfo.hint }} {{ activeInfo.resolution }} · NASA, {{ formatShortDate(activeInfo.date) }}</p>
+                  <p class="small muted">{{ activeInfo.hint }} {{ activeInfo.resolution }}<template v-if="activeInfo.date"> · NASA, {{ formatShortDate(activeInfo.date) }}</template></p>
                   <label class="intensity small">Intensity <input v-model.number="intensity" type="range" min="0.3" max="1" step="0.05"></label>
                 </template>
               </section>
