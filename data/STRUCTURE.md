@@ -46,6 +46,17 @@ Not used, safe to delete from `~/Downloads`: `ECO_L4G_ESI_ALEXI…` (35 GB, USA 
 - ⚠️ Values go down to −107 m over sea / voids: mask with `.swb` and clip to ≥ 0 on land.
 - Elevation range 0 → 4 713 m (coast to Andes).
 
+## Built: the Lambayeque grid file (in the app)
+
+`pipeline/build_lambayeque.py` turns the three downloaded datasets into `web/public/data/lambayeque.json` (117 KB, ~10 s):
+for each of the 420 IMERG cells, the typical and coastal-El-Niño monthly rain and 24 annual totals (IMERG), mean elevation,
+mean slope and land share (NASADEM at ~90 m, water masked), plus the regional GRACE series and trend (scale factor applied).
+The app loads it only when the chosen point is inside Lambayeque, and then uses IMERG (11 km) instead of POWER (55 km) for
+rain, shows the ground (slope, erosion risk) and the underground-water trend, and can paint the rain grid on the map.
+
+Status of the other downloads (from the download session on Nov 13–14): SMAP Harmony job still queued; AppEEARS (ECOSTRESS,
+HLS and the MODIS/SMAP site requests) answered **503** for hours, so nothing from it is in the app yet. Re-run when it recovers.
+
 ## How to show it without lag
 
 The rule: **Python does the heavy work once; the browser only loads small, ready-to-paint files, and only when a layer is opened.**
@@ -65,7 +76,11 @@ Why this is fast:
 - **Quantised numbers** (rain in whole mm, slope in 0.1°) and gzip from the static host keep files tiny.
 - Live APIs (NASA POWER, GIBS) stay for "any point on Earth"; the pre-computed files make **Lambayeque instant and offline-safe** for the demo.
 
-## For coastal Peru: which El Niño index
+## For coastal Peru: which El Niño index (applied in the app)
 
 NOAA's ONI (central Pacific) did **not** flag 2017, yet IMERG shows it as the wettest year on the Lambayeque coast (coastal El Niño).
 For this region also use **Niño 1+2** (NOAA, `https://www.cpc.ncep.noaa.gov/data/indices/sstoi.indices`) or Peru's **ICEN** index (ENFEN).
+
+**Checked in the data:** with ONI years, the Chiclayo cell shows *less* rain than usual (187 vs 217 mm a year). Using
+Jan–Apr Niño 1+2 anomaly ≥ 0.8 °C gives 1983, 1998, 2016, 2017 and 2023, exactly Lambayeque's flood years. The app uses this
+list (`NINO_COASTAL` in `web/src/lib/nasa.js`) inside Lambayeque, and ONI elsewhere.

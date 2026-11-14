@@ -63,6 +63,17 @@ feat(web)!: switch the map from Leaflet to MapLibre
 BREAKING CHANGE: map overlays are now MapLibre sources; Leaflet layer code was removed.
 ```
 
+## Workflow: always pull before you push
+
+```bash
+git pull --rebase origin main      # bring your teammates' commits first
+cd web && npx vite build && cd ..   # make sure it still builds
+git push origin main
+```
+
+If the pull reports a conflict, fix the files, `git add` them, `git rebase --continue`, build again, then push.
+Never `git push --force` on `main`.
+
 ## Rules of thumb
 
 - One logical change per commit. If a change fits two types, split it into two commits.
