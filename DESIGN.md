@@ -69,8 +69,13 @@ No red, yellow or green "traffic lights". No rainbow ramps (jet, viridis, turbo)
 
 ## 4. Icons
 
-Use only the pixel icons in `web/src/lib/pixelIcons.js` through `<PixelIcon name="…" />` (16 × 16, scaled by whole numbers).
-They speak the farmer's language: a plant that is fine, thirsty or dead says more than a red dot.
+**Redesign (branch `redesign/4d-documentary`, Nov 15, 2026): pixel art stays only in Sprout.** Every other icon is one of
+Field Shift's own **animated line icons** (`web/src/lib/lineIcons.js`, through `<PixelIcon name="…" />`; the component
+keeps its old name): 24 × 24, 1.6 px strokes with round ends, drawn by hand so they do not look like a stock icon set.
+No icon library. Strokes use the text colour or a palette class (`c-teal`, `c-fire`, `c-sand`, `c-ember`, `c-sage`,
+`c-ghost`, `c-muted`). Sizes: 18, 36 or 54 px. Each icon **draws itself on** when it appears and then keeps one small
+movement of its own (the sun's rays turn, rain falls, a plant sways, an arrow nudges its way); all of it stops with
+`prefers-reduced-motion`. They still speak the farmer's language: a plant that is fine, thirsty or dead says more than a dot.
 
 | Icon | Means |
 |---|---|
@@ -79,11 +84,12 @@ They speak the farmer's language: a plant that is fine, thirsty or dead says mor
 | `plant_dead` | Crop loss, high risk |
 | `seed` · `harvest` · `bare` | Sowing month · harvest month · bare soil |
 | `sun` · `drop` · `rain` · `frost` | Heat · irrigation water · heavy rain · frost |
+| `soil_dry` · `soil_moist` · `soil_wet` | The ground of a month: cracked · with drops · under a wave |
 | `rice` · `maize` · `cowpea` · `sorghum` · `green_manure` | The crops of the example rotations (Lambayeque). Shown in order with their months (`CropSequence`) wherever a rotation is named |
 | `satellite` · `calendar` · `heart` · `compare` · `report` | The topics of the map screen: what the satellites see · year by year · what matters to you · compare with today · your report |
 | `up` · `down` · `flat` | Trend. Color = what it means for the crop: `--ember` worse, `--teal` better, `--ink` neutral |
 
-Line icons (stroke SVG) are allowed only for UI controls (play, sound, close), drawn in `--ink` or `--muted`.
+The thermometer and the rain gauge of Farmer mode (`Instrument.vue`) are drawn in the same line style.
 
 ## 5. Charts
 
@@ -158,8 +164,8 @@ printed report.
 ## 9. Motion
 
 Stages cross-fade and scale (0.5 s). Topic cards slide in from their own side, one after another (90 ms rhythm). The region
-picker's camera glides between department, province and district. Charts draw in, numbers count. The field log opens like a ship log: a scan sweeps the screen while the line draws from 1998, the entries pop in one by one along their arrows, the coming year fades in last, and an entry rings once when it becomes the current one. Nothing loops except the sky,
-the satellite, three comets that fall now and then, the campfire and Sprout's idle bob. Everything turns off with `prefers-reduced-motion`.
+picker's camera glides between department, province and district. Charts draw in, numbers count. The field log opens like a ship log: a scan sweeps the screen while the line draws from 1998, the entries pop in one by one along their arrows, the coming year fades in last, and an entry rings once when it becomes the current one. Loops: the sky,
+the satellite, three comets that fall now and then, the campfire, Sprout's idle bob, and the one small movement of each line icon (§4). Everything turns off with `prefers-reduced-motion`.
 
 ## 10. Two modes: Farmer and Pro
 

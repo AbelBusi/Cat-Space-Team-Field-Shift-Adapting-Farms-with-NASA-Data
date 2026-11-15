@@ -68,8 +68,27 @@
     .swipe { flex-direction: row !important; overflow-x: auto; scroll-snap-type: x mandatory; }
     .swipe > * { flex: 0 0 84%; min-width: 0; scroll-snap-align: start; }
   }
-  .px-icon, .instrument, .pixel-globe, .grid-image { image-rendering: pixelated; }
+  .pixel-globe, .grid-image { image-rendering: pixelated; }
   .px-icon { display: inline-block; flex: none; }
+  /* Field Shift's line icons (lib/lineIcons.js): they draw themselves on, then keep one small movement each. */
+  .ln-icon { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; overflow: hidden; }
+  .ln-icon .c-teal { stroke: var(--teal); } .ln-icon .c-fire { stroke: var(--fire); } .ln-icon .c-sand { stroke: var(--sand); }
+  .ln-icon .c-ember { stroke: var(--ember); } .ln-icon .c-sage { stroke: var(--sage); } .ln-icon .c-ghost { stroke: var(--ghost); }
+  .ln-icon .c-muted { stroke: var(--muted); } .ln-icon .c-deep { stroke: var(--deep); }
+  .ln-icon [pathLength] { stroke-dasharray: 1; animation: ln-draw .9s ease-out both; }
+  .ln-icon g { transform-box: fill-box; transform-origin: center; }
+  .i-spin { animation: ln-spin 16s linear infinite; } .i-spin-slow { animation: ln-spin 28s linear infinite; }
+  .i-bob { animation: ln-bob 2.8s ease-in-out infinite; }
+  .i-fall { animation: ln-fall 1.4s linear infinite; animation-delay: var(--d, 0s); }
+  .ln-icon g.i-sway, .ln-icon g.i-droop, .ln-icon g.i-grow { transform-origin: 50% 100%; }
+  .i-sway { animation: ln-sway 4.2s ease-in-out infinite; } .i-droop { animation: ln-droop 5s ease-in-out infinite; }
+  .i-grow { animation: ln-grow 3.6s ease-in-out infinite; } .i-beat { animation: ln-beat 1.7s ease-in-out infinite; }
+  .i-nudge-up { animation: ln-nudge-up 1.8s ease-in-out infinite; } .i-nudge-down { animation: ln-nudge-down 1.8s ease-in-out infinite; }
+  .i-nudge-right { animation: ln-nudge-right 1.8s ease-in-out infinite; }
+  .i-pulse { animation: ln-pulse 2.4s ease-in-out infinite; } .i-blink { animation: ln-pulse 1.4s steps(2) infinite; }
+  .i-wave { animation: ln-wave 2.6s linear infinite; }
+  .ln-icon g.i-tilt { transform-origin: 50% 0; } .i-tilt { animation: ln-tilt 4.5s ease-in-out infinite; }
+  .i-twinkle { animation: ln-twinkle 2.4s ease-in-out infinite; animation-delay: var(--d, 0s); }
   .cat { display: block; overflow: visible; animation: bob 1.2s steps(2) infinite; }
   .cat-ant { animation: bob-ant 1.2s steps(2) infinite; }
   .cat-body { animation: pop .28s var(--ease-out); transform-origin: 24px 48px; }
@@ -181,6 +200,21 @@
 @keyframes edge-in { from { opacity: 0; stroke-width: 14; } }
 @keyframes nudge { 50% { transform: translateX(4px); } }
 @keyframes ping { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2.2); opacity: 0; } }
+@keyframes ln-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes ln-spin { to { transform: rotate(360deg); } }
+@keyframes ln-bob { 50% { transform: translateY(1.5px) scale(1.04, .96); } }
+@keyframes ln-fall { 0% { transform: translateY(-2px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(3.5px); opacity: 0; } }
+@keyframes ln-sway { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+@keyframes ln-droop { 50% { transform: rotate(4deg) scaleY(.97); } }
+@keyframes ln-grow { 0%, 100% { transform: scale(.82); } 50% { transform: scale(1); } }
+@keyframes ln-beat { 0%, 100% { transform: scale(1); } 30% { transform: scale(1.12); } 60% { transform: scale(.98); } }
+@keyframes ln-nudge-up { 50% { transform: translateY(-2px); } }
+@keyframes ln-nudge-down { 50% { transform: translateY(2px); } }
+@keyframes ln-nudge-right { 50% { transform: translateX(2px); } }
+@keyframes ln-pulse { 50% { opacity: .3; } }
+@keyframes ln-wave { to { transform: translateX(-10px); } }
+@keyframes ln-tilt { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+@keyframes ln-twinkle { 0%, 100% { transform: scale(.82); opacity: .6; } 50% { transform: scale(1.08); opacity: 1; } }
 /* The field's log (FieldTimeline): the line draws from 1998, a scan sweeps once, entries pop in one by one along the
    arrows, the coming year fades in last. The chosen month glides; a log entry rings once when it becomes the current one. */
 .log-draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw-on var(--t, 1.6s) ease-out var(--d, 0s) forwards; }
