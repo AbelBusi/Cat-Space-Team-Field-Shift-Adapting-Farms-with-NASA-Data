@@ -1,22 +1,17 @@
 /* Field Shift styles. Tailwind does layout, spacing, type and responsive rules in the templates.
    This file keeps what Tailwind cannot: the design tokens (DESIGN.md), pixel-art blocks, Leaflet overrides,
-   keyframes and print. Night is the default; [data-theme="light"] is the daytime camp. */
+   keyframes and print. There is one look only: the night camp. */
 @import "tailwindcss";
 
 :root {
   --bg: #0B1026; --panel: #121A3A; --line: #1E2A52; --muted: #8C9BC4; --ink: #F2E8D5; --teal: #4FC1B6; --fire: #F2A541;
   --sand: #D8C08E; --soil: #A88B5A; --sage: #9CC5A1; --deep: #2E6E86; --ember: #E0703A; --ghost: #A99BE8;
   --on-accent: #0B1026;
-  /* The sky scene is always night, so text written straight on it keeps the night colors in both themes. */
+  /* Text written straight on the sky or the satellite photo (same values as --ink, --muted, --bg). */
   --sky-ink: #F2E8D5; --sky-muted: #8C9BC4; --sky-bg: #0B1026;
   --fallow: var(--line);
   --ease-out: cubic-bezier(.2, .7, .2, 1);
   color-scheme: dark;
-}
-:root[data-theme="light"] {
-  --bg: #F4EEDF; --panel: #FFFDF7; --line: #DCD3BF; --muted: #5B6585; --ink: #141B38; --teal: #23877E; --fire: #B86A0B;
-  --on-accent: #FFFDF7;
-  color-scheme: light;
 }
 
 /* Only the DESIGN.md palette exists as Tailwind colors: bg-panel, text-ink, border-line, text-teal, bg-fire… */
@@ -128,7 +123,7 @@
   .leaflet-control-attribution { background: color-mix(in srgb, var(--panel) 85%, transparent) !important; color: var(--muted) !important; font-family: var(--font-mono); font-size: 10px; }
   .leaflet-container a { color: var(--teal); }
   .share-label { font-family: var(--font-mono); font-size: 12px; line-height: 18px; text-align: center; color: var(--ink); background: color-mix(in srgb, var(--panel) 85%, transparent); border: 1px solid var(--teal); }
-  /* Place names on the satellite photo: the photo looks the same in both themes, so the night colors are fixed.
+  /* Place names on the satellite photo.
      A thin dark outline (text-shadow on four sides) keeps them readable on any ground, as on road maps. */
   .place-label { color: var(--sky-ink); font-family: var(--font-sans); font-size: 12px; line-height: 16px; text-align: center; white-space: nowrap; pointer-events: none;
     text-shadow: 1px 0 0 var(--sky-bg), -1px 0 0 var(--sky-bg), 0 1px 0 var(--sky-bg), 0 -1px 0 var(--sky-bg), 0 0 4px var(--sky-bg); transition: opacity .25s, visibility .25s; }

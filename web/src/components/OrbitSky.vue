@@ -3,10 +3,17 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { PAL } from '../lib/palette.js'
 
 // Night sky of the landing scene: twinkling stars, a dusk glow over the horizon, and a satellite crossing
-// on its orbit, sending signal rings down to the land. Always night, whatever the page theme.
+// on its orbit, sending signal rings down to the land, and now and then a comet falling.
 const canvas = ref(null)
 let raf
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
+// Three comets, each crossing the upper sky now and then on its own slow cycle (decoration only).
+// x, y: start as a share of the screen; period and delay in ms; each fall lasts `dur` ms.
+const COMETS = [
+  { x: 0.30, y: 0.04, period: 11000, delay: 1500, dur: 1700, len: 0.30 },
+  { x: 0.78, y: 0.02, period: 15000, delay: 7000, dur: 2100, len: 0.36 },
+  { x: 0.55, y: 0.10, period: 19000, delay: 12500, dur: 1500, len: 0.24 },
+]
 const stars = Array.from({ length: 170 }, (_, i) => ({ x: (i * 7919 % 1000) / 1000, y: (i * 104729 % 1000) / 1000 * 0.72, r: i % 9 === 0 ? 1.6 : 0.9, p: i * 0.37 }))
 
 function draw(t) {
@@ -29,6 +36,20 @@ function draw(t) {
     ctx.fillRect(s.x * w, s.y * h, s.r, s.r)
   }
   ctx.globalAlpha = 1
+
+  // Comets fall down and to the left: a bright head and a fading trail.
+  if (!reduce) for (const c of COMETS) {
+    const k = ((t + c.period - c.delay) % c.period) / c.dur
+    if (k >= 1) continue
+    const span = Math.min(w, h * 1.6) * c.len, hx = (c.x - 0.38 * k) * w, hy = c.y * h + span * 0.9 * k
+    const tail = span * (0.35 + 0.65 * Math.sin(Math.PI * Math.min(1, k * 1.4) / 2)), a = Math.sin(Math.PI * k)
+    const tx = hx + tail * 0.82, ty = hy - tail * 0.57
+    const trail = ctx.createLinearGradient(hx, hy, tx, ty)
+    trail.addColorStop(0, `rgba(242,232,213,${(0.9 * a).toFixed(3)})`); trail.addColorStop(0.35, `rgba(79,193,182,${(0.35 * a).toFixed(3)})`); trail.addColorStop(1, 'rgba(79,193,182,0)')
+    ctx.strokeStyle = trail; ctx.lineWidth = 2; ctx.lineCap = 'round'
+    ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(tx, ty); ctx.stroke()
+    ctx.globalAlpha = a; ctx.fillStyle = PAL.ink; ctx.fillRect(hx - 1.5, hy - 1.5, 3, 3); ctx.globalAlpha = 1
+  }
 
   // Orbit: a wide dashed arc, and the satellite moving along it.
   const cx = w * 0.5, cy = h * 2.3, R = h * 2.05

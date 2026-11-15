@@ -3,17 +3,9 @@ import { ref } from 'vue'
 import { state, enterFree } from '../store.js'
 import { guide, setGuide, say } from '../guide.js'
 import { t, lang, setLang, LANGS } from '../i18n.js'
-import { ICON } from '../content.js'
 
-const root = document.documentElement
-const dark = ref(root.dataset.theme !== 'light')   // night is the default look
 const menu = ref(false)
 
-function toggleTheme() {
-  dark.value = !dark.value
-  root.dataset.theme = dark.value ? 'dark' : 'light'
-  try { localStorage.setItem('fs-theme', root.dataset.theme) } catch {}
-}
 function setMode(m) {
   state.mode = m
   try { localStorage.setItem('fs-mode', m) } catch {}
@@ -62,9 +54,6 @@ const print = () => window.print()
           <button v-if="state.stage === 'explore' && state.area?.kind === 'district'" type="button" class="btn" :title="t('Open the whole department and tap anywhere')" @click="enterFree()">{{ t('Free mode') }}</button>
           <button type="button" class="btn" :aria-pressed="guide.on" :title="t('Sprout explains each screen by itself')" @click="setGuide(!guide.on)">Sprout: {{ t(guide.on ? 'on' : 'off') }}</button>
           <button v-if="state.stage === 'explore'" type="button" class="btn" :title="t('Print the report or save it as a PDF')" @click="print">PDF</button>
-          <button type="button" class="btn !px-2" :aria-label="t(dark ? 'Switch to light mode' : 'Switch to dark mode')" @click="toggleTheme">
-            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" v-html="dark ? ICON.sun : ICON.moon" />
-          </button>
         </div>
       </div>
     </div>

@@ -23,8 +23,7 @@ Data must still read clearly, so data colors are *derived* from the same two acc
 | `--teal` | `#4FC1B6` | **The accent.** Links, active state, selected items, focus ring, "normal" data | Warnings |
 | `--fire` | `#F2A541` | **The campfire.** At most ONE highlighted thing per screen: the main button, the key number, the highlighted bar | Decoration, backgrounds |
 
-Light mode ("daytime camp") keeps the same roles: `--bg #F4EEDF`, `--panel #FFFDF7`, `--line #DCD3BF`, `--muted #5B6585`,
-`--ink #141B38`, `--teal #23877E`, `--fire #B86A0B` (darker so they pass contrast on cream).
+There is **one look only: the night camp.** The light mode was removed on Nov 15, 2026 (not needed, and the team preferred the night).
 
 ### Data (derived, only inside charts, maps and legends)
 
@@ -128,7 +127,7 @@ printed report.
 
 Stages cross-fade and scale (0.5 s). Topic cards slide in from their own side, one after another (90 ms rhythm). The region
 picker's camera glides between department, province and district. Charts draw in, numbers count. Nothing loops except the sky,
-the satellite, the campfire and Sprout's idle bob. Everything turns off with `prefers-reduced-motion`.
+the satellite, three comets that fall now and then, the campfire and Sprout's idle bob. Everything turns off with `prefers-reduced-motion`.
 
 ## 10. Two modes: Farmer and Pro
 

@@ -42,5 +42,5 @@ farmers anywhere can compare crop rotations. Team from Chiclayo, Peru. Read this
 ## Before you finish
 
 - `cd web && npx vite build` must pass.
-- Check the page in a browser at desktop and phone width, light and dark mode.
+- Check the page in a browser at desktop and phone width (there is only the night look, no light mode).
 - The commit message follows `COMMITS.md` (Conventional Commits, English).
