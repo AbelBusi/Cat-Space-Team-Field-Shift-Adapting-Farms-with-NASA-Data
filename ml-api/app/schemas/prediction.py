@@ -11,7 +11,7 @@ from .common import ModelName, Open, Reliability, Strict, Location
 # ---------- single prediction ----------
 
 class PredictionRequest(Strict):
-    model: ModelName = Field(description="sm_root_monthly (root-zone soil water) or ndvi_quarterly (greenness)")
+    model: ModelName = Field(description="sm_root_monthly_v3 (root-zone soil water, the app's model), sm_root_monthly (v1, kept as reference) or ndvi_quarterly (greenness)")
     features: dict[str, float | None] = Field(description="Every feature of the model, by its training name. null = "
                                               "missing (only where training also had missing values)")
 

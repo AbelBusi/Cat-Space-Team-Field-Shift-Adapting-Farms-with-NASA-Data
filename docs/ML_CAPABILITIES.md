@@ -11,7 +11,7 @@ else they could do with little work, and what they must not be used for. Numbers
 | Predicts | Root-zone soil water (ERA5-Land layer 3, **28–100 cm**), monthly, m³/m³ | Vegetation greenness (**NDVI**), quarterly |
 | From | That month's rain, temperature, evaporation, humidity, wind, sunlight; last month's soil water; soil classes | That quarter's weather and soil water; NDVI 1 and 4 quarters before; soil classes |
 | Where | Any 2 km cell of the Lambayeque grid (3,149 cells; 1,950 inside the department) | Same grid (cells with NDVI) |
-| How good (test 2023–2025) | RMSE 0.020 m³/m³, R² 0.96; halves the error of "same as last month" | RMSE 0.126, R² 0.53; 21 % better than "the usual NDVI here" |
+| How good (test 2023–2025) | v1: RMSE 0.020 m³/m³, R² 0.96; halves the error of "same as last month". **v3** (the app's model since Nov 15, also reads ERA5-Land's own rain): RMSE 0.014, 21 % smaller error than v1 on 2018–2022 | RMSE 0.126, R² 0.53; 21 % better than "the usual NDVI here" |
 | Honest range | 90 % interval held the truth 82 % of the time (too narrow in El Niño years); adaptive version reaches 90 % | 84 %; adaptive version 89 % |
 
 In one sentence: **given the weather of a month (or a quarter) and the state of the soil, the models say how much water
@@ -24,7 +24,7 @@ the deep soil holds and how green the land is, for a 2 km cell, with a measured 
 | **Estimate** soil water and NDVI for a cell and month, with an interval and its real coverage | `POST /api/v1/predictions`; `fs_ml.predict` | ml-api, notebooks |
 | **Warn** when inputs are outside what the model has seen (trees cannot extrapolate) | training ranges p01–p99 and min–max per feature | every prediction |
 | **Project** the next months (analog ensemble: the weather of each past year, month by month) | useful for **6 months** (soil water) and 4 quarters (NDVI) on 2018–2022; 2 months in El Niño years | `GET /api/v1/projections`, "What's ahead" |
-| **What-if** scenarios: El Niño years, two months without rain, your own changes (dry months, ±°C, El Niño years) | same engine, weather changed on purpose | "What if…", simulator, `POST /api/v1/simulations/climate` |
+| **What-if** scenarios: El Niño years, two months without rain, half or double the rain, your own changes (dry months, ±°C, rain, El Niño years) | same engine, weather changed on purpose; temperature, droughts and rain passed their checks with v3 | "What if…", simulator, `POST /api/v1/simulations/climate` |
 | **Rank places**: districts and towns where the deep soil should keep the most water in the dry months | median of the cells' projections | "Where water holds" |
 | **Explain** with Sprout: the AI reads the on-screen numbers and the cell's projections and interprets them, without inventing | `POST /api/v1/ask` | Sprout's chat |
 | **Check itself** on past years (hindcasts) and say how far ahead it is useful | block bootstrap CIs per lead | "How sure is Sprout", paper |
@@ -53,7 +53,7 @@ Each would need its own rules written before it is checked, like every step so f
 
 | To be able to… | We need | Status |
 |---|---|---|
-| React to rain alone (today a rain-only change moves soil water less than the model error) | ERA5-Land monthly precipitation and soil layer 2; monotone constraints on rain | request documented in `ML_V2_NINO_MODELS.md` §2 |
+| React to rain alone | ERA5-Land monthly precipitation; monotone constraints on rain | **done**: v3 (`ML_V3_ERA5_RAIN.md`), check S3 passes |
 | Know El Niño from the start, not only through analog years | Niño 1+2 index as a feature | v2 trained; decided on 2026 |
 | Say which **crop** fits, or expected **yield** or **profit** | yields by district and campaign, crop calendars, prices | not available (MIDAGRI files are truncated, no yields) |
 | Separate irrigated from rain-fed fields | irrigated area per year (MapBiomas, Olmos, Tinajones) | pending |

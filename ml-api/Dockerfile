@@ -12,7 +12,7 @@ COPY docs/SPROUT_PERSONA.md docs/SPROUT_PERSONA.md
 COPY ml/artifacts/api_validation/checks.json ml/artifacts/api_validation/checks.json
 COPY ml/artifacts/phase2_validation ml/artifacts/phase2_validation
 COPY ml/artifacts/phase3_testing ml/artifacts/phase3_testing
-COPY ml/artifacts/v3_era5_rain/summary.json ml/artifacts/v3_era5_rain/validation_metrics_ci.json ml/artifacts/v3_era5_rain/
+COPY ml/artifacts/v3_era5_rain/summary.json ml/artifacts/v3_era5_rain/validation_metrics_ci.json ml/artifacts/v3_era5_rain/ndvi_chain.json ml/artifacts/v3_era5_rain/hindcast_skill_validation.csv ml/artifacts/v3_era5_rain/
 COPY ml/artifacts/v3_era5_rain/sm_root_monthly ml/artifacts/v3_era5_rain/sm_root_monthly
 COPY ml-api/app ml-api/app
 COPY ml-api/data ml-api/data

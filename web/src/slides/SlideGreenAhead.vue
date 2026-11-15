@@ -6,7 +6,7 @@ import FanChart from '../components/FanChart.vue'
 import PixelIcon from '../components/PixelIcon.vue'
 import AheadMapCard from '../components/AheadMapCard.vue'
 import { state } from '../store.js'
-import { proj, projError, spot, periodImage, shortLabel, useAheadMap, SCENARIOS } from '../lib/projections.js'
+import { proj, projError, spot, periodImage, shortLabel, useAheadMap, SCENARIOS, offered } from '../lib/projections.js'
 import { M1 } from '../content.js'
 import { PAL } from '../lib/palette.js'
 import { t } from '../i18n.js'
@@ -53,7 +53,7 @@ const QMONTHS = ['Jan–Mar', 'Apr–Jun', 'Jul–Sep', 'Oct–Dec']
     <template #right>
       <HudCard :title="t('What if…')">
         <div class="seg flex-wrap" role="group" :aria-label="t('What if…')">
-          <button v-for="x in SCENARIOS" :key="x.id" type="button" :aria-pressed="state.ahead.scen === x.id" :title="t(x.hint)" @click="state.ahead.scen = x.id">
+          <button v-for="x in offered(proj)" :key="x.id" type="button" :aria-pressed="state.ahead.scen === x.id" :title="t(x.hint)" @click="state.ahead.scen = x.id">
             <PixelIcon :name="x.icon" :size="1" />
           </button>
         </div>

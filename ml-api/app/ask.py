@@ -46,10 +46,14 @@ def enrich(context: dict) -> dict:
     if st.STATE is not None and isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
         from .schemas import Location
         try:
-            proj = {}
+            proj, offered = {}, st.STATE.bundle["soil_water"]
             for scen, note in (("base", "a normal year (the weather of each past year 1998-2025)"),
                                ("el_nino", "only the coastal El Nino years 1998, 2016, 2017, 2023, 2024 (5 years, less sure)"),
-                               ("drought_feb_mar", "a normal year with no rain in Feb and Mar")):
+                               ("drought_feb_mar", "a normal year with no rain in Feb and Mar"),
+                               ("rain_half", "half the rain of each past year, every month"),
+                               ("rain_double", "double the rain of each past year, every month")):
+                if scen not in offered:
+                    continue
                 p = projections.projection_at(Location(lat=lat, lon=lon), "soil_water", scen)
                 proj[scen] = {"what": note, "months": p["periods"][:6], "median": p["median"][:6],
                               **({"low_90": p["low_90"][:6], "high_90": p["high_90"][:6]} if p["low_90"] else {})}

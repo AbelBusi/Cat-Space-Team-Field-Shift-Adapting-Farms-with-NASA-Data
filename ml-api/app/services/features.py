@@ -14,21 +14,28 @@ def _shift(a: np.ndarray, k: int) -> np.ndarray:
     return out
 
 
+def _sum6(rain: np.ndarray) -> np.ndarray:
+    out = np.full_like(rain, np.nan)
+    for t in range(5, rain.shape[1]):
+        out[:, t] = rain[:, t - 5:t + 1].sum(axis=1)           # NaN if any month missing (min_periods=6)
+    return out
+
+
 def sm_matrix(cube) -> dict:
-    """name -> (cells, months) array of every soil water feature."""
+    """name -> (cells, months) array of every soil water feature (v1, plus the ERA5-Land rain ones of v3 when the cube has it)."""
     v = cube.v
     rain = v["rain_mm"]
-    sum6 = np.full_like(rain, np.nan)
-    for t in range(5, rain.shape[1]):
-        sum6[:, t] = rain[:, t - 5:t + 1].sum(axis=1)          # NaN if any month missing (min_periods=6)
     month = np.broadcast_to(cube.dates.month.to_numpy(), rain.shape)
     n = rain.shape
-    cols = {"rain_mm": rain, "rain_mm_lag1": _shift(rain, 1), "rain_mm_lag2": _shift(rain, 2), "rain_mm_sum6": sum6,
+    cols = {"rain_mm": rain, "rain_mm_lag1": _shift(rain, 1), "rain_mm_lag2": _shift(rain, 2), "rain_mm_sum6": _sum6(rain),
             "t2m_c": v["t2m_c"], "pet_mm": v["pet_mm"], "pet_mm_lag1": _shift(v["pet_mm"], 1),
             "sm_root_m3m3_lag1": _shift(v["sm_root_m3m3"], 1), "sm_surface_m3m3_lag1": _shift(v["sm_surface_m3m3"], 1),
             "power_rh2m_pct": v["power_rh2m_pct"], "power_ws2m_ms": v["power_ws2m_ms"],
             "power_allsky_mj_m2_day": v["power_allsky_mj_m2_day"],
             "month_sin": np.sin(2 * np.pi * month / 12), "month_cos": np.cos(2 * np.pi * month / 12)}
+    if "era5_rain_mm" in v:
+        e = v["era5_rain_mm"]
+        cols |= {"era5_rain_mm": e, "era5_rain_mm_lag1": _shift(e, 1), "era5_rain_mm_lag2": _shift(e, 2), "era5_rain_mm_sum6": _sum6(e)}
     for c in SOIL:
         cols[c] = np.broadcast_to(cube.cells[c].to_numpy(float)[:, None], n)
     return cols

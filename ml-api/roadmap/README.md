@@ -19,14 +19,14 @@
 ## Estado de implementación (actualizado el 15 de noviembre de 2026)
 
 Fases 1 y 2 implementadas en `ml-api/app/` (servicios en `app/services/`, rutas en `app/routers/`, contratos en
-`app/schemas/`). 13 pruebas de integración con los modelos y datos reales (`ml-api/tests/test_api.py`). Las pruebas
+`app/schemas/`). 14 pruebas de integración con los modelos y datos reales (`ml-api/tests/test_api.py`). Las pruebas
 de la Fase 2 se corrieron con reglas escritas antes (`docs/ML_API_VALIDATION.md`, notebook 07).
 
 | Grupo | Endpoints | Nivel que devuelven |
 |---|---|---|
 | Predicciones | `POST /predictions`, `/predictions/soil-water`, `/ndvi`, `/complete`, `/batch`; `GET /predictions/{cell_id}/history` | `ok` / `warning` / `out_of_domain` según las entradas |
 | Confianza por lugar | `GET /predictions/{cell_id}/confidence` | `warning` (S10 **pasó**: ρ = 0.65) |
-| Simulaciones | `POST /simulations/climate`, `/custom`, `/drought`, `/el-nino`, `/temperature`, `/rainfall`, `/recovery`; `GET /simulations/{id}/results` | un solo motor; `experimental` si cambian temperatura (S1 falló), sequía (S2 falló), lluvia (S3 falló), recuperación (S4 falló) o evaporación/viento/radiación (sin validación); NDVI incluido cuando el inicio es fin de trimestre |
+| Simulaciones | `POST /simulations/climate`, `/custom`, `/drought`, `/el-nino`, `/temperature`, `/rainfall`, `/recovery`; `GET /simulations/{id}/results` | un solo motor con el modelo **v3**; temperatura, sequía y lluvia **sin** etiqueta `experimental` (S1, S2 y S3 pasan con v3); `experimental` si cambian la recuperación (S4 falló) o evaporación/viento/radiación (sin validación); NDVI incluido cuando el inicio es fin de trimestre |
 | Análisis territorial | `GET /analysis/districts`, `/water-retention`, `/vegetation`, `/drought-risk`, `/anomalies`, `/hotspots` | rankings `warning`; riesgo de sequía `experimental` (S5 falló: sobreconfiado); anomalías de NDVI y focos `experimental` (S7 no comprobable) |
 | Alertas | `GET /alerts/drought`, `/alerts/vegetation` | `warning` (S6 **pasó**: 4.7 % y 3.7 % marcadas, 5 % esperado) |
 | Explicabilidad | `GET /explanations/{prediction_id}`, `POST /explanations` | TreeSHAP exacto; la suma da la predicción |
@@ -37,8 +37,11 @@ de la Fase 2 se corrieron con reglas escritas antes (`docs/ML_API_VALIDATION.md`
 **Fase 3 — iniciada (15 nov 2026):** llegó la lluvia de ERA5-Land y se entrenó el **modelo v3** de agua del suelo con
 restricciones monótonas (`docs/ML_V3_ERA5_RAIN.md`, reglas escritas antes). Pasó R1 y R2 (claramente mejor que v1:
 *skill* +0.21 [0.17, 0.25]; RMSE de validación 0.0099) y con él **pasan S1 temperatura, S2 sequías y S3 lluvia**; S4
-recuperación sigue fallando. **Desde ahora las simulaciones corren con v3** (sus propias correcciones de rango y
-pruebas); las predicciones de un paso y las proyecciones de la web siguen con v1 hasta que el equipo decida.
+recuperación sigue fallando. **El equipo decidió usar v3 en toda la app** (`docs/ML_V3_ERA5_RAIN.md` §4): simulaciones,
+proyecciones de la web (con sus correcciones de rango y las del NDVI encadenado a v3: útil 4 trimestres, cobertura 84 %)
+y predicciones por celda (intervalo ± 0.020 m³/m³ en ene–abr, cobertura real 82 %). La web ofrece ahora también
+**mitad** y **doble de lluvia**, y la pantalla "Qué tan seguro está Sprout" muestra la mejora (RMSE 0.0125 → 0.0099;
+marzo 2023: 0.053 → 0.024). Siguen con v1: `/predictions` con las 19 características de v1 y las alertas (S6 se validó con v1).
 
 **Resto de la Fase 3 — pendiente:** necesita datos que no tenemos (precipitación ERA5-Land, superficies regadas, rendimientos,
 calendarios, precios, 2026 completo). Lo que las pruebas de la Fase 2 enseñan es concreto: el modelo actual responde poco
@@ -97,6 +100,12 @@ sin perder el principio que guió todo el proyecto: **cada número viene con su 
 | Artefactos | `ml/artifacts/final_model/<modelo>/`: `model.ubj`, `preprocessing.json` (orden de características y rangos p01/p99/min/max), `intervals.json` (anchos y cobertura probada), `model_card.json` | igual |
 
 *Skill* = 1 − RMSE_modelo / RMSE_regla_simple. Corchetes = IC 95 % por bootstrap de bloques espaciales.
+
+**Modelo v3 de agua del suelo (`sm_root_monthly_v3`, el que usa la app desde el 15 nov 2026):** las 19 características
+de v1 más la lluvia propia de ERA5-Land (mes, 2 rezagos y suma de 6 meses; solo como entrada), con restricciones
+monótonas (más lluvia nunca baja el agua del suelo; más calor o evaporación nunca la sube). 1,877 árboles. Validación
+2018–2022: RMSE 0.0099 [0.0087, 0.0110], *skill* sobre v1 +0.21 [0.17, 0.25]; segunda mirada 2023–2025: RMSE 0.0142.
+Artefactos en `ml/artifacts/v3_era5_rain/` (`docs/ML_V3_ERA5_RAIN.md`).
 
 ### 2.2 Capas construidas sobre los modelos
 
@@ -357,12 +366,12 @@ precisión.
   en más del 1 % de las celdas), igual que las de lluvia; y aviso de extrapolación cuando la temperatura supera el
   máximo de 1998–2017.
 
-### 6.4 Precipitación — 🟣 Fase 2, `experimental`
+### 6.4 Precipitación — ✅ validada con v3 (Fase 3)
 - **Configuración:** reducción o aumento (×0–×3), meses sin lluvia, comparación histórica.
-- **Estado de evidencia:** las pruebas pre-registradas **fallaron** (lluvia ×2 bajó el agua del suelo en 38 % de las
-  celdas en promedio; efecto medio ≤ +0.003 m³/m³, menor que el RMSE 0.0125). La API ya marca `rain_only_change`.
-- **Camino para validarlo:** agregar la precipitación propia de ERA5-Land y restricciones monótonas en las
-  características de lluvia (`monotone_constraints` de XGBoost) en un modelo v3, con validación completa (Fase 3).
+- **Estado de evidencia:** con v1 las pruebas pre-registradas **fallaron** (efecto medio ±0.0006 m³/m³, un veinteavo
+  del error). Con **v3** (lluvia propia de ERA5-Land y restricciones monótonas) **S3 pasa**: lluvia ×0.5 → −0.012,
+  ×2 → +0.019 m³/m³, ninguna celda al revés. La API sigue marcando `rain_only_change` y el aviso `era5_rain`.
+- **En la web:** escenarios "La mitad de lluvia" y "El doble de lluvia" en "¿Qué pasaría si…?" y en el verdor.
 
 ### 6.5 Personalizado — 🟣 Fase 2
 - **Variables:** lluvia (×), temperatura (Δ °C), humedad relativa (Δ puntos), evaporación potencial (×), viento (Δ m/s),

@@ -83,7 +83,7 @@ def drought_risk(scenario: str, lead: int, province: str | None) -> dict:
 def _residuals(variable: str) -> tuple[np.ndarray, list[str], float]:
     s = state.get()
     if variable == "soil_water":
-        return s.cube.v["sm_root_m3m3"] - s.sm_pred, [f"{d:%Y-%m}" for d in s.cube.dates], s.models["sm_root_monthly"]["card"]["metrics"]["validation_2018_2022"]["RMSE"]["value"]
+        return s.cube.v["sm_root_m3m3"] - s.sm_pred, [f"{d:%Y-%m}" for d in s.cube.dates], s.models[s.primary["soil_water"]]["card"]["metrics"]["validation_2018_2022"]["RMSE"]["value"]
     return s.cube.ndvi - s.nd_pred, [str(q) for q in s.cube.quarters], s.models["ndvi_quarterly"]["card"]["metrics"]["validation_2018_2022"]["RMSE"]["value"]
 
 

@@ -24,8 +24,10 @@ def info() -> dict:
             "intended_use": c.get("intended_use"), "known_limitations": c.get("not_for"), "library_versions": c.get("library_versions"),
         }
     pc = s.proj_card
-    out["projections"] = {"method": pc["method"], "useful_lead": pc["useful_lead"], "coverage_2023_2025": pc["coverage_2023_2025"],
-                          "scenario_checks": pc["scenario_checks"], "not_for": pc["not_for"]}
+    out["projections"] = {"method": pc["method"], "soil_water_model": s.proj["soil_water_model"], "useful_lead": s.proj["useful_lead"],
+                          "coverage_2023_2025": s.proj["coverage_2023_2025"], "skill_by_lead_validation": s.proj["skill_by_lead"],
+                          "scenario_checks_v1": pc["scenario_checks"], "not_for": pc["not_for"]}
+    out["app_models"] = s.primary | {"alerts": "sm_root_monthly (v1: check S6 was validated with it)"}
     return out
 
 
@@ -57,10 +59,12 @@ def validation() -> dict:
     for name in ("sm_root_monthly", "ndvi_quarterly"):
         out[name] = {"validation_2018_2022_criteria": _csv(art / "phase2_validation" / name / "criteria.csv"),
                      "testing_2023_2025_criteria": _csv(art / "phase3_testing" / name / "criteria.csv")}
-    sk = s.skill
-    out["projections"] = {"useful_lead": s.proj_card["useful_lead"], "coverage_2023_2025": s.proj_card["coverage_2023_2025"],
-                          "skill_by_lead_validation": _records(sk[sk.period == "validation"].round(4)),
-                          "scenario_checks": s.proj_card["scenario_checks"]}
+    if s.sim["version"] == "v3":
+        out["sm_root_monthly_v3"] = {"decision": s.sim["card"]["test_verdict"], "metrics": s.sim["card"]["metrics"],
+                                     "scenario_checks": s.sim["checks"], "rules": "docs/ML_V3_ERA5_RAIN.md"}
+    out["projections"] = {"soil_water_model": s.proj["soil_water_model"], "useful_lead": s.proj["useful_lead"],
+                          "coverage_2023_2025": s.proj["coverage_2023_2025"], "skill_by_lead_validation": s.proj["skill_by_lead"],
+                          "scenario_checks_v1": s.proj_card["scenario_checks"]}
     out["api_phase2_checks"] = {k: {kk: vv for kk, vv in v.items() if kk not in ("table", "calibration")} for k, v in s.checks.items()} or "not run"
     out["rules"] = ["docs/ML_PHASE1_TRAINING.md §10", "docs/ML_PROJECTIONS.md §3", "docs/ML_API_VALIDATION.md"]
     return out

@@ -202,9 +202,10 @@ One code path for any OpenAI-compatible endpoint (`LLM_BASE_URL`, `LLM_MODEL`, `
 
 - Not a yield, crop or profit model; no irrigation in the data; one value per 2 km cell.
 - Projections beat "a typical year" only for the first 6 months (soil water) on 2018–2022; in 2023–2025 (El Niño) only for 2.
-- The 90 % ranges held the real value 80 % (soil water) and 84 % (NDVI) of the time in 2023–2025: too narrow in extreme years.
-- Simulations run with the **v3** model: temperature, droughts and rain passed their checks with it (recovery did not).
-  It reads ERA5-Land's own rain, 3-6 times wetter than the real rain on this coast: an input, never shown as rain.
-  One-step predictions and the web's projections still use v1 (rain-only changes failed their checks with v1).
+- The 90 % ranges held the real value 81 % (soil water, v3) and 84 % (NDVI) of the time in 2023–2025: too narrow in extreme years.
+- Soil water is the **v3** model everywhere (projections, cell predictions, simulations): temperature, droughts and
+  rain passed their checks with it (recovery did not). It reads ERA5-Land's own rain, 3-6 times wetter than the real
+  rain on this coast: an input, never shown as rain. v1 stays for feature-based requests with its 19 features and for
+  the alerts (validated with v1). See `docs/ML_V3_ERA5_RAIN.md` §4.
 - Temperature and humidity changes do not recompute evaporation or surface soil water.
 - `summary` and `limitations` are in English; the web translates its own labels.

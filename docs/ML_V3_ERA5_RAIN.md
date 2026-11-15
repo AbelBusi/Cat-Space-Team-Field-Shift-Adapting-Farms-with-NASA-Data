@@ -1,7 +1,8 @@
 # Field Shift ML · v3 soil water model with ERA5-Land's own rain
 
-Status (Nov 15, 2026): **trained and validated: R1 and R2 pass, so v3 may run simulations** (rules committed before training in `8d87fe5`; notebook `ml/notebooks/08_v3_era5_rain.ipynb`). The tested v1 models and `ml/artifacts/final_model/`
-are not changed. Outputs: `ml/artifacts/v3_era5_rain/`.
+Status (Nov 15, 2026): **trained and validated: R1 and R2 pass. The team chose v3 as the app's soil water model**
+(simulations, the web's projections and the cell predictions; §4). Rules committed before training in `8d87fe5`; notebook
+`ml/notebooks/08_v3_era5_rain.ipynb`. The tested v1 models and `ml/artifacts/final_model/` are not changed. Outputs: `ml/artifacts/v3_era5_rain/`.
 
 ## 1. New data received
 
@@ -76,4 +77,21 @@ climatology). Coverage of the 90 % band in 2023–2025: 81 %, still too narrow i
 weaknesses found in Phase 2: storm months (March 2023 error halved) and the response to changed weather (temperature,
 droughts and rain now move soil water the right way, by a visible amount). Recovery stays experimental. The intervals are
 still too narrow in El Niño years. Per §2, the API may run **simulations** with v3; the web's projections and one-step
-predictions stay v1 until the team decides. ERA5-Land rain remains an input only.
+predictions stayed v1 until the team decided (§4). ERA5-Land rain remains an input only.
+
+## 4. v3 in the whole app (team decision, Nov 15, 2026)
+
+After the results above, the team asked for v3 everywhere soil water is shown. Two things had to be measured first,
+with the same code and rules as for v1 (nothing tuned after seeing them):
+
+| Needed for | Script | Result |
+|---|---|---|
+| The NDVI projections, now fed with v3's soil water (the NDVI model itself stays the tested v1) | `ml/scripts/v3_ndvi_chain.py` → `ml/artifacts/v3_era5_rain/ndvi_chain.json` (hindcasts as notebook 06: starts Dec 2017 – Sep 2022, leads 1–4) | useful for **4 quarters** (skill 0.17, 0.11, 0.11, 0.10; every lower CI > 0); range corrections 0.13–0.14; 90 % range held the real NDVI **84 %** of the time in 2023–2025 (v1 chain: 84 %) |
+| The 90 % interval of one-step predictions | `ml/scripts/v3_intervals.py` → `ml/artifacts/v3_era5_rain/sm_root_monthly/intervals.json` (split conformal on 2018–2022, one width per season; the same code reproduces v1's stored widths exactly) | ± **0.020** m³/m³ in Jan–Apr (v1: ± 0.030), ± 0.013 in May–Dec (v1: ± 0.013); real coverage 2023–2025 **82 %** (v1: 82 %) |
+
+What the API does now (`ml-api/app/services/state.py`): v3 is loaded as `sm_root_monthly_v3` and is the soil water model
+of the web's projections (`GET /projections`, with v3's corrections and the NDVI chain's), of every cell-based
+prediction (`/predictions/soil-water` with a location, `/complete`, `/history`, `/confidence`, `/analysis/anomalies`)
+and of the simulations. Because S3 passed, the web now also offers **half** and **double the rain**. Kept on v1: the
+feature-based `/predictions` with v1's 19 features (older clients), and the **alerts** (check S6 was validated with v1).
+The projection metadata carries `model_upgrade` (v1 → v3 numbers) for the web's "How sure is Sprout" screen.

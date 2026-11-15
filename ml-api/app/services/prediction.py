@@ -11,7 +11,14 @@ from . import features as FX, state
 from .common import GRID_STEP, LRU, PHYSICAL, TARGET_MEANING, make_id, warn, worst
 from .common import NotFound, BadRequest
 
-MODELS = {"soil_water": "sm_root_monthly", "ndvi": "ndvi_quarterly"}
+def model_for(variable: str, feats: dict | None = None) -> str:
+    """The app's model for a variable: soil water v3 when it is loaded (v1 when the given features are v1's, for older clients)."""
+    s = state.get()
+    if variable == "ndvi":
+        return "ndvi_quarterly"
+    if feats is not None and "era5_rain_mm" not in feats:
+        return "sm_root_monthly"
+    return s.primary["soil_water"]
 EXPLAIN_CACHE = LRU(2000)          # prediction_id -> (model name, features) for GET /explanations/{id}
 
 
@@ -71,7 +78,7 @@ def validate_features(name: str, feats: dict) -> list[str]:
 
 
 def _season(name, f):
-    if name == "sm_root_monthly":
+    if name.startswith("sm_root_monthly"):
         month = round(math.atan2(f["month_sin"], f["month_cos"]) * 6 / math.pi) % 12 or 12
         return "wet Jan-Apr" if month <= 4 else "dry May-Dec"
     return f"Q{int(f['quarter'])}"
@@ -130,7 +137,7 @@ def _period_index(variable: str, period: str) -> int:
 def predict_cell(variable: str, loc, period: str) -> dict:
     """Prediction for a cell and month (soil water) or quarter (NDVI), from the observed inputs of the data cube."""
     s = state.get(); i = find_cell(loc); t = _period_index(variable, period)
-    name = MODELS[variable]
+    name = model_for(variable)
     cols = s.sm_cols if variable == "soil_water" else s.nd_cols
     feats = FX.row(cols, i, t, s.models[name]["features"])
     obs = (s.cube.v["sm_root_m3m3"] if variable == "soil_water" else s.cube.ndvi)[i, t]
@@ -179,7 +186,7 @@ def history(variable: str, cell_id: str, start: str | None, end: str | None) -> 
     s = state.get(); i = find_cell(Location(cell_id=cell_id))
     if variable == "soil_water":
         labels, obs, pred = [f"{d:%Y-%m}" for d in s.cube.dates], s.cube.v["sm_root_m3m3"][i], s.sm_pred[i]
-        halves = [s.models["sm_root_monthly"]["intervals"]["half_width_90_by_season"]["wet Jan-Apr" if d.month <= 4 else "dry May-Dec"] for d in s.cube.dates]
+        halves = [s.models[model_for("soil_water")]["intervals"]["half_width_90_by_season"]["wet Jan-Apr" if d.month <= 4 else "dry May-Dec"] for d in s.cube.dates]
     else:
         labels, obs, pred = [str(q) for q in s.cube.quarters], s.cube.ndvi[i], s.nd_pred[i]
         halves = [s.models["ndvi_quarterly"]["intervals"]["half_width_90_by_season"][f"Q{q.quarter}"] for q in s.cube.quarters]
@@ -190,7 +197,7 @@ def history(variable: str, cell_id: str, start: str | None, end: str | None) -> 
         rows.append({"period": lab, "observed": None if np.isnan(o) else round(float(o), 5),
                      "predicted": None if np.isnan(p) else round(float(p), 5), "low_90": round(float(p - h), 5), "high_90": round(float(p + h), 5),
                      "split": split_of(int(lab[:4]))})
-    return {"location": cell_info(i), "variable": variable, "unit": s.models[MODELS[variable]]["card"]["target"]["unit"],
+    return {"location": cell_info(i), "variable": variable, "model": model_for(variable), "unit": s.models[model_for(variable)]["card"]["target"]["unit"],
             "note": "Predicted with each period's real weather (one step). In training years the error is optimistic.", "rows": rows}
 
 
@@ -208,7 +215,7 @@ def confidence(cell_id: str) -> dict:
         out[name] = {"rmse": float(np.sqrt((e ** 2).mean())) if e.size else None, "bias": float(e.mean()) if e.size else None, "values": int(e.size)}
     chk = state.check("S10")
     return {"location": cell_info(i), "variable": "soil_water", "group": f"{len(grp)} cells sharing one ERA5-Land pixel",
-            "historical_error": out, "model_rmse_validation_all_cells": s.models["sm_root_monthly"]["card"]["metrics"]["validation_2018_2022"]["RMSE"]["value"],
+            "historical_error": out, "model": model_for("soil_water"), "model_rmse_validation_all_cells": s.models[model_for("soil_water")]["card"]["metrics"]["validation_2018_2022"]["RMSE"]["value"],
             "reliability": "warning" if chk.get("pass") else "experimental",
             "check_S10": {k: chk.get(k) for k in ("pass", "spearman_val_vs_test_rmse", "status") if k in chk},
             "note": "Past error of the model at this place, not the chance that one prediction is right."}

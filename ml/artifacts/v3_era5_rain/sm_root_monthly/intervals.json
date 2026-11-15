@@ -1,0 +1,23 @@
+{
+  "method": "split conformal, absolute errors of Validation 2018-2022, one width per season (same code as v1)",
+  "nominal": 0.9,
+  "half_width_90_by_season": {
+    "wet Jan-Apr": 0.020246346791585296,
+    "dry May-Dec": 0.012595200410453256
+  },
+  "tested_coverage": {
+    "by_season_90": 0.8216481836923296,
+    "years": [
+      2023,
+      2025
+    ]
+  },
+  "reproduces_v1": {
+    "half_width_90_by_season": {
+      "wet Jan-Apr": 0.029511930545171094,
+      "dry May-Dec": 0.012821320205218034
+    },
+    "by_season_90": 0.8158633681666311
+  },
+  "warning": "Not a probability. Coverage measured on 2023-2025; it can be lower in extreme years."
+}

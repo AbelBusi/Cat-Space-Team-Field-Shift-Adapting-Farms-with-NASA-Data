@@ -7,7 +7,7 @@ import PixelIcon from '../components/PixelIcon.vue'
 import AheadMapCard from '../components/AheadMapCard.vue'
 import SimTuner from '../components/SimTuner.vue'
 import { state } from '../store.js'
-import { proj, projError, spot, periodImage, shortLabel, useAheadMap, versusUsual, SCENARIOS } from '../lib/projections.js'
+import { proj, projError, spot, periodImage, shortLabel, useAheadMap, versusUsual, SCENARIOS, offered } from '../lib/projections.js'
 import { M1, MONTHS } from '../content.js'
 import { PAL } from '../lib/palette.js'
 import { t } from '../i18n.js'
@@ -36,7 +36,7 @@ const arrowColor = v => dir(v) === 'down' ? PAL.ember : dir(v) === 'up' ? PAL.te
 const SOIL = { wetter: 'soil_wet', usual: 'soil_moist', drier: 'soil_dry' }
 const ground = (series, i) => SOIL[versusUsual('soil_water', series?.median[i], base.value?.usual[i])] || 'soil_moist'
 const idx = half => [0, 1, 2, 3, 4, 5].map(j => j + half)
-const SHORT = { el_nino: 'With El Niño', drought_feb_mar: 'Without rain' }
+const SHORT = { el_nino: 'With El Niño', drought_feb_mar: 'Without rain', rain_half: 'With half the rain', rain_double: 'With double the rain' }
 // A new "what if" opens on the month where it changes the most.
 watch(() => [state.ahead.scen, biggest.value], () => { if (state.ahead.scen !== 'base') state.ahead.month = biggest.value })
 const month = i => t(MONTHS[+periods.value[i].slice(5, 7) - 1])
@@ -94,7 +94,7 @@ const members = computed(() => proj.value?.soil_water[state.ahead.scen]?.members
     <template #right>
       <HudCard :title="t('What if…')">
         <div class="flex flex-col gap-1">
-          <button v-for="x in SCENARIOS" :key="x.id" type="button" class="btn !justify-start !px-2 text-left" :aria-pressed="state.ahead.scen === x.id" :title="t(x.hint)" @click="state.ahead.scen = x.id">
+          <button v-for="x in offered(proj)" :key="x.id" type="button" class="btn !justify-start !px-2 text-left" :aria-pressed="state.ahead.scen === x.id" :title="t(x.hint)" @click="state.ahead.scen = x.id">
             <PixelIcon :name="x.icon" :size="1" /><span>{{ t(x.label) }}</span>
           </button>
         </div>

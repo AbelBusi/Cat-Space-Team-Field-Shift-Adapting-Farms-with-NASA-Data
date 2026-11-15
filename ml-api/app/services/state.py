@@ -30,6 +30,8 @@ class State:
     sm_pred: np.ndarray | None = None                   # one-step predictions of every cell and month
     nd_pred: np.ndarray | None = None
     sim: dict | None = None                             # the soil water model that runs simulations (v3 if accepted, else v1)
+    primary: dict = field(default_factory=lambda: {"soil_water": "sm_root_monthly", "ndvi": "ndvi_quarterly"})
+    proj: dict | None = None                            # corrections, useful lead, skill and coverage of the projections in use
     cache: dict = field(default_factory=dict)
 
 
@@ -71,11 +73,15 @@ def load() -> None:
         checks = json.loads(settings.api_checks.read_text())["checks"] if settings.api_checks.exists() else {}
         s = State(models=models, cube=cube, proj_card=json.loads(settings.projection_card.read_text()), sha=sha,
                   skill=pd.read_csv(settings.projection_card.with_name("hindcast_skill_by_lead.csv")), checks=checks)
+        s.sim = _simulation_model(s, models["sm_root_monthly"])
+        if s.sim["version"] == "v3":            # v3 becomes the soil water model of the whole app; v1 stays as reference
+            models["sm_root_monthly_v3"] = s.sim; sha["sm_root_monthly_v3"] = s.sim["sha256"]
+            s.primary["soil_water"] = "sm_root_monthly_v3"
+        s.proj = _projection_config(s)
         s.sm_cols, s.nd_cols = features.sm_matrix(cube), features.nd_matrix(cube)
-        s.sm_pred = features.predict_matrix(models["sm_root_monthly"], s.sm_cols)
+        s.sm_pred = features.predict_matrix(models[s.primary["soil_water"]], s.sm_cols)
         s.nd_pred = features.predict_matrix(models["ndvi_quarterly"], s.nd_cols)
         s.bundle, s.risk = projections.build_bundle(s)
-        s.sim = _simulation_model(s, models["sm_root_monthly"])
         STATE, LOAD_ERROR = s, None
         log.info("loaded in %.1f s: models %s | cube %d cells %s..%s | phase 2 checks: %s", time.time() - t0,
                  {k: v[:12] for k, v in sha.items()}, len(cells), cube.dates[0].date(), cube.dates[-1].date(),
@@ -106,14 +112,52 @@ def _simulation_model(s: State, v1: dict) -> dict:
         m = xgb.XGBRegressor(); m.load_model(d / "sm_root_monthly" / "model.ubj")
         assert m.get_booster().feature_names == prep["feature_names_in_order"]
         met = {r["metric"]: r for r in json.loads((d / "validation_metrics_ci.json").read_text())["validation_2018_2022"] if r["model"] == "v3"}
-        log.info("simulations use v3 (ERA5-Land rain, monotone constraints): %s", summ["sha256"][:12])
+        intervals = json.loads((d / "sm_root_monthly" / "intervals.json").read_text())
+        log.info("soil water model: v3 (ERA5-Land rain, monotone constraints): %s", summ["sha256"][:12])
         return {"name": "sm_root_monthly_v3", "version": "v3", "model": m, "features": prep["feature_names_in_order"],
-                "bounds": prep["training_feature_bounds"], "card": v1["card"], "sha256": summ["sha256"], "rmse": met["RMSE"]["value"],
+                "bounds": prep["training_feature_bounds"], "card": _v3_card(v1["card"], summ, met, prep), "intervals": intervals,
+                "sha256": summ["sha256"], "rmse": met["RMSE"]["value"],
                 "corr": {int(k): v for k, v in summ["projections"]["correction_by_lead"].items()},
                 "useful": summ["projections"]["useful_lead_months"], "coverage": summ["projections"]["coverage_90_2023_2025"],
-                "checks": summ["scenario_checks"], "metrics_validation": met}
+                "checks": summ["scenario_checks"], "metrics_validation": met, "second_look": summ["second_look_2023_2025"],
+                "rmse_v1": rmse_v1}
     except FileNotFoundError:
         log.info("simulations use v1 (no v3 artifacts)"); return fallback
+
+
+def _v3_card(v1: dict, summ: dict, met: dict, prep: dict) -> dict:
+    """v3's model card: v1's target, data and limits, with v3's own numbers (notebook 08)."""
+    m = lambda k: {"value": met[k]["value"], "ci95": [met[k]["ci_low"], met[k]["ci_high"]]}
+    sl = summ["second_look_2023_2025"]
+    return v1 | {"name": "sm_root_monthly_v3", "version": "3.0 (validated, ERA5-Land rain)", "sha256": summ["sha256"], "trees": summ["trees"],
+                 "features_in_order": prep["feature_names_in_order"], "hyperparameters": summ["hyperparameters"] | {"monotone_constraints": prep["monotone_constraints"]},
+                 "metrics": {"validation_2018_2022": {k: m(k) for k in ("MAE", "RMSE", "R2", "bias", "skill vs persistence", "skill vs climatology", "skill vs v1")},
+                             "testing_2023_2025_second_look": {"RMSE": sl["rmse_v3"], "skill vs v1": {"value": sl["skill_vs_v1"][0], "ci95": sl["skill_vs_v1"][1:]},
+                                                               "march_2023_RMSE": sl["march_2023_rmse"]["v3"]}},
+                 "test_verdict": "VALIDATED: rules R1 and R2 of docs/ML_V3_ERA5_RAIN.md pass; 2023-2025 is a second look, not a blind test",
+                 "data": v1["data"] | {"sources": v1["data"]["sources"] + ["ERA5-Land total precipitation (model input only, 3-6x wetter than CHIRPS on this coast)"]},
+                 "not_for": v1["not_for"] + ["Showing ERA5-Land rain as the real rain (it is a model input only)"],
+                 "library_versions": summ["versions"]}
+
+
+def _projection_config(s: State) -> dict:
+    """Range corrections, useful lead, skill by lead and coverage of the projections: v3's (soil water from notebook 08,
+    NDVI chained on v3 from ml/scripts/v3_ndvi_chain.py) when v3 is the soil water model, else the projection card's."""
+    pc, sk = s.proj_card, s.skill[s.skill.period == "validation"]
+    rows = lambda df: [{"lead": int(r.lead), "skill": round(r.skill, 3), "low": round(r.skill_ci_low, 3), "high": round(r.skill_ci_high, 3)} for r in df.itertuples()]
+    v1 = {"soil_water_model": "v1", "corr_sm": {int(k): v for k, v in pc["correction_by_lead"]["sm"].items()},
+          "corr_nd": {int(k): v for k, v in pc["correction_by_lead"]["ndvi"].items()}, "useful_lead": pc["useful_lead"],
+          "skill_by_lead": {"soil_water": rows(sk[sk.variable == "sm"]), "ndvi": rows(sk[sk.variable == "ndvi"])},
+          "coverage_2023_2025": {k: round(v["coverage_90"], 3) for k, v in pc["coverage_2023_2025"].items()}}
+    chain = settings.v3_dir / "ndvi_chain.json"
+    if s.sim["version"] != "v3" or not chain.exists():
+        return v1
+    nd = json.loads(chain.read_text()); smk = pd.read_csv(settings.v3_dir / "hindcast_skill_validation.csv")
+    return {"soil_water_model": "v3", "corr_sm": s.sim["corr"], "corr_nd": {int(k): v for k, v in nd["correction_by_lead"].items()},
+            "useful_lead": pc["useful_lead"] | {"soil_water_months": s.sim["useful"], "ndvi_quarters": nd["useful_lead_quarters"]},
+            "skill_by_lead": {"soil_water": rows(smk), "ndvi": [{"lead": r["lead"], "skill": round(r["skill"], 3), "low": round(r["skill_ci_low"], 3),
+                                                                  "high": round(r["skill_ci_high"], 3)} for r in nd["skill_by_lead_validation"]]},
+            "coverage_2023_2025": {"sm": round(s.sim["coverage"], 3), "ndvi": round(nd["coverage_90_2023_2025"], 3)}}
 
 
 def get() -> State:

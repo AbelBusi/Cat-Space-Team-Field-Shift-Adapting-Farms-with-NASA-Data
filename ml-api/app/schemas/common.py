@@ -6,7 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
-ModelName = Literal["sm_root_monthly", "ndvi_quarterly"]
+ModelName = Literal["sm_root_monthly", "sm_root_monthly_v3", "ndvi_quarterly"]
 Reliability = Literal["ok", "warning", "out_of_domain", "experimental"]
 
 

@@ -103,14 +103,17 @@ export const periodLabel = (v, p, months, t) => v === 'ndvi'
   ? t('Quarter {q}, {y}', { q: p.slice(-1), y: p.slice(0, 4) })
   : `${t(months[+p.slice(5, 7) - 1])} ${p.slice(0, 4)}`
 
-// The scenarios on offer, in order, with their pixel icon. "Half / double the rain" are computed (ml/artifacts/projections)
-// but not offered: the sanity checks of docs/ML_PROJECTIONS.md showed the model barely reacts to rain alone (changes
-// smaller than its own error, sometimes in the wrong direction), so they would show noise as if it were an answer.
+// The scenarios on offer, in order, with their pixel icon. "Half / double the rain" are served only when the API runs the
+// v3 soil water model, which passed the rain check (docs/ML_V3_ERA5_RAIN.md); with v1 they would show noise as an answer.
+// Lists show only the scenarios the API sent: offered(p).
 export const SCENARIOS = [
   { id: 'base', label: 'A normal year', icon: 'sun', hint: 'The weather of each of 28 past years (1998–2025), one by one.' },
   { id: 'el_nino', label: 'An El Niño year', icon: 'rain', hint: 'Only the years with a coastal El Niño in the rainy season: 1998, 2016, 2017, 2023, 2024.' },
   { id: 'drought_feb_mar', label: 'Two months without rain', icon: 'soil_dry', hint: 'No rain in February and March 2026, the heart of the rainy season.' },
+  { id: 'rain_half', label: 'Half the rain', icon: 'plant_thirsty', hint: 'Each past year with half its rain, every month.' },
+  { id: 'rain_double', label: 'Double the rain', icon: 'drop', hint: 'Each past year with twice its rain, every month.' },
 ]
+export const offered = p => SCENARIOS.filter(x => p?.soil_water?.[x.id])
 
 // For a topic of the "ahead" track: load the file, switch off other map images, and keep the map image in sync.
 export function useAheadMap(build) {

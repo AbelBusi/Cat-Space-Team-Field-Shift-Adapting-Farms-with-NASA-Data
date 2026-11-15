@@ -109,14 +109,14 @@ def run(location, start: str, horizon: int, cfg, kind: str = "climate", include_
     if include_ndvi and t0.month % 3 == 0 and horizon >= 3:
         nb, na = P.project_ndvi(nd_m, one, base_run), P.project_ndvi(nd_m, one, alt_run)
         nq = nb["members"].shape[2]
-        corr_nd = np.array([s.proj_card["correction_by_lead"]["ndvi"][str(k)] for k in range(1, nq + 1)])
+        corr_nd = np.array([s.proj["corr_nd"][k] for k in range(1, nq + 1)])     # NDVI fed with this soil water model
         qb = _band(nb["members"][:, 0, :], corr_nd, -1, 1); qa = _band(na["members"][:, 0, :], corr_nd, -1, 1)
         qlabels = [str(q) for q in nb["quarters"]]
         nd_err = nd_m["card"]["metrics"]["validation_2018_2022"]["RMSE"]["value"]
         ndvi = {"periods": qlabels, "unit": "NDVI",
                 "baseline": {"median": _r(qb[0]), "low_90": _r(qb[1]), "high_90": _r(qb[2])},
                 "scenario": {"median": _r(qa[0]), "low_90": _r(qa[1]), "high_90": _r(qa[2])},
-                "comparison": _compare(qlabels, qb[0], qa[0], nd_err, s.proj_card["useful_lead"]["ndvi_quarters"])}
+                "comparison": _compare(qlabels, qb[0], qa[0], nd_err, s.proj["useful_lead"]["ndvi_quarters"])}
 
     # domain, reliability, warnings
     hard, soft = P.out_of_training_range(w, sm_m["bounds"]), P.out_of_training_range(w, sm_m["bounds"], soft=True)
@@ -171,7 +171,7 @@ def run(location, start: str, horizon: int, cfg, kind: str = "climate", include_
         "simulation_id": sid, "kind": kind, "model_versions": {k: v[:16] for k, v in s.sha.items()} | {"simulations": f"{sm_m['version']} {sm_m['sha256'][:16]}"},
         "location": cell_info(i), "start": start,
         "model": {"algorithm": "XGBoost", "name": sm_m["name"], "version": sm_m["version"], "status": "available", "sha256": sm_m["sha256"]},
-        "target": sm_m["card"]["target"] | {"meaning": TARGET_MEANING["sm_root_monthly"]},
+        "target": sm_m["card"]["target"] | {"meaning": TARGET_MEANING[sm_m["name"]]},
         "periods": labels,
         "baseline": {"median": _r(bm), "low_90": _r(bl), "high_90": _r(bh), "members": len(w_all["years"]), "analog_years": [int(y) for y in w_all["years"]]},
         "scenario": {"median": _r(am), "low_90": _r(al), "high_90": _r(ah), "members": len(w["years"]), "analog_years": [int(y) for y in w["years"]]},

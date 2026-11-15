@@ -1,0 +1,41 @@
+{
+ "what": "NDVI v1 model chained on the v3 soil water model",
+ "skill_by_lead_validation": [
+  {
+   "lead": 1,
+   "best_rule": "climatology",
+   "skill": 0.17375404139655504,
+   "skill_ci_low": 0.09348977095997467,
+   "skill_ci_high": 0.2511607434796161
+  },
+  {
+   "lead": 2,
+   "best_rule": "climatology",
+   "skill": 0.11222803736394837,
+   "skill_ci_low": 0.026000647216251022,
+   "skill_ci_high": 0.18947224447781388
+  },
+  {
+   "lead": 3,
+   "best_rule": "climatology",
+   "skill": 0.11103476701905868,
+   "skill_ci_low": 0.03128562692559523,
+   "skill_ci_high": 0.17945387352330483
+  },
+  {
+   "lead": 4,
+   "best_rule": "persistence",
+   "skill": 0.10311091050593513,
+   "skill_ci_low": 0.0739996721185773,
+   "skill_ci_high": 0.12790965906550136
+  }
+ ],
+ "useful_lead_quarters": 4,
+ "correction_by_lead": {
+  "1": 0.13235129580568894,
+  "2": 0.13999341722954523,
+  "3": 0.14082406461238864,
+  "4": 0.13980074077844618
+ },
+ "coverage_90_2023_2025": 0.8429745002136854
+}

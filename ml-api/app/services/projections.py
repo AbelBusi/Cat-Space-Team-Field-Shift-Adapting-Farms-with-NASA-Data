@@ -14,9 +14,10 @@ DRY_SEASON = [6, 7, 8, 9, 10]               # Jul..Nov when the start is Decembe
 
 
 def build_bundle(s) -> tuple[dict, dict]:
-    """Run the tested models over every Lambayeque cell from the last observed month for the scenarios offered in the
-    app: a normal year (all weather years), El Niño years, and two dry months (its global check failed, its mean effect
-    dries the soil; see docs/ML_PROJECTIONS.md §4.3). Same code, analog years and range corrections as notebook 06.
+    """Run the models over every Lambayeque cell from the last observed month for the scenarios offered in the app: a
+    normal year (all weather years), El Niño years, two dry months, and (with v3, whose checks S2 and S3 pass) half and
+    double rain. Soil water uses the app's soil water model (v3 when accepted, else v1) with its own range corrections
+    (notebook 08 / 06); NDVI is the tested v1 model fed with that soil water (ml/scripts/v3_ndvi_chain.py).
     Also returns the drought risk: per cell and lead, the share of analog members below the cell's 20th percentile
     for that calendar month (1998-2017), a feature that is experimental until check S5 passes."""
     import time
@@ -24,7 +25,7 @@ def build_bundle(s) -> tuple[dict, dict]:
     from fs_ml import project as P
     warnings.filterwarnings("ignore", message="(All-NaN slice|Mean of empty slice)")   # cells/quarters with no data stay null
     t0 = time.time()
-    cube, sm_m, nd_m = s.cube, s.models["sm_root_monthly"], s.models["ndvi_quarterly"]
+    cube, sm_m, nd_m = s.cube, s.models[s.primary["soil_water"]], s.models["ndvi_quarterly"]
     start = cube.dates[-1]
     # the web's projections: cells inside Lambayeque with soil water (the others are served by cell endpoints)
     valid = ~np.isnan(cube.v["sm_root_m3m3"][:, cube.t(start)]) & (cube.cells.province != "outside").to_numpy()
@@ -33,8 +34,10 @@ def build_bundle(s) -> tuple[dict, dict]:
     scen = {"base": (W, f"the weather of each past year {W['years'][0]}-{W['years'][-1]}, one by one"),
             "el_nino": (P.select_members(W, EL_NINO_YEARS), f"only coastal El Niño years {EL_NINO_YEARS}"),
             "drought_feb_mar": (P.scenario_drought(W, [2, 3], cube, start), f"no rain and the driest surface soil in {' and '.join(dry_names)}")}
-    corr = {v: np.array([s.proj_card["correction_by_lead"][key][str(k)] for k in range(1, n + 1)])
-            for v, key, n in (("soil_water", "sm", 12), ("ndvi", "ndvi", 4))}
+    if s.proj["soil_water_model"] == "v3":       # rain-only what-ifs: v3 passed check S3 (docs/ML_V3_ERA5_RAIN.md)
+        scen |= {"rain_half": (P.scenario_adjust(W, rain_factor=0.5), "half the rain of each past year, every month"),
+                 "rain_double": (P.scenario_adjust(W, rain_factor=2.0), "double the rain of each past year, every month")}
+    corr = {"soil_water": np.array([s.proj["corr_sm"][k] for k in range(1, 13)]), "ndvi": np.array([s.proj["corr_nd"][k] for k in range(1, 5)])}
     out = {"soil_water": {}, "ndvi": {}}
     yrs = cube.dates.year.to_numpy()
     with np.errstate(all="ignore"):
@@ -73,20 +76,28 @@ def build_bundle(s) -> tuple[dict, dict]:
             m = (cells.district == d).to_numpy()
             summary.append({"district": d, "scenario": name, "cells": int(m.sum()), "dry_season_soil_water": int(round(np.median(a[m]))),
                             "q3q4_ndvi": None if np.isnan(b[m]).all() else int(round(np.nanmedian(b[m])))})
-    sk = lambda v: [{"lead": int(r.lead), "skill": round(r.skill, 3), "low": round(r.skill_ci_low, 3), "high": round(r.skill_ci_high, 3)}
-                    for r in s.skill[(s.skill.variable == v) & (s.skill.period == "validation")].itertuples()]
     base_sm = np.array([x for x in out["soil_water"]["base"]["median"] if x is not None])
     base_nd = np.array([x for x in out["ndvi"]["base"]["median"] if x is not None])
+    upgrade = None
+    if s.proj["soil_water_model"] == "v3":       # what changed from v1 (docs/ML_V3_ERA5_RAIN.md), for the web's "can I trust it" screen
+        sl, mv = s.sim["second_look"], s.sim["metrics_validation"]
+        upgrade = {"from": "v1", "to": "v3", "what": "the soil water model also reads ERA5-Land's own rain (an input only, not the real rain), "
+                   "with more rain never lowering and more heat never raising soil water",
+                   "rmse_validation_2018_2022": {"v1": round(s.sim["rmse_v1"], 4), "v3": round(mv["RMSE"]["value"], 4)},
+                   "skill_vs_v1": {"value": round(mv["skill vs v1"]["value"], 3), "low": round(mv["skill vs v1"]["ci_low"], 3), "high": round(mv["skill vs v1"]["ci_high"], 3)},
+                   "rmse_march_2023": {k: round(v, 4) for k, v in sl["march_2023_rmse"].items()},
+                   "rmse_2023_2025": {"v1": round(sl["rmse_v1"], 4), "v3": round(sl["rmse_v3"], 4)},
+                   "scenario_checks_passed": sorted(k for k, v in s.sim["checks"].items() if v.get("pass"))}
     bundle = {
-        "meta": {"start": f"{start:%Y-%m}", "scale": K, "grid_step_deg": 0.017966305682390427,
+        "meta": {"model_upgrade": upgrade,"start": f"{start:%Y-%m}", "scale": K, "grid_step_deg": 0.017966305682390427,
                  "periods": {"soil_water": [f"{d:%Y-%m}" for d in sm_dates], "ndvi": [str(q) for q in nd_quarters]},
-                 "useful_lead": s.proj_card["useful_lead"], "skill_by_lead": {"soil_water": sk("sm"), "ndvi": sk("ndvi")},
-                 "coverage_2023_2025": {k: round(v["coverage_90"], 3) for k, v in s.proj_card["coverage_2023_2025"].items()},
+                 "useful_lead": s.proj["useful_lead"], "skill_by_lead": s.proj["skill_by_lead"],
+                 "coverage_2023_2025": s.proj["coverage_2023_2025"], "soil_water_model": s.proj["soil_water_model"],
                  "scenarios": {k: d for k, (_, d) in scen.items()},
                  "domain": {"soil_water": [int(np.percentile(base_sm, 2)), int(np.percentile(base_sm, 98))],
                             "ndvi": [int(np.percentile(base_nd, 2)), int(np.percentile(base_nd, 98))]},
-                 "models": {k: v[:16] for k, v in s.sha.items()}, "not_for": s.proj_card["not_for"],
-                 "computed_by": "ml-api at startup with the tested XGBoost models"},
+                 "models": {k: s.sha[k][:16] for k in (s.primary["soil_water"], "ndvi_quarterly")}, "not_for": s.proj_card["not_for"],
+                 "computed_by": f"ml-api at startup: soil water {s.proj['soil_water_model']}, NDVI v1 fed with it"},
         "cells": {"x": xy[0].tolist(), "y": xy[1].tolist(), "province": [provinces.index(p) for p in cells.province],
                   "district": [districts.index(d) if d else -1 for d in cells.district]},
         "provinces": provinces, "districts": districts, **out, "district_summary": summary,

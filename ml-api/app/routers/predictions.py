@@ -20,8 +20,8 @@ def predict(req: PredictionRequest):
 
 
 def _one(variable: str, req: CellPredictionRequest):
-    name = svc.MODELS[variable]
     if req.features is not None:
+        name = svc.model_for(variable, req.features)
         problems = svc.validate_features(name, req.features)
         return _invalid(problems) if problems else svc.predict_one(name, req.features)
     return svc.predict_cell(variable, req.location, req.period)

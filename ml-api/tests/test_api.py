@@ -65,21 +65,32 @@ def test_simulation_errors():
     assert rec["reliability_level"] == "experimental"             # S4 failed with v3 too
 
 
-def test_projections_match_the_validated_notebook():
-    """The grid served to the web equals ml/notebooks/06_projections.ipynb (artifacts/projections), cell by cell."""
-    from pathlib import Path
-    import pandas as pd
+def test_projections_match_the_engine_with_the_app_model():
+    """The grid served to the web equals fs_ml.project run with the app's soil water model (v3), cell by cell, and the
+    range corrections are v3's (notebook 08) and the NDVI chain's (ml/scripts/v3_ndvi_chain.py)."""
+    import json
+    import numpy as np
+    from fs_ml import project as P
+    from app.config import settings
+    from app.services import state
+    s = state.get()
     b = client.get("/api/v1/projections").json()
-    assert set(b["soil_water"]) >= {"base", "el_nino", "drought_feb_mar", "usual"} and b["meta"]["start"] == "2025-12"
-    art = pd.read_parquet(Path(__file__).resolve().parents[2] / "ml/artifacts/projections/projection_2026_cells.parquet")
-    n = len(b["cells"]["x"])
-    for i in (0, n // 3, n // 2, n - 1):                       # cells spread over the grid
-        cid = f'{b["cells"]["x"][i]},{b["cells"]["y"][i]}'
-        for scen in ("base", "el_nino", "drought_feb_mar"):
-            ref = art[(art.cell_id == cid) & (art.variable == "soil_water_28_100cm") & (art.scenario == scen)].sort_values("lead")
-            assert len(ref) == 12, cid
-            got = b["soil_water"][scen]["median"][i * 12:(i + 1) * 12]
-            assert [round(v * 1000) for v in ref["median"]] == got, (cid, scen)
+    assert b["meta"]["soil_water_model"] == "v3" and b["meta"]["start"] == "2025-12"
+    assert set(b["soil_water"]) >= {"base", "el_nino", "drought_feb_mar", "rain_half", "rain_double", "usual"}
+    assert b["meta"]["useful_lead"] == {"soil_water_months": 6, "ndvi_quarters": 4}
+    chain = json.loads((settings.v3_dir / "ndvi_chain.json").read_text())
+    assert s.proj["corr_nd"][1] == chain["correction_by_lead"]["1"]
+    cid_all = s.cube.cells.cell_id.to_numpy(); start = s.cube.dates[-1]; n = len(b["cells"]["x"])
+    for i in (0, n // 3, n - 1):
+        cid = f'{b["cells"]["x"][i]},{b["cells"]["y"][i]}'; k = int((cid_all == cid).nonzero()[0][0])
+        one = P.Cube(cells=s.cube.cells.iloc[[k]].reset_index(drop=True), dates=s.cube.dates, v={a: v[[k]] for a, v in s.cube.v.items()},
+                     quarters=s.cube.quarters, ndvi=s.cube.ndvi[[k]])
+        w = P.analog_weather(one, start, 12, range(1998, start.year + 1))
+        med = np.quantile(P.project_sm(s.models["sm_root_monthly_v3"], one, start, 12, None, weather=w)["members"][:, 0, :], 0.5, axis=0)
+        assert [int(round(v * 1000)) for v in med] == b["soil_water"]["base"]["median"][i * 12:(i + 1) * 12], cid
+    # more rain never gives drier soil than less rain (v3 is monotone in rain)
+    half, double = b["soil_water"]["rain_half"]["median"], b["soil_water"]["rain_double"]["median"]
+    assert all(h <= d for h, d in zip(half, double) if h is not None and d is not None)
     one = client.get("/api/v1/projections/cell", params={"lat": -6.42, "lon": -79.73}).json()
     assert len(one["median"]) == 12 and one["low_90"][0] <= one["median"][0] <= one["high_90"][0]
 
@@ -113,8 +124,19 @@ def test_cell_prediction_equals_the_projection_engine_with_real_weather():
     one = P.Cube(cells=s.cube.cells.iloc[[i]].reset_index(drop=True), dates=s.cube.dates, v={k: v[[i]] for k, v in s.cube.v.items()},
                  quarters=s.cube.quarters, ndvi=s.cube.ndvi[[i]])
     w = P.analog_weather(one, pd.Timestamp("2019-01-01"), 1, [2019])
-    direct = P.project_sm(s.models["sm_root_monthly"], one, pd.Timestamp("2019-01-01"), 1, None, weather=w)["members"][0, 0, 0]
+    assert r["model"] == "sm_root_monthly_v3"
+    direct = P.project_sm(s.models["sm_root_monthly_v3"], one, pd.Timestamp("2019-01-01"), 1, None, weather=w)["members"][0, 0, 0]
     assert abs(r["prediction"] - direct) < 1e-6 and r["split"] == "validation" and r["observed"] is not None
+
+
+def test_feature_predictions_pick_v1_or_v3_by_their_features():
+    v1 = client.post("/api/v1/predictions/soil-water", json={"features": sm_features()}).json()
+    era5 = {"era5_rain_mm": 80.0, "era5_rain_mm_lag1": 40.0, "era5_rain_mm_lag2": 20.0, "era5_rain_mm_sum6": 240.0}
+    v3 = client.post("/api/v1/predictions/soil-water", json={"features": sm_features(**era5)}).json()
+    assert v1["model"] == "sm_root_monthly" and v3["model"] == "sm_root_monthly_v3"
+    wet = client.post("/api/v1/predictions", json={"model": "sm_root_monthly_v3", "features": sm_features(**era5 | {"era5_rain_mm": 300.0})}).json()
+    assert wet["prediction"] >= v3["prediction"]                  # monotone in rain
+    assert v3["interval_90"]["high"] - v3["interval_90"]["low"] < v1["interval_90"]["high"] - v1["interval_90"]["low"]
 
 
 def test_ndvi_complete_batch_history_confidence():

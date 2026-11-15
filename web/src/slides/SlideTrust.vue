@@ -23,6 +23,9 @@ function bars(v) {
 const sm = computed(() => bars('soil_water'))
 const nd = computed(() => bars('ndvi'))
 const pct = v => Math.round(v * 100)
+// What changed when the soil water model moved from v1 to v3 (sent by the API, docs/ML_V3_ERA5_RAIN.md).
+const up = computed(() => m.value?.model_upgrade)
+const marchHalf = computed(() => up.value && up.value.rmse_march_2023.v3 / up.value.rmse_march_2023.v1 < 0.6)
 </script>
 
 <template>
@@ -45,6 +48,10 @@ const pct = v => Math.round(v * 100)
             </g>
           </svg>
           <p v-if="state.mode === 'pro'" class="text-xs text-muted">{{ t('Bars: skill by months ahead (1 = perfect, 0 = no better than the simple rule), tested on 2018–2022 with 95 % intervals.') }}</p>
+          <details class="text-xs">
+            <summary class="cursor-pointer text-muted">{{ t('The 90 % range, checked') }}</summary>
+            <p class="mt-1">{{ t('In 2023–2025, a period with a coastal El Niño, the real soil water fell inside the range {a} % of the time (greenness: {b} %). It should be 90 %: in extreme years the ranges are too narrow.', { a: pct(m.coverage_2023_2025.sm), b: pct(m.coverage_2023_2025.ndvi) }) }}</p>
+          </details>
         </HudCard>
         <HudCard :title="t('Greenness')">
           <p>{{ nd.useful ? t('Useful for the next {n} quarters, but only a little better than the usual value.', { n: nd.useful }) : t('Not clearly better than the usual value: read greenness ahead as a rough idea.') }}</p>
@@ -54,8 +61,16 @@ const pct = v => Math.round(v * 100)
     </template>
 
     <template v-if="proj" #right>
-      <HudCard :title="t('The 90 % range, checked')">
-        <p class="text-xs">{{ t('In 2023–2025, a period with a coastal El Niño, the real soil water fell inside the range {a} % of the time (greenness: {b} %). It should be 90 %: in extreme years the ranges are too narrow.', { a: pct(m.coverage_2023_2025.sm), b: pct(m.coverage_2023_2025.ndvi) }) }}</p>
+      <HudCard v-if="up" :title="t('My soil model got better')">
+        <div class="flex items-center gap-3">
+          <PixelIcon name="up" :color="PAL.teal" :size="3" />
+          <p class="text-xs">{{ t('It now also reads the rain of the same data that measures the soil water, so more rain never makes the soil drier and more heat never makes it wetter.') }}</p>
+        </div>
+        <p class="text-xs text-muted">{{ t('That rain is much wetter than the rain gauges on this coast: I use it only inside the model, never as the real rain.') }}</p>
+        <p v-if="state.mode === 'farmer'" class="text-xs">{{ marchHalf ? t('Its mistakes on past years are smaller, and in the March 2023 floods they were about half as big.') : t('Its mistakes on past years are smaller.') }}</p>
+        <p v-else class="font-mono text-xs">{{ t('Error 2018–2022: {a} → {b} m³/m³ ({p} % smaller, 95 %: {lo}–{hi} %). March 2023: {c} → {d}. Checks passed: {s}.', {
+          a: up.rmse_validation_2018_2022.v1.toFixed(4), b: up.rmse_validation_2018_2022.v3.toFixed(4), p: pct(up.skill_vs_v1.value), lo: pct(up.skill_vs_v1.low), hi: pct(up.skill_vs_v1.high),
+          c: up.rmse_march_2023.v1.toFixed(3), d: up.rmse_march_2023.v3.toFixed(3), s: up.scenario_checks_passed.join(', ') }) }}</p>
       </HudCard>
       <HudCard :title="t('What Sprout cannot tell you')">
         <ul class="flex flex-col gap-1.5 text-xs">
@@ -63,7 +78,7 @@ const pct = v => Math.round(v * 100)
           <li class="flex gap-2"><PixelIcon name="rain" :size="1" />{{ t('Next year\'s rain: it is not forecast, only the range of past years.') }}</li>
           <li class="flex gap-2"><PixelIcon name="drop" :size="1" />{{ t('Irrigation: the data do not include it.') }}</li>
           <li class="flex gap-2"><PixelIcon name="satellite" :size="1" />{{ t('Your exact field: each value is a 2 km cell.') }}</li>
-          <li class="flex gap-2"><PixelIcon name="flat" :size="1" />{{ t('"More rain" or "less rain" alone: my model leans on last month\'s soil water and barely reacts to rain by itself, so I only offer the El Niño and dry-months cases.') }}</li>
+          <li v-if="!up" class="flex gap-2"><PixelIcon name="flat" :size="1" />{{ t('"More rain" or "less rain" alone: my model leans on last month\'s soil water and barely reacts to rain by itself, so I only offer the El Niño and dry-months cases.') }}</li>
         </ul>
       </HudCard>
     </template>
