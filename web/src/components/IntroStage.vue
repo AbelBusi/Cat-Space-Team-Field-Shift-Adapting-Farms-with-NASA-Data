@@ -32,6 +32,8 @@ function begin(on, answered = true) {
   state.province = null
   state.stage = 'where'
 }
+const REPO = 'https://github.com/AbelBusi/Cat-Space-Team-Field-Shift-Adapting-Farms-with-NASA-Data'
+const PAPER = `${import.meta.env.BASE_URL}paper/field_shift_ml.pdf`   // compiled from paper/field_shift_ml.tex
 // The two doors of the landing: what the satellites see today, or what our models project ahead.
 function start(track) {
   Object.assign(state, { track, slide: 0 })
@@ -76,6 +78,11 @@ function pet() {
       <button type="button" class="btn !min-h-11 !px-5" :title="t('Projections and what-if scenarios from our models trained on NASA data')" @click="start('ahead')">
         <PixelIcon name="calendar" :size="1" />{{ t("See what's ahead") }}
       </button>
+    </div>
+    <!-- For judges and researchers: the code and the paper on the models. -->
+    <div class="mt-2 flex flex-wrap items-center justify-center gap-2">
+      <a class="btn !min-h-8 text-xs" :href="REPO" target="_blank" rel="noopener">[ {{ t('View repository') }} ]</a>
+      <a class="btn !min-h-8 text-xs" :href="PAPER" target="_blank" rel="noopener">[ {{ t('Read the paper') }} ]</a>
     </div>
 
     <!-- The landing spot, next to the campfire. Everything in the arrival is placed from here. -->
