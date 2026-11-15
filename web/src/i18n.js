@@ -23,6 +23,18 @@ export function t(s, params) {
 }
 
 const ES = {
+  "Find a place": "Buscar un lugar",
+  "Town, neighborhood, street…": "Pueblo, urbanización, calle…",
+  "Search results": "Resultados",
+  "No place found in Lambayeque.": "No encontré ese lugar en Lambayeque.",
+  "Province": "Provincia",
+  "District": "Distrito",
+  "Town": "Pueblo",
+  "Neighborhood": "Urbanización",
+  "Street": "Calle",
+  "Place": "Lugar",
+  "Area": "Zona",
+  "River": "Río",
   "Sprout the alien cat, looking determined": "Sprout, el gato alienígena, decidido",
   "Average of {place}, weighted by area: {p} NASA POWER squares and {r} rain squares. Greenness: at the center.": "Promedio de {place}, ponderado por área: {p} cuadrantes de NASA POWER y {r} de lluvia. Verdor: en el centro.",
   "Average of your field, weighted by area: {p} NASA POWER squares and {r} rain squares. Greenness: at the center.": "Promedio de tu terreno, ponderado por área: {p} cuadrantes de NASA POWER y {r} de lluvia. Verdor: en el centro.",
@@ -419,6 +431,18 @@ const ES = {
 }
 
 const QU = {
+  "Find a place": "Huk kitita maskay",
+  "Town, neighborhood, street…": "Llaqta, urbanización, calle…",
+  "Search results": "Tarisqakuna",
+  "No place found in Lambayeque.": "Lambayequepi mana tarikunchu.",
+  "Province": "Provincia",
+  "District": "Distrito",
+  "Town": "Llaqta",
+  "Neighborhood": "Urbanización",
+  "Street": "Calle",
+  "Place": "Kiti",
+  "Area": "Suyu",
+  "River": "Mayu",
   "Sprout the alien cat, looking determined": "Sprout, hanaq pacha misi, sinchi sunqu",
   "Average of {place}, weighted by area: {p} NASA POWER squares and {r} rain squares. Greenness: at the center.": "{place}p chawpinchasqan, hatun kayninman hina: {p} NASA POWER tawa k'uchu, {r} para tawa k'uchu. Q'umir kay: chawpinpi.",
   "Average of your field, weighted by area: {p} NASA POWER squares and {r} rain squares. Greenness: at the center.": "Chakraykip chawpinchasqan, hatun kayninman hina: {p} NASA POWER tawa k'uchu, {r} para tawa k'uchu. Q'umir kay: chawpinpi.",

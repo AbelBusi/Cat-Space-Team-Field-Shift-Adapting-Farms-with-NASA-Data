@@ -1,11 +1,13 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import HudCard from './HudCard.vue'
-import { state, enterDistrict, enterFree } from '../store.js'
+import { state, enterDistrict, enterFree, LAMBAYEQUE } from '../store.js'
 import { enter, say } from '../guide.js'
 import { t } from '../i18n.js'
 import { useTween } from '../lib/tween.js'
 import { DEPARTMENT, PROVINCES, ADMIN_SOURCE, locate, boundsOf } from '../lib/admin.js'
+import { searchPlaces } from '../lib/nasa.js'
+import PLACES from '../data/lambayeque_places.json'
 
 // "Where do you farm?": the department with its provinces, then the districts of the province you tap.
 // One drawing for everything: the camera (the SVG viewBox) glides from the department to a province to a district.
@@ -49,6 +51,55 @@ function open(p, d) {
   if (zoomed.value) return
   zoomed.value = d
   setTimeout(() => enterDistrict(p, d), matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 620)
+}
+
+// Quick search: districts, provinces and our 650 towns answer at once from local data; streets, neighborhoods and
+// other places come from OpenStreetMap (Nominatim), only inside Lambayeque, after a short pause in typing.
+const query = ref(''), found = ref([]), searching = ref(false), searchError = ref(false)
+const fold = s => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+const where = (lat, lon) => { const hit = locate(lat, lon); return hit ? `${hit.district.name}, ${hit.province.name}` : '' }
+function localMatches(q) {
+  const f = fold(q), score = name => fold(name).startsWith(f) ? 0 : fold(name).includes(f) ? 1 : -1
+  const out = []
+  for (const p of PROVINCES) if (score(p.name) >= 0) out.push({ kind: 'Province', title: p.name, detail: 'Lambayeque', province: p, s: score(p.name) })
+  for (const p of PROVINCES) for (const d of p.districts) if (score(d.name) >= 0) out.push({ kind: 'District', title: d.name, detail: p.name, province: p, district: d, s: score(d.name) })
+  for (const [name, lat, lon, rank] of PLACES) if (score(name) >= 0) out.push({ kind: rank === 2 ? 'Neighborhood' : 'Town', title: name, detail: where(lat, lon), lat, lon, s: score(name) + rank / 10 })
+  return out.sort((a, b) => a.s - b.s).slice(0, 6)
+}
+const KIND = { highway: 'Street', place: 'Town', boundary: 'Area', landuse: 'Neighborhood', amenity: 'Place', building: 'Place', natural: 'Place', waterway: 'River' }
+let pause, asked = 0
+function onType() {
+  clearTimeout(pause)
+  searchError.value = false
+  const q = query.value.trim()
+  if (q.length < 2) { found.value = []; return }
+  found.value = localMatches(q)
+  if (q.length < 3) return
+  pause = setTimeout(async () => {
+    const id = ++asked
+    searching.value = true
+    try {
+      const { west, north, east, south } = LAMBAYEQUE
+      const remote = (await searchPlaces(q, [west, north, east, south].join(','), true))
+        .filter(r => locate(r.lat, r.lon))
+        .map(r => ({ kind: r.category === 'place' && /suburb|neighbourhood|quarter/.test(r.type) ? 'Neighborhood' : KIND[r.category] || 'Place', title: r.title, detail: where(r.lat, r.lon), lat: r.lat, lon: r.lon, bounds: r.bounds }))
+      if (id !== asked) return
+      const seen = new Set(found.value.map(r => fold(r.title)))
+      found.value = [...found.value, ...remote.filter(r => !seen.has(fold(r.title)))].slice(0, 9)
+    } catch { if (id === asked) searchError.value = true }
+    finally { if (id === asked) searching.value = false }
+  }, 550)   // Nominatim asks for few requests: wait until typing stops
+}
+function go(r) {
+  if (!r) return
+  query.value = ''
+  found.value = []
+  if (r.kind === 'Province') return (state.province = r.province.name)
+  if (r.kind === 'District') return enterDistrict(r.province, r.district)
+  const hit = locate(r.lat, r.lon)
+  if (!hit) return
+  state.flyTo = { lat: r.lat, lon: r.lon, bounds: r.kind === 'Street' || r.kind === 'Neighborhood' ? r.bounds : null }
+  enterDistrict(hit.province, hit.district, { lat: r.lat, lon: r.lon })
 }
 
 const finding = ref(false)
@@ -108,6 +159,24 @@ function findMe() {
           </button>
         </template>
       </div>
+      <form class="relative flex flex-col gap-1 border-t border-line pt-2" role="search" @submit.prevent="go(found[0])">
+        <label for="place-search" class="label">{{ t('Find a place') }}</label>
+        <div class="flex items-center border border-line bg-bg/70 focus-within:border-teal">
+          <svg class="ml-2 size-4 shrink-0 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></svg>
+          <input id="place-search" v-model="query" type="search" autocomplete="off" enterkeyhint="go" class="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-ink outline-none placeholder:text-muted"
+                 :placeholder="t('Town, neighborhood, street…')" @input="onType" @keydown.esc="query = ''; found = []">
+          <span v-if="searching" class="mr-2 block size-2 animate-ping bg-teal" aria-hidden="true" />
+        </div>
+        <ul v-if="found.length" class="max-h-[30dvh] overflow-y-auto border border-line bg-panel" role="listbox" :aria-label="t('Search results')">
+          <li v-for="(r, i) in found" :key="r.kind + r.title + i">
+            <button type="button" role="option" class="flex w-full items-baseline gap-2 px-2 py-1.5 text-left hover:bg-teal/10 focus:bg-teal/10" @click="go(r)">
+              <span class="w-[5.5rem] shrink-0 font-mono text-[10px] uppercase tracking-wider text-teal">{{ t(r.kind) }}</span>
+              <span class="min-w-0"><b class="block truncate text-sm">{{ r.title }}</b><span v-if="r.detail" class="block truncate text-xs text-muted">{{ r.detail }}</span></span>
+            </button>
+          </li>
+        </ul>
+        <p v-else-if="query.trim().length >= 3 && !searching" class="text-xs text-muted">{{ t(searchError ? 'Search is not available right now. Check the connection and try again.' : 'No place found in Lambayeque.') }}</p>
+      </form>
       <div class="flex flex-wrap gap-2 border-t border-line pt-2">
         <button v-if="focus" type="button" class="btn" @click="state.province = null">‹ Lambayeque</button>
         <button type="button" class="btn btn-fire" :disabled="finding" @click="findMe">{{ t(finding ? 'Searching…' : 'Use my location') }}</button>

@@ -13,6 +13,7 @@ export const state = reactive({
   area: null,       // the territory on the map: { kind: 'district' | 'department', name, province, rings }
   slide: 0,         // index in SLIDES
   wide: false,      // true: the readings describe the whole territory (district or department), not one tapped point
+  flyTo: null,      // { lat, lon, bounds } the map should zoom to once it opens (a search result)
   province: null,   // province open in the place picker
   layer: 'heat', month: 2, scen: 'normal',
   mode: (() => { try { return localStorage.getItem('fs-mode') || 'farmer' } catch { return 'farmer' } })(),   // farmer | pro

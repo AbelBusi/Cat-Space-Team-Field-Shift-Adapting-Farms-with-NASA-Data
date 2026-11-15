@@ -288,6 +288,12 @@ onMounted(() => {
   map.on('zoom move viewreset zoomend moveend', clip)
   addEventListener('resize', onResize)
   showArea()
+  // A search result: go straight to it (a street or a neighborhood fits its own box, a point gets a close zoom).
+  if (state.flyTo) {
+    const f = state.flyTo
+    state.flyTo = null
+    setTimeout(() => f.bounds ? map.flyToBounds(f.bounds, { ...padding(), maxZoom: 17, duration: 1.2 }) : map.flyTo([f.lat, f.lon], 16, { duration: 1.2 }), 350)
+  }
   findPlaces()
   drawLabels()
   drawPoint()

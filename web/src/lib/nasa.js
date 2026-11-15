@@ -127,17 +127,19 @@ export function gibsDataLayers(now = Date.now()) {
 
 // Place search with OpenStreetMap Nominatim. Its usage policy asks for caching and few requests.
 const searchCache = new Map()
-export async function searchPlaces(q, viewbox) {
-  const key = q.toLowerCase()
+// viewbox: 'west,north,east,south'. bounded: only results inside it (the Lambayeque search uses both).
+export async function searchPlaces(q, viewbox, bounded = false) {
+  const key = `${q.toLowerCase()}|${viewbox}|${bounded}`
   if (searchCache.has(key)) return searchCache.get(key)
-  const params = new URLSearchParams({ q, format: 'jsonv2', limit: '5', 'accept-language': 'en' })
+  const params = new URLSearchParams({ q, format: 'jsonv2', limit: bounded ? '8' : '5', 'accept-language': 'es' })
   if (viewbox) params.set('viewbox', viewbox)   // prefer what the user is looking at, without excluding the rest
+  if (bounded) params.set('bounded', '1')
   const r = await fetch(`https://nominatim.openstreetmap.org/search?${params}`)
   if (!r.ok) throw new Error(`Place search answered ${r.status}`)
   const places = (await r.json()).map(it => {
     const [title, ...rest] = it.display_name.split(', ')
     const bb = it.boundingbox?.map(Number)   // [south, north, west, east]
-    return { id: it.place_id, title, detail: rest.join(', '), lat: +it.lat, lon: +it.lon, bounds: bb?.length === 4 ? [[bb[0], bb[2]], [bb[1], bb[3]]] : null }
+    return { id: it.place_id, title, detail: rest.join(', '), lat: +it.lat, lon: +it.lon, bounds: bb?.length === 4 ? [[bb[0], bb[2]], [bb[1], bb[3]]] : null, category: it.category, type: it.type }
   })
   searchCache.set(key, places)
   return places

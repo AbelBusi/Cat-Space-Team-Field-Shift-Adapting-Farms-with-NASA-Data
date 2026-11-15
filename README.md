@@ -58,7 +58,9 @@ pipeline/.venv/bin/python pipeline/fetch_power.py -6.77 -79.84   # quick check: 
 ## How it works
 
 **One screen, like a game.** Sprout says hello and asks if you want a guide. Then you pick your province and district on a
-map of Lambayeque (or "Use my location", or "Free mode" for the whole department). The satellite map opens **cut to that
+map of Lambayeque (or "Use my location", or "Free mode" for the whole department), or type in the quick search under
+the list: provinces, districts and 650 towns answer at once from local data, and streets, neighborhoods and other places come
+from OpenStreetMap (only inside Lambayeque); picking one opens its district and flies the map to it. The satellite map opens **cut to that
 territory**, with town and village names, and the topics come one at a time with the side arrows: satellite signals → ground and
 recent weather → year by year → what matters to you → rotations → comparison → report. The **PDF** button prints the full report.
 Sprout can be turned off (it waits as a small tab and raises a `!` when it has something to say) and answers open questions.
