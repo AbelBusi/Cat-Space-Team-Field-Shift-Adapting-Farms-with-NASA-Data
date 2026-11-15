@@ -1,0 +1,28 @@
+# Field Shift on one machine: the web (Caddy, ports 80/443) and the ML API (FastAPI + the XGBoost models, internal).
+#   cd deploy && docker compose up -d --build
+# Optional: ml-api/.env with the AI settings for Sprout (LLM_BASE_URL, LLM_MODEL, LLM_API_KEY); never commit it.
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: ml-api/Dockerfile
+    env_file:
+      - path: ../ml-api/.env
+        required: false
+    restart: unless-stopped
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.web
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+    depends_on:
+      - api
+    restart: unless-stopped
+volumes:
+  caddy_data:

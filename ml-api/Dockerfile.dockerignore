@@ -14,4 +14,7 @@
 !ml/artifacts/v3_era5_rain/summary.json
 !ml/artifacts/v3_era5_rain/validation_metrics_ci.json
 !ml/artifacts/v3_era5_rain/sm_root_monthly
+!ml/artifacts/v3_era5_rain/ndvi_chain.json
+!ml/artifacts/v3_era5_rain/hindcast_skill_validation.csv
+!ml/artifacts/trends/trend_check.json
 **/__pycache__

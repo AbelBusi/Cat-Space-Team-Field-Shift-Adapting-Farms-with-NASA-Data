@@ -1,0 +1,6 @@
+# Send only the web app and the Caddy config to the web image build.
+**
+!web
+!deploy/Caddyfile
+web/node_modules
+web/dist
