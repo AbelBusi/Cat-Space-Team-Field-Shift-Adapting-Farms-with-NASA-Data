@@ -1,0 +1,391 @@
+{
+  "phase": "1 - training only",
+  "model": "sm_root_monthly",
+  "problem_type": "regression",
+  "estimator": "xgboost.XGBRegressor",
+  "target": {
+    "column": "sm_root_m3m3",
+    "unit": "m3/m3"
+  },
+  "features_in_order": [
+    "rain_mm",
+    "rain_mm_lag1",
+    "rain_mm_lag2",
+    "rain_mm_sum6",
+    "t2m_c",
+    "pet_mm",
+    "pet_mm_lag1",
+    "sm_root_m3m3_lag1",
+    "sm_surface_m3m3_lag1",
+    "power_rh2m_pct",
+    "power_ws2m_ms",
+    "power_allsky_mj_m2_day",
+    "month_sin",
+    "month_cos",
+    "soil_nutrient_low_class",
+    "soil_oxygen_low_class",
+    "soil_lime_gypsum_class",
+    "soil_salinity_sodicity_class",
+    "soil_rooting_class"
+  ],
+  "hyperparameters_stage1_with_early_stopping": {
+    "n_estimators": 3000,
+    "learning_rate": 0.05,
+    "max_depth": 6,
+    "min_child_weight": 20,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "reg_alpha": 0.0,
+    "reg_lambda": 1.0,
+    "gamma": 0.0,
+    "objective": "reg:squarederror",
+    "tree_method": "hist",
+    "eval_metric": "rmse",
+    "early_stopping_rounds": 100,
+    "random_state": 42,
+    "n_jobs": 16
+  },
+  "hyperparameters_final_refit": {
+    "n_estimators": 1122,
+    "learning_rate": 0.05,
+    "max_depth": 6,
+    "min_child_weight": 20,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "reg_alpha": 0.0,
+    "reg_lambda": 1.0,
+    "gamma": 0.0,
+    "objective": "reg:squarederror",
+    "tree_method": "hist",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "n_jobs": 16
+  },
+  "best_number_of_trees": 1122,
+  "random_seed": 42,
+  "library_versions": {
+    "python": "3.14.6",
+    "numpy": "2.5.4",
+    "pandas": "3.1.1",
+    "scipy": "1.18.1",
+    "scikit_learn": "1.9.1",
+    "xgboost": "3.4.1",
+    "matplotlib": "3.11.2",
+    "platform": "Linux-7.0.0-42-generic-x86_64-with-glibc2.43"
+  },
+  "data_files": [
+    {
+      "key": "gee_monthly",
+      "file": "Hídrico/GEE_2km_Clima_Humedad_Mensual_1998_01_a_2026_11.csv",
+      "sha256": "6ab8a999ceddb031ac8960877808772e6f31fe89ed7af5c56f5ff43997911144"
+    },
+    {
+      "key": "gee_quarterly",
+      "file": "Hídrico/GEE_2km_Veg_Salinidad_Trimestral_1998_Q1_a_2026_Q4.csv",
+      "sha256": "0845c6a5aa40b50f6a8dc3c1adc22f0ac641b30d3b9535bfc554a2def29b7b81"
+    },
+    {
+      "key": "gee_s2_scenes",
+      "file": "Hídrico/Lambayeque_Grilla_2km.csv",
+      "sha256": "b0f5d8e842fb64264cf756d0cef16be0f479ba152a862cb2da43eb501ffe187c"
+    },
+    {
+      "key": "power_t2m",
+      "file": "Clima y metereología/Temperature at 2 Meters_Monthly_1998_2017.csv",
+      "sha256": "bd7bb3c51fd91589b55143ef13a0b0a83e773420d1afff226d0434605ed1f108"
+    },
+    {
+      "key": "power_rh2m",
+      "file": "Clima y metereología/Relative Humidity at 2 Meters_Monthly_1998_2017.csv",
+      "sha256": "b8a3c0e7c6ad48350d562255d08d944f347a0a5658bdadee7d1600e7acec086b"
+    },
+    {
+      "key": "power_ws2m",
+      "file": "Clima y metereología/Wind Speed at 2 Meters_Monthly_1998_2017.csv",
+      "sha256": "c5f2308b9d960d1131ba65fe53717147f67f63c73a908d829bfbb7f52a669638"
+    },
+    {
+      "key": "power_allsky",
+      "file": "Clima y metereología/All Sky Surface Shortwave Downward Irradiance_Monthly_1998_2017.csv",
+      "sha256": "5e21d32cbddcdd41767969b52e34b868d1c4123d668b949cf0b1effe7cc033d4"
+    },
+    {
+      "key": "gaez_nutrient_low",
+      "file": "Suelos/Nutrient Availability low.json",
+      "sha256": "4bb49f3b9759977562d7ff9527a4ef265b83a48043ccc2d2a82e13b1b17078a9"
+    },
+    {
+      "key": "gaez_oxygen_high",
+      "file": "Suelos/Oxygen Availability High.json",
+      "sha256": "c5e1a699eac7305e379ac93bec056d34758a3f2bfce6affb94a50ac3db4c8deb"
+    },
+    {
+      "key": "gaez_oxygen_low",
+      "file": "Suelos/Oxygen Availability Low.json",
+      "sha256": "9d9efd82e3b0f83c3bf01397bb49d12f682e1e57f09752ce2ca16c6793a53277"
+    },
+    {
+      "key": "gaez_lime_gypsum_high",
+      "file": "Suelos/Presence of lime and gypsum High.json",
+      "sha256": "9d743ea6f4a985f0f3cf7515343f843b8b837352ee3b56cddb92c03b548ca807"
+    },
+    {
+      "key": "gaez_lime_gypsum_low",
+      "file": "Suelos/Presence of lime and gypsum Low.json",
+      "sha256": "baed6642d2f647e465c78291674d841bfe626eb02a44cc5866b0b57089df49a1"
+    },
+    {
+      "key": "gaez_salinity_high",
+      "file": "Suelos/Presence of salinity and sodicity High.json",
+      "sha256": "f4478efa8bcfec4d0405eda20e9d3aa2cb78b08c1ca7df84bb7c20d189a2468a"
+    },
+    {
+      "key": "gaez_salinity_low",
+      "file": "Suelos/Presence of salinity and sodicity Low.json",
+      "sha256": "866fe07fb1a9f55c3394a54f8f4cad7f0db92d275425b29abcb59469256dda84"
+    },
+    {
+      "key": "gaez_rooting_high",
+      "file": "Suelos/Rooting Conditions High.json",
+      "sha256": "e17db43d812af02a6465923e719fe849689c660f6d0ddb367b61382c22862340"
+    },
+    {
+      "key": "gaez_rooting_low",
+      "file": "Suelos/Rooting Conditions Low.json",
+      "sha256": "8b5414032455104bd596a8552be3aa3601bacf92d9114edf4a0cb92d1aa91c11"
+    }
+  ],
+  "partitions": {
+    "formal": {
+      "training": [
+        1998,
+        2017
+      ],
+      "validation": [
+        2018,
+        2022
+      ],
+      "testing": [
+        2023,
+        2026
+      ]
+    },
+    "internal_inside_training": {
+      "fit": [
+        1998,
+        2015
+      ],
+      "early_stopping": [
+        2016,
+        2017
+      ]
+    },
+    "validation_and_testing_used": false
+  },
+  "rows": {
+    "training_with_target": 750240,
+    "fit": 675216,
+    "internal_early_stopping": 75024,
+    "cells": 3126
+  },
+  "internal_training_diagnostics": {
+    "WARNING": "Internal training diagnostics only. Not validation or test performance.",
+    "stage1_metrics": [
+      {
+        "subset": "fit 1998-2015 (in-sample)",
+        "model": "XGBoost",
+        "n": 675216,
+        "MAE": 0.004028063437098564,
+        "RMSE": 0.00655318258313702,
+        "R2": 0.9959949560452974,
+        "bias": -1.5040760622339417e-07
+      },
+      {
+        "subset": "fit 1998-2015 (in-sample)",
+        "model": "baseline: training mean",
+        "n": 675216,
+        "MAE": 0.0871004844217526,
+        "RMSE": 0.10354964753056412,
+        "R2": 0.0,
+        "bias": 1.0775748226024599e-17
+      },
+      {
+        "subset": "fit 1998-2015 (in-sample)",
+        "model": "baseline: climatology",
+        "n": 675216,
+        "MAE": 0.02105374825260746,
+        "RMSE": 0.032767824249537364,
+        "R2": 0.8998622194811726,
+        "bias": 4.3210855618274915e-19
+      },
+      {
+        "subset": "fit 1998-2015 (in-sample)",
+        "model": "baseline: persistence",
+        "n": 675216,
+        "MAE": 0.018108113760155586,
+        "RMSE": 0.03217027443985822,
+        "R2": 0.9034811182213784,
+        "bias": 0.00012810960831571253
+      },
+      {
+        "subset": "internal ES 2016-2017",
+        "model": "XGBoost",
+        "n": 75024,
+        "MAE": 0.011636630896226201,
+        "RMSE": 0.022419444644476934,
+        "R2": 0.9550193555037538,
+        "bias": -0.0027100714032659732
+      },
+      {
+        "subset": "internal ES 2016-2017",
+        "model": "baseline: training mean",
+        "n": 75024,
+        "MAE": 0.08878539297148785,
+        "RMSE": 0.10648693659800905,
+        "R2": -0.014772384386209092,
+        "bias": -0.012848052819335015
+      },
+      {
+        "subset": "internal ES 2016-2017",
+        "model": "baseline: climatology",
+        "n": 75024,
+        "MAE": 0.026529642421604632,
+        "RMSE": 0.04328258569136517,
+        "R2": 0.8323504592598436,
+        "bias": -0.012848052819335024
+      },
+      {
+        "subset": "internal ES 2016-2017",
+        "model": "baseline: persistence",
+        "n": 75024,
+        "MAE": 0.025369307004048536,
+        "RMSE": 0.042835526860639114,
+        "R2": 0.8357958235946726,
+        "bias": -0.00043831516831019347
+      }
+    ],
+    "rmse_skill_internal_block": {
+      "vs training mean": 0.7894629579860024,
+      "vs climatology": 0.482021596298726,
+      "vs persistence": 0.4766156438925978
+    },
+    "per_year_internal_block": [
+      {
+        "year": 2016,
+        "n": 37512,
+        "MAE": 0.00860402372687376,
+        "RMSE": 0.016527214183164766,
+        "R2": 0.97400220307456,
+        "bias": -0.0018440419652440718
+      },
+      {
+        "year": 2017,
+        "n": 37512,
+        "MAE": 0.014669238065578648,
+        "RMSE": 0.027057608683646237,
+        "R2": 0.9339651498859783,
+        "bias": -0.003576100841287875
+      }
+    ],
+    "final_refit_in_sample": {
+      "n": 750240,
+      "MAE": 0.004334031331619366,
+      "RMSE": 0.0070527922118993475,
+      "R2": 0.9953868265161693,
+      "bias": 4.417819980995702e-07
+    }
+  },
+  "provisional_intervals": {
+    "method": "split conformal, absolute residuals of the stage-1 model on 2016-2017",
+    "half_width": {
+      "80%": 0.016421159428934906,
+      "90%": 0.03141660193602244,
+      "95%": 0.05004025830162895
+    },
+    "coverage_2017_when_calibrated_on_2016": {
+      "80%": 0.6911654937086799,
+      "90%": 0.8068351460865856,
+      "95%": 0.8861964171465131
+    },
+    "status": "PROVISIONAL - recalibrate on the Validation years before showing any interval to users"
+  },
+  "importance_final_model": {
+    "rain_mm": {
+      "gain": 0.009209,
+      "mean_abs_contribution": 0.0016820000018924475
+    },
+    "rain_mm_lag1": {
+      "gain": 0.003279,
+      "mean_abs_contribution": 0.0013849999522790313
+    },
+    "rain_mm_lag2": {
+      "gain": 0.00581,
+      "mean_abs_contribution": 0.0021180000621825457
+    },
+    "rain_mm_sum6": {
+      "gain": 0.024055,
+      "mean_abs_contribution": 0.0015010000206530094
+    },
+    "t2m_c": {
+      "gain": 0.006009,
+      "mean_abs_contribution": 0.0020119999535381794
+    },
+    "pet_mm": {
+      "gain": 0.006191,
+      "mean_abs_contribution": 0.00886400043964386
+    },
+    "pet_mm_lag1": {
+      "gain": 0.005299,
+      "mean_abs_contribution": 0.007581000216305256
+    },
+    "sm_root_m3m3_lag1": {
+      "gain": 0.582455,
+      "mean_abs_contribution": 0.06754899770021439
+    },
+    "sm_surface_m3m3_lag1": {
+      "gain": 0.18587,
+      "mean_abs_contribution": 0.022196000441908836
+    },
+    "power_rh2m_pct": {
+      "gain": 0.009629,
+      "mean_abs_contribution": 0.0019809999503195286
+    },
+    "power_ws2m_ms": {
+      "gain": 0.003666,
+      "mean_abs_contribution": 0.0012839999981224537
+    },
+    "power_allsky_mj_m2_day": {
+      "gain": 0.003328,
+      "mean_abs_contribution": 0.0012700000079348683
+    },
+    "month_sin": {
+      "gain": 0.020011,
+      "mean_abs_contribution": 0.0024999999441206455
+    },
+    "month_cos": {
+      "gain": 0.035051,
+      "mean_abs_contribution": 0.00534699996933341
+    },
+    "soil_nutrient_low_class": {
+      "gain": 0.004821,
+      "mean_abs_contribution": 0.0004560000088531524
+    },
+    "soil_oxygen_low_class": {
+      "gain": 0.083503,
+      "mean_abs_contribution": 0.0004290000069886446
+    },
+    "soil_lime_gypsum_class": {
+      "gain": 0.000334,
+      "mean_abs_contribution": 1.1000000085914508e-05
+    },
+    "soil_salinity_sodicity_class": {
+      "gain": 0.00373,
+      "mean_abs_contribution": 0.00019200000679120421
+    },
+    "soil_rooting_class": {
+      "gain": 0.007751,
+      "mean_abs_contribution": 0.0005000000237487257
+    }
+  },
+  "notes": "Feature importance is not causality. Coordinates, ids and years are not features."
+}

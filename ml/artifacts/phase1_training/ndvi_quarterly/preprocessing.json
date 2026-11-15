@@ -1,0 +1,172 @@
+{
+  "feature_names_in_order": [
+    "q_rain_mm",
+    "q_rain_mm_lag1",
+    "q_t2m_c",
+    "q_pet_mm",
+    "q_sm_root_m3m3",
+    "q_power_rh2m_pct",
+    "q_power_ws2m_ms",
+    "q_power_allsky_mj_m2_day",
+    "quarter",
+    "ndvi_lag1",
+    "ndvi_lag4",
+    "soil_nutrient_low_class",
+    "soil_oxygen_low_class",
+    "soil_lime_gypsum_class",
+    "soil_salinity_sodicity_class",
+    "soil_rooting_class"
+  ],
+  "feature_units": {
+    "q_rain_mm": "mm/quarter",
+    "q_rain_mm_lag1": "mm/quarter",
+    "q_t2m_c": "°C",
+    "q_pet_mm": "mm/quarter",
+    "q_sm_root_m3m3": "m3/m3",
+    "q_power_rh2m_pct": "%",
+    "q_power_ws2m_ms": "m/s",
+    "q_power_allsky_mj_m2_day": "MJ/m2/day",
+    "quarter": "1-4",
+    "ndvi_lag1": "index",
+    "ndvi_lag4": "index",
+    "soil_nutrient_low_class": "FAO GAEZ class code",
+    "soil_oxygen_low_class": "FAO GAEZ class code",
+    "soil_lime_gypsum_class": "FAO GAEZ class code",
+    "soil_salinity_sodicity_class": "FAO GAEZ class code",
+    "soil_rooting_class": "FAO GAEZ class code"
+  },
+  "missing_values": "left as NaN; XGBoost native handling (no imputer)",
+  "scaling": "none",
+  "training_feature_bounds": {
+    "q_rain_mm": {
+      "min": 0.0,
+      "p01": 8.23227095381185e-10,
+      "p50": 15.561791457235813,
+      "p99": 380.8091329430093,
+      "max": 830.2006211280824,
+      "missing_share": 0.0
+    },
+    "q_rain_mm_lag1": {
+      "min": 0.0,
+      "p01": 7.610571617355788e-10,
+      "p50": 16.729233160614967,
+      "p99": 403.3213134540212,
+      "max": 830.2006211280824,
+      "missing_share": 0.023206612295010084
+    },
+    "q_t2m_c": {
+      "min": 9.75086212766407,
+      "p01": 12.627921188757254,
+      "p50": 20.53366641383019,
+      "p99": 26.60449928111808,
+      "max": 27.437384324715612,
+      "missing_share": 0.007180128036481628
+    },
+    "q_pet_mm": {
+      "min": 322.9624852538109,
+      "p01": 395.35506814718246,
+      "p50": 658.3292856812477,
+      "p99": 1822.3374038934708,
+      "max": 2151.0714814066887,
+      "missing_share": 0.007180128036481628
+    },
+    "q_sm_root_m3m3": {
+      "min": 0.056170735877617006,
+      "p01": 0.05913500609221282,
+      "p50": 0.22731222701898757,
+      "p99": 0.4216846691664829,
+      "max": 0.4926756738212495,
+      "missing_share": 0.007180128036481628
+    },
+    "q_power_rh2m_pct": {
+      "min": 54.95333333333334,
+      "p01": 58.85999999999999,
+      "p50": 67.69666666666666,
+      "p99": 89.07,
+      "max": 89.63,
+      "missing_share": 0.0
+    },
+    "q_power_ws2m_ms": {
+      "min": 1.1733333333333333,
+      "p01": 1.2133333333333332,
+      "p50": 2.606666666666667,
+      "p99": 4.496666666666666,
+      "max": 5.02,
+      "missing_share": 0.0
+    },
+    "q_power_allsky_mj_m2_day": {
+      "min": 12.833333333333334,
+      "p01": 13.713333333333333,
+      "p50": 18.209999999999997,
+      "p99": 23.76,
+      "max": 24.24,
+      "missing_share": 0.0
+    },
+    "quarter": {
+      "min": 1.0,
+      "p01": 1.0,
+      "p50": 3.0,
+      "p99": 4.0,
+      "max": 4.0,
+      "missing_share": 0.0
+    },
+    "ndvi_lag1": {
+      "min": -0.5860676169395447,
+      "p01": 0.05166388906538486,
+      "p50": 0.3337014317512512,
+      "p99": 0.8012736344337463,
+      "max": 0.9477316737174988,
+      "missing_share": 0.1814105937034114
+    },
+    "ndvi_lag4": {
+      "min": -0.5757837295532227,
+      "p01": 0.050152373500168324,
+      "p50": 0.3194022898872694,
+      "p99": 0.7901731878519058,
+      "max": 0.9035182297229767,
+      "missing_share": 0.34418574059458035
+    },
+    "soil_nutrient_low_class": {
+      "min": 6.0,
+      "p01": 6.0,
+      "p50": 8.0,
+      "p99": 10.0,
+      "max": 10.0,
+      "missing_share": 0.0
+    },
+    "soil_oxygen_low_class": {
+      "min": 7.0,
+      "p01": 7.0,
+      "p50": 10.0,
+      "p99": 10.0,
+      "max": 10.0,
+      "missing_share": 0.0
+    },
+    "soil_lime_gypsum_class": {
+      "min": 9.0,
+      "p01": 10.0,
+      "p50": 10.0,
+      "p99": 10.0,
+      "max": 10.0,
+      "missing_share": 0.0
+    },
+    "soil_salinity_sodicity_class": {
+      "min": 7.0,
+      "p01": 8.0,
+      "p50": 10.0,
+      "p99": 10.0,
+      "max": 10.0,
+      "missing_share": 0.0
+    },
+    "soil_rooting_class": {
+      "min": 3.0,
+      "p01": 3.0,
+      "p50": 10.0,
+      "p99": 10.0,
+      "max": 10.0,
+      "missing_share": 0.0
+    }
+  },
+  "out_of_range_rule": "warn if any feature < p01 or > p99; strong warning outside min..max",
+  "build_functions": "fs_ml.data + fs_ml.features (same code for every phase)"
+}

@@ -13,3 +13,7 @@ data/manual/**/*.zip
 .idea/
 .vscode/
 *.log
+# ML (Phase 1+): local venv and data rebuilt from the team folder by the notebook
+ml/.venv/
+ml/data/
+__pycache__/
