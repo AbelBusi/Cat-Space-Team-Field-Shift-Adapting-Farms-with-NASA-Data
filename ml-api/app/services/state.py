@@ -29,6 +29,7 @@ class State:
     nd_cols: dict | None = None
     sm_pred: np.ndarray | None = None                   # one-step predictions of every cell and month
     nd_pred: np.ndarray | None = None
+    sim: dict | None = None                             # the soil water model that runs simulations (v3 if accepted, else v1)
     cache: dict = field(default_factory=dict)
 
 
@@ -74,6 +75,7 @@ def load() -> None:
         s.sm_pred = features.predict_matrix(models["sm_root_monthly"], s.sm_cols)
         s.nd_pred = features.predict_matrix(models["ndvi_quarterly"], s.nd_cols)
         s.bundle, s.risk = projections.build_bundle(s)
+        s.sim = _simulation_model(s, models["sm_root_monthly"])
         STATE, LOAD_ERROR = s, None
         log.info("loaded in %.1f s: models %s | cube %d cells %s..%s | phase 2 checks: %s", time.time() - t0,
                  {k: v[:12] for k, v in sha.items()}, len(cells), cube.dates[0].date(), cube.dates[-1].date(),
@@ -81,6 +83,37 @@ def load() -> None:
     except Exception as e:      # reported by /health and as 503, never hidden
         STATE, LOAD_ERROR = None, f"{type(e).__name__}: {e}"
         log.exception("model loading failed")
+
+
+def _simulation_model(s: State, v1: dict) -> dict:
+    """v3 runs the simulations when its rules passed (R1 and R2) and the cube has ERA5-Land rain; otherwise v1.
+    Each carries its own range corrections, useful lead, error and scenario checks."""
+    import xgboost as xgb
+    rmse_v1 = v1["card"]["metrics"]["validation_2018_2022"]["RMSE"]["value"]
+    fallback = {"name": "sm_root_monthly", "version": "v1", "model": v1["model"], "features": v1["features"], "bounds": v1["bounds"],
+                "card": v1["card"], "sha256": s.sha["sm_root_monthly"], "rmse": rmse_v1,
+                "corr": {int(k): v for k, v in s.proj_card["correction_by_lead"]["sm"].items()},
+                "useful": s.proj_card["useful_lead"]["soil_water_months"], "coverage": s.proj_card["coverage_2023_2025"]["sm"]["coverage_90"],
+                "checks": {k: s.checks.get(k, {"pass": False}) for k in ("S1", "S2", "S3", "S4")}}
+    d = settings.v3_dir
+    try:
+        summ = json.loads((d / "summary.json").read_text())
+        if summ.get("status") != "candidate" or not summ["decision"]["usable_for_simulations"] or "era5_rain_mm" not in s.cube.v:
+            log.info("simulations use v1 (v3 not accepted or no ERA5-Land rain in the cube)"); return fallback
+        if _sha(d / "sm_root_monthly" / "model.ubj") != summ["sha256"]:
+            raise RuntimeError("v3 model file does not match its summary (sha256)")
+        prep = json.loads((d / "sm_root_monthly" / "preprocessing.json").read_text())
+        m = xgb.XGBRegressor(); m.load_model(d / "sm_root_monthly" / "model.ubj")
+        assert m.get_booster().feature_names == prep["feature_names_in_order"]
+        met = {r["metric"]: r for r in json.loads((d / "validation_metrics_ci.json").read_text())["validation_2018_2022"] if r["model"] == "v3"}
+        log.info("simulations use v3 (ERA5-Land rain, monotone constraints): %s", summ["sha256"][:12])
+        return {"name": "sm_root_monthly_v3", "version": "v3", "model": m, "features": prep["feature_names_in_order"],
+                "bounds": prep["training_feature_bounds"], "card": v1["card"], "sha256": summ["sha256"], "rmse": met["RMSE"]["value"],
+                "corr": {int(k): v for k, v in summ["projections"]["correction_by_lead"].items()},
+                "useful": summ["projections"]["useful_lead_months"], "coverage": summ["projections"]["coverage_90_2023_2025"],
+                "checks": summ["scenario_checks"], "metrics_validation": met}
+    except FileNotFoundError:
+        log.info("simulations use v1 (no v3 artifacts)"); return fallback
 
 
 def get() -> State:

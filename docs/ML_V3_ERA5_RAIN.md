@@ -1,7 +1,7 @@
 # Field Shift ML · v3 soil water model with ERA5-Land's own rain
 
 Status (Nov 15, 2026): **trained and validated: R1 and R2 pass, so v3 may run simulations** (rules committed before training in `8d87fe5`; notebook `ml/notebooks/08_v3_era5_rain.ipynb`). The tested v1 models and `ml/artifacts/final_model/`
-are not changed. Outputs will go to `ml/artifacts/v3_era5_rain/`.
+are not changed. Outputs: `ml/artifacts/v3_era5_rain/`.
 
 ## 1. New data received
 
@@ -52,7 +52,7 @@ predictions and the web's projections stay v1 until the team decides. If R1 or R
 |---|---|---|
 | Trees | 1,122 | 1,877 |
 | Validation 2018–2022 RMSE | 0.0125 | **0.0099** m³/m³ |
-| Skill vs persistence (A, B) | 0.52 [0.48, 0.55] | **0.62 [0.59, …]** |
+| Skill vs persistence (A, B) | 0.52 [0.48, 0.55] | **0.62 [0.59, 0.64]** |
 | Skill of v3 over v1 (R2) | — | **+0.21 [0.17, 0.25]**: clearly better, not just "not worse" |
 | Criteria A–F (R1) | pass | **pass** (bias 0.0013, worst year 0.56, worst province 0.44, 90 % coverage 2021–2022 0.884) |
 | 2023–2025 RMSE (second look) | 0.0198 | **0.0142** (skill over v1 +0.28 [0.24, 0.32]) |

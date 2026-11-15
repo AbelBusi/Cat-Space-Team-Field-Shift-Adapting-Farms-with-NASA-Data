@@ -62,14 +62,15 @@ def _compare(labels, base, alt, err, useful):
 
 def run(location, start: str, horizon: int, cfg, kind: str = "climate", include_ndvi: bool = True, request: dict | None = None) -> dict:
     from fs_ml import project as P
-    s = state.get(); cube = s.cube; sm_m, nd_m = s.models["sm_root_monthly"], s.models["ndvi_quarterly"]
+    s = state.get(); cube = s.cube; nd_m = s.models["ndvi_quarterly"]
+    sm_m = s.sim                     # v3 (ERA5-Land rain, monotone) when accepted, else v1: its own corrections and checks
     i = find_cell(location)
     t0 = pd.Timestamp(start + "-01")
     if t0 not in cube.dates or cube.t(t0) < 4:
         raise BadRequest(f"start must be between {cube.dates[4]:%Y-%m} and {cube.dates[-1]:%Y-%m}")
     if np.isnan(cube.v["sm_root_m3m3"][i, cube.t(t0)]):
         raise NotFound("this cell has no observed soil water at the start month (a coastal cell without ERA5-Land)")
-    sid = make_id("sim", {"kind": kind, **(request or {})}, s.sha)
+    sid = make_id("sim", {"kind": kind, "sim_model": sm_m["sha256"], **(request or {})}, s.sha)
     hit = RESULTS.get(sid)
     if hit:
         return hit
@@ -96,12 +97,11 @@ def run(location, start: str, horizon: int, cfg, kind: str = "climate", include_
 
     # soil water, month by month
     base_run, alt_run = P.project_sm(sm_m, one, t0, horizon, None, weather=w_all), P.project_sm(sm_m, one, t0, horizon, None, weather=w)
-    corr_sm = np.array([s.proj_card["correction_by_lead"]["sm"][str(k)] for k in range(1, horizon + 1)])
+    corr_sm = np.array([sm_m["corr"][k] for k in range(1, horizon + 1)])
     bm, bl, bh = _band(base_run["members"][:, 0, :], corr_sm, 0, 1)
     am, al, ah = _band(alt_run["members"][:, 0, :], corr_sm, 0, 1)
     labels = [f"{d:%Y-%m}" for d in base_run["dates"]]
-    rmse = sm_m["card"]["metrics"]["validation_2018_2022"]["RMSE"]["value"]
-    useful = s.proj_card["useful_lead"]["soil_water_months"]
+    rmse, useful = sm_m["rmse"], sm_m["useful"]
     comp = _compare(labels, bm, am, rmse, useful)
 
     # NDVI on whole quarters (needs a start at the end of a quarter)
@@ -137,13 +137,15 @@ def run(location, start: str, horizon: int, cfg, kind: str = "climate", include_
     checks_used = {}
     for k, code in CHECK_OF.items():
         if ch.get(k) or kind == k:
-            c = state.check(code); checks_used[code] = c.get("pass", False)
+            c = sm_m["checks"].get(code, {"pass": False}); checks_used[code] = c.get("pass", False)
             if not c.get("pass"):
-                warnings.append(warn("experimental", f"The {k} what-if did not pass its Phase 2 check ({code}, docs/ML_API_VALIDATION.md): treat it as experimental.")); level = "experimental"
+                warnings.append(warn("experimental", f"The {k} what-if did not pass its check ({code}) with the {sm_m['version']} model: treat it as experimental.")); level = "experimental"
     if ch["evaporation"] or ch["wind"] or ch["sunlight"]:
         warnings.append(warn("experimental", "Changes of evaporation, wind or sunlight have no validation yet.")); level = "experimental"
-    if ch["rainfall"] and not ch["drought"]:
+    if ch["rainfall"] and not ch["drought"] and sm_m["version"] == "v1":
         warnings.append(warn("rain_only", "Rain-only changes failed the sanity checks: the model barely reacts to rain alone and can move the wrong way."))
+    if sm_m["version"] == "v3" and (ch["rainfall"] or ch["drought"]):
+        warnings.append(warn("era5_rain", "The v3 model reads ERA5-Land's own rain, which is several times wetter than the real rain on this coast; the change is applied to it in the same proportion. Never read it as the real amount of rain."))
     if any(c["within_model_error"] for c in comp):
         warnings.append(warn("within_model_error", "Some differences are smaller than the model's typical error (validation RMSE): they cannot be told apart from noise.",
                              [c["period"] for c in comp if c["within_model_error"]]))
@@ -161,14 +163,14 @@ def run(location, start: str, horizon: int, cfg, kind: str = "climate", include_
                    f"and lower in {n_down}. The biggest difference is {big['absolute_difference']:+.4f} m3/m3{pct} in {big['period']}.")
     limits = ["A model answer to a made-up situation, not a forecast and not proof of cause and effect.",
               f"Projections beat 'a typical year' only for the first {useful} months (hindcasts 2018-2022).",
-              f"In 2023-2025 the 90 % range held the real value {s.proj_card['coverage_2023_2025']['sm']['coverage_90']:.0%} of the time: ranges are too narrow in El Niño years.",
+              f"In 2023-2025 the 90 % range held the real value {sm_m['coverage']:.0%} of the time: ranges are too narrow in El Niño years.",
               "One 2 km cell; no irrigation in the data; no crop yield."]
-    limits = [w_["message"] for w_ in warnings if w_["code"] in ("rain_only", "experimental", "pet_not_recomputed", "few_analogs", "out_of_domain")] + limits
+    limits = [w_["message"] for w_ in warnings if w_["code"] in ("rain_only", "era5_rain", "experimental", "pet_not_recomputed", "few_analogs", "out_of_domain")] + limits
 
     res = {
-        "simulation_id": sid, "kind": kind, "model_versions": {k: v[:16] for k, v in s.sha.items()},
+        "simulation_id": sid, "kind": kind, "model_versions": {k: v[:16] for k, v in s.sha.items()} | {"simulations": f"{sm_m['version']} {sm_m['sha256'][:16]}"},
         "location": cell_info(i), "start": start,
-        "model": {"algorithm": "XGBoost", "name": "sm_root_monthly", "status": "available", "sha256": s.sha["sm_root_monthly"]},
+        "model": {"algorithm": "XGBoost", "name": sm_m["name"], "version": sm_m["version"], "status": "available", "sha256": sm_m["sha256"]},
         "target": sm_m["card"]["target"] | {"meaning": TARGET_MEANING["sm_root_monthly"]},
         "periods": labels,
         "baseline": {"median": _r(bm), "low_90": _r(bl), "high_90": _r(bh), "members": len(w_all["years"]), "analog_years": [int(y) for y in w_all["years"]]},
@@ -177,8 +179,8 @@ def run(location, start: str, horizon: int, cfg, kind: str = "climate", include_
         "out_of_training_range": hard, "unusual_inputs": soft,
         "reliability_level": level, "warnings": warnings,
         "reliability": {"useful_lead_months": useful, "model_rmse_validation": rmse,
-                        "range_coverage_2023_2025": s.proj_card["coverage_2023_2025"]["sm"]["coverage_90"],
-                        "rain_only_change": ch["rainfall"] and not ch["drought"], "scenario_checks": s.proj_card["scenario_checks"],
+                        "range_coverage_2023_2025": sm_m["coverage"],
+                        "rain_only_change": ch["rainfall"] and not ch["drought"], "simulation_model": sm_m["version"],
                         "phase2_checks_used": checks_used},
         "interpretation": {"summary": summary, "limitations": list(dict.fromkeys(limits))},
     }

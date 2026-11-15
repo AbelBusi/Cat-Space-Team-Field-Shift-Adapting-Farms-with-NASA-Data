@@ -30,6 +30,8 @@ class Settings:
     projection_card: Path = field(default_factory=lambda: _path("FS_PROJECTION_CARD", "../ml/artifacts/projections/projection_card.json"))
     # Results of the Phase 2 checks (docs/ML_API_VALIDATION.md): which new features may leave the "experimental" label
     api_checks: Path = field(default_factory=lambda: _path("FS_API_CHECKS", "../ml/artifacts/api_validation/checks.json"))
+    # v3 soil water model (ERA5-Land rain, monotone constraints): runs the simulations when present (docs/ML_V3_ERA5_RAIN.md)
+    v3_dir: Path = field(default_factory=lambda: _path("FS_V3_DIR", "../ml/artifacts/v3_era5_rain"))
     # Monthly inputs 1998-2025 per Lambayeque cell, written by ml/scripts/export_api_cube.py
     cube_path: Path = field(default_factory=lambda: _path("FS_CUBE_PATH", "data/cube.npz"))
     cors_origins: tuple = field(default_factory=lambda: tuple(o.strip() for o in os.environ.get(

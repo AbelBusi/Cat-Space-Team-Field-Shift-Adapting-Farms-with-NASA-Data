@@ -55,8 +55,14 @@ def test_simulation_errors():
     assert client.post("/api/v1/simulations/climate", json={"location": {"lat": 0, "lon": 0}}).status_code == 400
     assert client.post("/api/v1/simulations/climate", json={"location": {"lat": -6.42, "lon": -79.73}, "horizon": 20}).status_code == 422
     rain = client.post("/api/v1/simulations/climate", json={"location": {"lat": -6.42, "lon": -79.73}, "scenario": {"rain_factor": 2}}).json()
-    assert rain["reliability"]["rain_only_change"] is True and any("sanity checks" in x for x in rain["interpretation"]["limitations"])
-    assert rain["reliability_level"] == "experimental"            # rain-only never left the experimental label
+    assert rain["reliability"]["rain_only_change"] is True
+    # simulations run with the v3 model (ERA5-Land rain, monotone): its rain check S3 passed, so rain is not experimental,
+    # double rain never lowers the soil, and the ERA5 rain warning is always there
+    assert rain["model"]["version"] == "v3" and rain["reliability_level"] != "experimental"
+    assert all(c["absolute_difference"] >= -1e-9 for c in rain["comparison"])
+    assert any(w["code"] == "era5_rain" for w in rain["warnings"])
+    rec = client.post("/api/v1/simulations/recovery", json={"location": {"lat": -6.42, "lon": -79.73}, "drought_months": 3}).json()
+    assert rec["reliability_level"] == "experimental"             # S4 failed with v3 too
 
 
 def test_projections_match_the_validated_notebook():

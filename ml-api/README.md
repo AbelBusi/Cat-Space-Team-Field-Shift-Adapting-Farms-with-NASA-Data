@@ -109,7 +109,7 @@ Docker was not running there. Run it once before relying on it.)
 | POST | `/predictions/complete` · `/predictions/batch` | 3 months of soil water + the quarter's NDVI, chained · up to 1,000 rows |
 | GET | `/predictions/{cell_id}/history` · `/confidence` | Observed vs predicted 1998–2025 with the period of each row · historical error of the place (check S10 passed) |
 | GET | `/projections` · `/projections/cell` | The whole grid for the web (integers × 1000) · one cell in real units |
-| POST | `/simulations/climate` · `/custom` · `/drought` · `/el-nino` · `/temperature` · `/rainfall` · `/recovery` | **One scenario engine**; soil water monthly and NDVI quarterly; `reliability_level` and `warnings` in every answer |
+| POST | `/simulations/climate` · `/custom` · `/drought` · `/el-nino` · `/temperature` · `/rainfall` · `/recovery` | **One scenario engine**, run by the **v3** soil water model (ERA5-Land rain, monotone constraints; `docs/ML_V3_ERA5_RAIN.md`) with its own range corrections and checks; NDVI quarterly; `reliability_level` and `warnings` in every answer |
 | GET | `/simulations/{simulation_id}/results` | A recent simulation by id (in memory) |
 | GET | `/analysis/districts` · `/water-retention` · `/vegetation` · `/drought-risk` · `/anomalies` · `/hotspots` | Territorial analysis by district (median of 2 km cells, OSM boundaries) |
 | GET | `/alerts/drought` · `/alerts/vegetation` | Cells below the band expected one step earlier (check S6 passed) |
@@ -203,7 +203,8 @@ One code path for any OpenAI-compatible endpoint (`LLM_BASE_URL`, `LLM_MODEL`, `
 - Not a yield, crop or profit model; no irrigation in the data; one value per 2 km cell.
 - Projections beat "a typical year" only for the first 6 months (soil water) on 2018–2022; in 2023–2025 (El Niño) only for 2.
 - The 90 % ranges held the real value 80 % (soil water) and 84 % (NDVI) of the time in 2023–2025: too narrow in extreme years.
-- **Rain-only changes failed their sanity checks**: the model leans on last month's soil water and barely reacts to rain
-  alone, sometimes in the wrong direction. The API flags `rain_only_change` and puts the warning first.
+- Simulations run with the **v3** model: temperature, droughts and rain passed their checks with it (recovery did not).
+  It reads ERA5-Land's own rain, 3-6 times wetter than the real rain on this coast: an input, never shown as rain.
+  One-step predictions and the web's projections still use v1 (rain-only changes failed their checks with v1).
 - Temperature and humidity changes do not recompute evaporation or surface soil water.
 - `summary` and `limitations` are in English; the web translates its own labels.

@@ -1,0 +1,138 @@
+{
+ "source": "ml/notebooks/08_v3_era5_rain.ipynb, section 3 (block bootstrap, 1,000 resamples)",
+ "validation_2018_2022": [
+  {
+   "model": "v3",
+   "metric": "MAE",
+   "value": 0.006,
+   "ci_low": 0.0051,
+   "ci_high": 0.0069
+  },
+  {
+   "model": "v3",
+   "metric": "RMSE",
+   "value": 0.0099,
+   "ci_low": 0.0087,
+   "ci_high": 0.011
+  },
+  {
+   "model": "v3",
+   "metric": "R2",
+   "value": 0.9913,
+   "ci_low": 0.9886,
+   "ci_high": 0.9932
+  },
+  {
+   "model": "v3",
+   "metric": "bias",
+   "value": -0.0013,
+   "ci_low": -0.002,
+   "ci_high": -0.0007
+  },
+  {
+   "model": "v3",
+   "metric": "skill vs v1",
+   "value": 0.2115,
+   "ci_low": 0.175,
+   "ci_high": 0.2479
+  },
+  {
+   "model": "v3",
+   "metric": "skill vs climatology",
+   "value": 0.6882,
+   "ci_low": 0.6572,
+   "ci_high": 0.7178
+  },
+  {
+   "model": "v3",
+   "metric": "skill vs persistence",
+   "value": 0.6207,
+   "ci_low": 0.5922,
+   "ci_high": 0.6441
+  },
+  {
+   "model": "v1",
+   "metric": "MAE",
+   "value": 0.0073,
+   "ci_low": 0.0061,
+   "ci_high": 0.0084
+  },
+  {
+   "model": "v1",
+   "metric": "RMSE",
+   "value": 0.0125,
+   "ci_low": 0.011,
+   "ci_high": 0.0139
+  },
+  {
+   "model": "v1",
+   "metric": "R2",
+   "value": 0.986,
+   "ci_low": 0.9813,
+   "ci_high": 0.9895
+  },
+  {
+   "model": "v1",
+   "metric": "bias",
+   "value": -0.0004,
+   "ci_low": -0.0009,
+   "ci_high": 0.0
+  },
+  {
+   "model": "climatology",
+   "metric": "MAE",
+   "value": 0.0212,
+   "ci_low": 0.0189,
+   "ci_high": 0.0236
+  },
+  {
+   "model": "climatology",
+   "metric": "RMSE",
+   "value": 0.0317,
+   "ci_low": 0.028,
+   "ci_high": 0.0352
+  },
+  {
+   "model": "climatology",
+   "metric": "R2",
+   "value": 0.9106,
+   "ci_low": 0.88,
+   "ci_high": 0.9322
+  },
+  {
+   "model": "climatology",
+   "metric": "bias",
+   "value": 0.0074,
+   "ci_low": 0.0028,
+   "ci_high": 0.0115
+  },
+  {
+   "model": "persistence",
+   "metric": "MAE",
+   "value": 0.0139,
+   "ci_low": 0.0106,
+   "ci_high": 0.0175
+  },
+  {
+   "model": "persistence",
+   "metric": "RMSE",
+   "value": 0.026,
+   "ci_low": 0.0222,
+   "ci_high": 0.0294
+  },
+  {
+   "model": "persistence",
+   "metric": "R2",
+   "value": 0.9396,
+   "ci_low": 0.9223,
+   "ci_high": 0.9539
+  },
+  {
+   "model": "persistence",
+   "metric": "bias",
+   "value": 0.0002,
+   "ci_low": 0.0001,
+   "ci_high": 0.0003
+  }
+ ]
+}

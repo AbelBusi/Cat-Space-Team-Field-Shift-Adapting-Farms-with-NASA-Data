@@ -72,7 +72,7 @@ const at = ref(0)
       <div class="seg" role="group" :aria-label="t('Rain change')">
         <button v-for="f in [0.5, 1, 1.5]" :key="f" type="button" :aria-pressed="ui.rain === f" @click="ui.rain = f">× {{ f }}</button>
       </div>
-      <span v-if="ui.rain !== 1" class="text-[11px] text-muted">{{ t('the model barely reacts to rain alone') }}</span>
+      <span v-if="ui.rain !== 1 && res?.reliability?.simulation_model === 'v1'" class="text-[11px] text-muted">{{ t('the model barely reacts to rain alone') }}</span>
     </div>
     <button type="button" class="btn" :disabled="!state.point || busy || !changed" @click="run">
       <PixelIcon name="satellite" :size="1" />{{ busy ? t('The model is running…') : t('Run the model') }}

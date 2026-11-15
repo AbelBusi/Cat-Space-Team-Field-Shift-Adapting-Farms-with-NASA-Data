@@ -14,7 +14,7 @@ from matplotlib.path import Path as Poly
 
 ML = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ML))
-from fs_ml import data as D, features as F, evaluate as E, project as P  # noqa: E402
+from fs_ml import data as D, features as F, evaluate as E, era5 as R, project as P  # noqa: E402
 
 OUT = ML.parent / "ml-api" / "data" / "cube.npz"
 ADMIN = json.loads((ML.parent / "web/src/data/lambayeque_admin.json").read_text(encoding="utf-8"))
@@ -36,6 +36,7 @@ def build(load_years, suffix, keep):
 parts = [build((1998, 2017), "", (1998, 2017)), build((2017, 2022), "_2018_2022", (2018, 2022)), build((2022, 2025), "_2023_2025", (2023, 2025))]
 MP = pd.concat([p[0] for p in parts], ignore_index=True)
 QP = pd.concat([p[1] for p in parts], ignore_index=True)
+MP = R.add_to_monthly(MP, R.load_era5_rain(MP.cell_id.unique()))   # ERA5-Land rain: input of the v3 model only
 cube = P.build_cube(MP, QP)
 c = cube.cells
 pts = c[["lon", "lat"]].to_numpy()

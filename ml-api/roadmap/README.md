@@ -34,7 +34,13 @@ de la Fase 2 se corrieron con reglas escritas antes (`docs/ML_API_VALIDATION.md`
 | Celdas fuera de Lambayeque | todos los endpoints por celda | servidas con aviso (S8 **pasó**) |
 | Sprout | `POST /ask` | ahora recibe también el resultado completo de una simulación (`simulation_id`) o la explicación de una predicción (`prediction_id`) |
 
-**Fase 3 — no implementada:** necesita datos que no tenemos (precipitación ERA5-Land, superficies regadas, rendimientos,
+**Fase 3 — iniciada (15 nov 2026):** llegó la lluvia de ERA5-Land y se entrenó el **modelo v3** de agua del suelo con
+restricciones monótonas (`docs/ML_V3_ERA5_RAIN.md`, reglas escritas antes). Pasó R1 y R2 (claramente mejor que v1:
+*skill* +0.21 [0.17, 0.25]; RMSE de validación 0.0099) y con él **pasan S1 temperatura, S2 sequías y S3 lluvia**; S4
+recuperación sigue fallando. **Desde ahora las simulaciones corren con v3** (sus propias correcciones de rango y
+pruebas); las predicciones de un paso y las proyecciones de la web siguen con v1 hasta que el equipo decida.
+
+**Resto de la Fase 3 — pendiente:** necesita datos que no tenemos (precipitación ERA5-Land, superficies regadas, rendimientos,
 calendarios, precios, 2026 completo). Lo que las pruebas de la Fase 2 enseñan es concreto: el modelo actual responde poco
 y a veces al revés cuando se cambia una sola entrada, porque depende del agua del suelo del mes anterior; los
 simuladores necesitan un modelo v3 que reaccione a la lluvia y la temperatura (sección 6.4).

@@ -11,4 +11,7 @@
 !ml/artifacts/api_validation/checks.json
 !ml/artifacts/phase2_validation
 !ml/artifacts/phase3_testing
+!ml/artifacts/v3_era5_rain/summary.json
+!ml/artifacts/v3_era5_rain/validation_metrics_ci.json
+!ml/artifacts/v3_era5_rain/sm_root_monthly
 **/__pycache__
