@@ -111,7 +111,9 @@ the tier B scripts. For GPM, open your Earthdata profile → *Applications → A
 | **Sentinel-2 cloudless 2024** by EOX (s2maps.eu) | Satellite base map up to zoom 14 | ⚠️ CC BY-NC-SA 4.0 (non-commercial, share-alike). Not an OSI license: confirm with the Local Lead, or switch to NASA GIBS imagery for the submission |
 | **Esri World Imagery** | Detailed base map from zoom 12 to 17 | ⚠️ Esri terms of use (not open). Same check as above |
 | **OpenStreetMap Nominatim** | Place-name search | Data © OpenStreetMap contributors, ODbL. Usage policy: light use, cache results, show attribution |
-| **NASA GIBS** `MODIS_Terra_NDVI_8Day`, `MODIS_Terra_Land_Surface_Temp_Day`, `Reference_Labels_15m` | "Vegetation health" and "Ground heat" image layers, place labels | NASA open data |
+| **NASA GIBS** `MODIS_Terra_NDVI_8Day`, `MODIS_Terra_Land_Surface_Temp_Day`, `IMERG_Precipitation_Rate`, `SMAP_L3_Passive_Enhanced_Day_Soil_Moisture` | Optional NASA image layers over the photo | NASA open data |
+| **OpenStreetMap** administrative boundaries (admin levels 4, 6, 8) | Lambayeque, its 3 provinces and 38 districts (`web/src/data/lambayeque_admin.json`, `pipeline/build_districts.py`) | © OpenStreetMap contributors, **ODbL**: attribution shown on the map and in the report |
+| **OpenStreetMap** place nodes (city, town, suburb, village, hamlet) | 650 town and village names on the map (`web/src/data/lambayeque_places.json`, `pipeline/build_places.py`) | © OpenStreetMap contributors, **ODbL** |
 
 ### Partner agencies (allowed and optional)
 - **ESA Copernicus Sentinel-2** (dataspace.copernicus.eu): raw Sentinel-2. HLS already includes it, so we only need it if HLS fails.
@@ -125,6 +127,7 @@ the tier B scripts. For GPM, open your Earthdata profile → *Applications → A
 | Vite, @vitejs/plugin-vue | dev server and build | MIT |
 | D3 | scales, shapes, colors | ISC |
 | Leaflet | world map | BSD-2-Clause |
+| Tailwind CSS | layout and responsive classes | MIT |
 | @fontsource packages | self-hosted fonts | MIT (package), fonts below |
 | Atkinson Hyperlegible, Bricolage Grotesque, Pixelify Sans | type | SIL Open Font License 1.1 |
 | earthaccess | Earthdata login and downloads | MIT |

@@ -28,8 +28,8 @@ const print = () => window.print()
 <template>
   <header class="fixed inset-x-0 top-0 z-40 border-b border-line bg-bg/90 print:hidden">
     <div class="flex h-12 items-center gap-2 px-3">
-      <button type="button" class="flex items-center gap-2 font-display text-[17px] font-semibold text-ink" :title="t('Back to the start')" @click="state.stage = 'intro'">
-        <span class="inline-block size-3 bg-teal" aria-hidden="true" />Field Shift
+      <button type="button" class="flex shrink-0 items-center gap-2 whitespace-nowrap font-display text-[17px] font-semibold text-ink" :title="t('Back to the start')" :aria-label="t('Back to the start')" @click="state.stage = 'intro'">
+        <span class="inline-block size-3 bg-teal" aria-hidden="true" /><span :class="{ 'max-sm:hidden': state.stage !== 'intro' }">Field Shift</span>
       </button>
 
       <nav v-if="state.stage !== 'intro'" class="flex min-w-0 items-center gap-1 font-mono text-xs uppercase tracking-wider text-muted" :aria-label="t('Where you are')">

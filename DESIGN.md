@@ -2,8 +2,9 @@
 
 **Agreed by the whole team on Nov 13, 2026. Do not add colors, shapes or fonts outside this file.**
 If something seems to need a new color, it does not: use a ramp step, a pattern, an icon or a text label instead.
-The tokens below live as CSS variables at the top of `web/src/style.css`, and as `PAL` / `RAMP` in `web/src/lib/palette.js` for
-Leaflet, D3 and canvas code. Always use those, never a raw hex.
+The tokens below live as CSS variables at the top of `web/src/style.css`, as **Tailwind colors** (`bg-panel`, `text-ink`,
+`border-line`, `text-teal`, `bg-fire`… Tailwind's own palette is switched off), and as `PAL` / `RAMP` in `web/src/lib/palette.js`
+for Leaflet, D3 and canvas code. Always use those, never a raw hex.
 
 Mood: **Outer Wilds at night**. A calm, cozy space-camp feeling: deep night sky, a turquoise glow, a warm campfire.
 Data must still read clearly, so data colors are *derived* from the same two accents.
@@ -93,21 +94,43 @@ Line icons (stroke SVG) are allowed only for UI controls (play, sound, close), d
 ## 6. Map
 
 - The base map is always **real satellite imagery, untouched**. Farmers must see their field as it is.
+- The satellite map is **cut to the chosen territory** (a district, or the whole department in free mode): outside its outline
+  the night sky shows, never the neighbouring regions or the ocean. The outline is a 4 px `--teal` line. The cut follows every
+  pan and zoom (also during the zoom animation), so nothing outside ever flashes.
+- Town and village names (OpenStreetMap) sit on the photo like on a road map: `--sky-ink` text with a thin dark outline. This text
+  outline is the one allowed "shadow", because a label must read on any ground. Bigger places first, no overlapping names.
 - NASA data are **optional overlays** on top, with the ramps above, a legend and an opacity control.
-- The frame around the map uses the interface neutrals, so the map looks like a ship's window.
 
-## 7. Sprout's panel (Outer Wilds translator style)
+## 7. One screen, like a game (layout since Nov 15, 2026)
 
-- A bar at the bottom of the screen: `--panel` background, 1 px `--teal` frame with HUD brackets, label `SPROUT · TRANSLATOR` in mono caps.
-- Text in IBM Plex Mono, `--ink`, typed letter by letter. Buttons `[ NEXT ]`, `[ SHOW ALL ]`, `[ ♪ ]`, `[ _ ]` (minimize).
-- Minimized: a small square tab with Sprout's face in a corner. On phones the panel spans the full width.
+No page scrolling. Three stages on the same night sky:
 
-## 8. Motion
+1. **Intro:** Sprout, big, says who it is and offers answers (guide me · I'll explore alone · ask something else).
+2. **Where do you farm?** Lambayeque drawn flat in the data categories (`--teal`, `--sand`, `--ghost` per province). Tap a
+   province, the camera glides into it and shows its districts with their names; tap a district to fly in. "Use my location"
+   and "Free mode" are always there.
+3. **Explore:** the clipped satellite map fills the screen. One **topic** at a time floats over it: cards on the left and right
+   edges (at most two per side, one idea per card), the topic title and dots at the top, and large `‹ ›` arrows on the sides
+   (keyboard arrows too). On phones the cards become one bottom sheet and the map stays on top.
 
-Things appear when Sprout explains them (fade + 12 px rise, 0.5 s). Charts draw in. Numbers count. Nothing loops except the sky,
-the satellite and Sprout's idle bob. Everything turns off with `prefers-reduced-motion`.
+Attention rule: never show everything at once. A topic shows only what its title promises; details go in a `<details>` or the
+printed report.
 
-## 9. Two modes: Farmer and Pro
+## 8. Sprout's panel (Outer Wilds translator style)
+
+- A panel at the bottom of the screen: `--panel` background, `--teal` frame with HUD brackets, label `SPROUT · TRANSLATOR` in mono caps.
+- Text in IBM Plex Mono, `--ink`, typed letter by letter. Answers to pick appear as buttons under the text (keys 1–9 work).
+- Personality: gentle, a little shy, always encouraging, never pushy (Ralsei-like). It explains a screen once, only with the
+  guide on. With the guide off it waits as a small tab and raises a `--fire` `!` when it has something worth saying.
+- Data never wait for Sprout: every topic shows its content at once; Sprout only talks about it.
+
+## 9. Motion
+
+Stages cross-fade and scale (0.5 s). Topic cards slide in from their own side, one after another (90 ms rhythm). The region
+picker's camera glides between department, province and district. Charts draw in, numbers count. Nothing loops except the sky,
+the satellite, the campfire and Sprout's idle bob. Everything turns off with `prefers-reduced-motion`.
+
+## 10. Two modes: Farmer and Pro
 
 A switch in the top bar (`state.mode`, saved in the browser). Same NASA data, two ways to read it.
 
@@ -121,7 +144,7 @@ A switch in the top bar (`state.mode`, saved in the browser). Same NASA data, tw
 Rules: Farmer mode never shows a percentage or a decimal; thresholds live in `levelWord()` (`web/src/content.js`), so the
 science is the same in both modes. Sprout explains in words what the icons show.
 
-## 10. Original charts we use
+## 11. Original charts we use
 
 | Chart | Where | Why it is ours |
 |---|---|---|

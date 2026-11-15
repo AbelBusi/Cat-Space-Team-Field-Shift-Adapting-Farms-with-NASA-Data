@@ -57,6 +57,16 @@ pipeline/.venv/bin/python pipeline/fetch_power.py -6.77 -79.84   # quick check: 
 
 ## How it works
 
+**One screen, like a game.** Sprout says hello and asks if you want a guide. Then you pick your province and district on a
+map of Lambayeque (or "Use my location", or "Free mode" for the whole department). The satellite map opens **cut to that
+territory**, with town and village names, and the topics come one at a time with the side arrows: satellite signals → ground and
+recent weather → year by year → what matters to you → rotations → comparison → report. The **PDF** button prints the full report.
+Sprout can be turned off (it waits as a small tab and raises a `!` when it has something to say) and answers open questions.
+
+**Asking Sprout anything:** set `VITE_ASK_URL` (in `web/.env.local`) to a small server that holds the AI key and answers
+`POST { question, lang, context }` with `{ answer }`. Never put an AI key in the browser. Without it, Sprout answers a few
+topics locally (NDVI, soil moisture, El Niño, satellite squares, rotations, salty soil) and says the AI is not connected.
+
 ```
 click on the map ──► grid cells around the point (lib/nasa.js → gridCells)
                  ──► NASA POWER monthly 2001–2024 ──► typical year + El Niño years   (≈1 s)
@@ -85,10 +95,11 @@ click on the map ──► grid cells around the point (lib/nasa.js → gridCell
 | `web/src/lib/nasa.js` | Live NASA requests (POWER, MODIS, GIBS layers), place search and the grid-cell geometry |
 | `web/src/lib/geo.js` | Field outline math: area, perimeter, center; coordinate parsing |
 | `web/src/store.js` | Chosen point, loaded data, rotation ranking and risk months |
-| `web/src/content.js` | **All page text**: signals, example places, crops, rotations, glossary and Sprout's lines (`SCRIPTS`) |
-| `web/src/guide.js` | Dialogue logic: which section is talking, what is revealed |
-| `web/src/cat/` | `sprites.js` (pixel art as text rows), `CatSprite.vue`, `CatDialogue.vue` |
-| `web/src/components/` | One component per section, plus `Reveal`, `YearRing`, `Radar`, `Sparkline`, `OrbitSky` |
+| `web/src/content.js` | **All page text**: signals, crops, rotations, glossary, the topics (`SLIDES`) and Sprout's lines (`SCRIPTS`) |
+| `web/src/guide.js` | Sprout's dialogue: lines, answers to pick, guide on/off, open questions |
+| `web/src/cat/` | `sprites.js` (pixel art as text rows), `CatSprite.vue`, `SproutDock.vue` |
+| `web/src/components/` · `web/src/slides/` | The stages, the clipped satellite map and the HUD pieces · one file per topic |
+| `web/src/data/` · `pipeline/build_districts.py` · `pipeline/build_places.py` | Lambayeque boundaries and place names from OpenStreetMap |
 | `pipeline/` | Python for datasets that need a login (GPM, SMAP, HLS, GRACE-FO) and `fetch_power.py` for quick checks |
 | `data/` | Downloaded open data for 10 places, and **the list of login-only datasets with step-by-step routes** (`data/README.md`) |
 | `pipeline/fetch_open_data.py` | Re-downloads all open data (POWER, MODIS NDVI, SoilGrids, NOAA ONI) for `data/places.csv` |
@@ -108,20 +119,20 @@ click on the map ──► grid cells around the point (lib/nasa.js → gridCell
 - Gentle, patient and encouraging. It explains one thing at a time and is honest about what the satellites cannot see.
 - 7 moods: `neutral`, `happy`, `surprised`, `worried`, `thinking`, `sad`, `shy`. It blinks, bobs, and moves its mouth while text types.
 - Its voice is a synthesized meow (`web/src/lib/sound.js`, no audio files): one meow per mood change, tiny mews while text types, and a meow when you tap it at the top of the page. Tune the `MEOW` table by ear.
-- **Add or edit a line:** `SCRIPTS` in `web/src/content.js`. Each line is `[text, mood]`. Line *i* of a section reveals every
-  `<Reveal :at="i">` block inside that section.
+- **Add or edit a line:** `SCRIPTS` in `web/src/content.js`, one entry per screen. Each line is `[text, mood]`; add its Spanish
+  and Quechua in `web/src/i18n.js`. Keep it short: the screen already shows the data, Sprout only explains it.
 - **Redraw the cat:** edit the character rows in `web/src/cat/sprites.js` (one character = one pixel, `.` = transparent, colors in `PALETTE`).
-- Visitors can skip everything ("Show everything"), mute the voice blips, or hide the box. With *reduced motion* enabled
-  in the operating system, text and charts appear without animation.
+- Visitors can turn the guide off (top bar or Sprout's answers), mute the voice blips, or minimize the box. With *reduced
+  motion* enabled in the operating system, text and charts appear without animation.
 
 ## Animations (and where)
 
 | Where | What moves |
 |---|---|
-| Landing | Outer Wilds night scene: twinkling stars, a satellite on its orbit sending signal rings, silhouettes of the Andes and algarrobo trees, a flickering campfire with Sprout |
-| Map | The map flies to the chosen spot, and the grid cells appear nested from the biggest to the smallest. The NASA POWER cell takes the color of the signal and month, and pulses while data loads |
-| Panel | Sparklines draw on, numbers count to new values, the resolution square resizes |
-| Rotations | Cards re-sort with a smooth slide when priorities change; each year is a row of 12 pixel plants (seed, growing, stressed, harvest, bare soil) that rise in order; risk icons on top; scores count |
+| Intro | Outer Wilds night scene: twinkling stars, a satellite on its orbit sending signal rings, silhouettes of the Andes and algarrobo trees, a flickering campfire with Sprout |
+| Region picker | The hills sink and the sky opens; provinces and districts pop in one after another; the camera glides into the province you tap and dives into the district |
+| Map | The satellite photo appears cut to the territory, the outline draws in; town names fade in as you zoom; the climate square takes the color of the signal and month |
+| Topics | Cards slide in from their side one after another; numbers count, sparklines and warming stripes draw on; rotation rows re-sort and their 12 plants rise in order |
 | Detail | Topic-by-topic squares with better/worse arrows; the confidence meter fills cell by cell |
 
 ## Team checklist before the event (Nov 14)

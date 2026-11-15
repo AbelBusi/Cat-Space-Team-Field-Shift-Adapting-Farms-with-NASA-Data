@@ -11,6 +11,7 @@ import { t } from '../i18n.js'
 import { gridCells, gibsDataLayers } from '../lib/nasa.js'
 import { polygonAreaM2, ringPerimeterM, vertexCenter } from '../lib/geo.js'
 import { inRings, boundsOf, locate } from '../lib/admin.js'
+import PLACES from '../data/lambayeque_places.json'
 
 // The satellite map, cut to the outline of the territory (a district, or the department in free mode): outside it
 // the night sky shows through. Everything else on screen floats above this map.
@@ -26,12 +27,32 @@ const latlngs = rings => rings.map(r => r.map(([lon, lat]) => [lat, lon]))
 
 // ---- The territory: clip, outline and camera -------------------------------------------------------------------
 // The clip is a CSS path on Leaflet's map pane, in the pane's own pixels, so it follows every pan for free.
-// It is rebuilt when the zoom changes; during an animated zoom it glides to the final shape with the tiles.
-function clip(animated, project = ll => map.latLngToLayerPoint(ll)) {
-  const pane = map.getPane('mapPane')
-  const d = state.area.rings.map(r => 'M' + r.map(([lon, lat]) => { const p = project(L.latLng(lat, lon)); return `${p.x.toFixed(1)} ${p.y.toFixed(1)}` }).join('L') + 'Z').join('')
-  pane.style.transition = animated ? 'clip-path .25s cubic-bezier(0,0,.25,1)' : 'none'
-  pane.style.clipPath = `path('${d}')`
+// It is rebuilt when the zoom changes. An animated zoom moves the tiles with a CSS transition; the clip follows them
+// frame by frame: `tracker` is an empty element that runs the same transition (like Leaflet's image overlays), and
+// its live transform is applied to the outline, so no piece of land outside the territory ever flashes.
+const outline = () => state.area.rings.map(r => r.map(([lon, lat]) => map.latLngToLayerPoint(L.latLng(lat, lon))))
+function setClip(rings) {
+  map.getPane('mapPane').style.clipPath = `path('${rings.map(r => 'M' + r.map(p => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join('L') + 'Z').join('')}')`
+}
+let tracker, following = 0
+function clip() {
+  cancelAnimationFrame(following)
+  following = 0
+  if (tracker) tracker.style.transform = ''
+  setClip(outline())
+}
+function followZoom(e) {
+  const from = outline()
+  const k = map.getZoomScale(e.zoom, map.getZoom())
+  const a = map._latLngToNewLayerPoint(map.layerPointToLatLng([0, 0]), e.zoom, e.center)   // where layer point 0,0 lands
+  L.DomUtil.setTransform(tracker, a, k)
+  cancelAnimationFrame(following)
+  const step = () => {
+    const m = new DOMMatrix(getComputedStyle(tracker).transform)
+    setClip(from.map(r => r.map(p => m.transformPoint(new DOMPoint(p.x, p.y)))))
+    following = requestAnimationFrame(step)
+  }
+  following = requestAnimationFrame(step)
 }
 // Room for the cards (left and right) and for Sprout (bottom), so the territory sits in the free middle of the screen.
 function padding() {
@@ -47,7 +68,7 @@ function showArea() {
   map.setMinZoom(1).setMaxBounds(null)
   map.fitBounds(b, { ...padding(), animate: false })
   map.setMinZoom(map.getZoom() - 0.5).setMaxBounds(b.pad(1.6))
-  clip(false)
+  clip()
 }
 
 // ---- The chosen point and the squares each satellite uses ------------------------------------------------------
@@ -97,6 +118,29 @@ function onClick(e) {
   const { lat, lng } = e.latlng
   if (inRings(lat, lng, state.area.rings)) return pickPoint(lat, lng)
   say(() => t('That spot is outside {place}. Tap inside the bright territory, or open free mode to explore all of Lambayeque.', { place: state.area.name }), 'shy', [], { level: 'note' })
+}
+
+// ---- Town and village names, like a road map, over the photo ------------------------------------------------------
+// From OpenStreetMap (pipeline/build_places.py). Bigger places come first; a name that would cover one already placed
+// is skipped, and smaller places appear as you zoom in.
+const MIN_ZOOM = [0, 7, 11, 8.5, 10.5]   // city, town, suburb, village, hamlet
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+let labelLayer, areaPlaces = []
+const findPlaces = () => { areaPlaces = PLACES.filter(([, lat, lon]) => inRings(lat, lon, state.area.rings)) }
+function drawLabels() {
+  labelLayer.clearLayers()
+  if (!mapUi.labels) return
+  const z = map.getZoom(), size = map.getSize(), taken = []
+  for (const [name, lat, lon, rank] of areaPlaces) {
+    if (z < MIN_ZOOM[rank]) continue
+    const p = map.latLngToContainerPoint([lat, lon])
+    const w = name.length * (rank < 2 ? 8.5 : 7) + 10, h = rank < 2 ? 20 : 16
+    const box = [p.x - w / 2, p.y - h / 2, p.x + w / 2, p.y + h / 2]
+    if (box[2] < 0 || box[0] > size.x || box[3] < 0 || box[1] > size.y) continue
+    if (taken.some(b => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])) continue
+    taken.push(box)
+    L.marker([lat, lon], { pane: 'labels', interactive: false, keyboard: false, icon: L.divIcon({ className: `place-label rank-${rank}`, html: esc(name), iconSize: [w, h] }) }).addTo(labelLayer)
+  }
 }
 
 // ---- Outline my field: each tap adds a corner --------------------------------------------------------------------
@@ -177,7 +221,7 @@ function showData() {
   if (d) dataLayer = L.tileLayer(d.tiles, { pane: 'data', maxNativeZoom: d.maxNativeZoom, maxZoom: 18, opacity: mapUi.intensity, attribution: 'Data: NASA GIBS' }).addTo(map)
 }
 
-const onResize = () => { map.invalidateSize(); clip(false) }
+const onResize = () => { map.invalidateSize(); clip() }
 onMounted(() => {
   // Half zoom steps let the territory fill the free space; the tile style below hides the hairline seams they cause.
   map = L.map(mapEl.value, { zoomControl: false, maxZoom: 18, zoomSnap: 0.5, zoomDelta: 0.5, maxBoundsViscosity: 0.7 }).setView([-6.5, -79.9], 9)
@@ -191,6 +235,7 @@ onMounted(() => {
     minZoom: 12, maxNativeZoom: 17, maxZoom: 18, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics',
   }).addTo(map)
   map.createPane('data').style.zIndex = 350   // NASA data images sit under the squares and the field outline
+  map.createPane('labels').style.zIndex = 450  // names above the squares, under the point and the field corners
   map.attributionControl.setPosition('bottomleft')
   map.attributionControl.addAttribution('Boundaries © OpenStreetMap contributors')
   L.control.scale({ imperial: false, position: 'bottomright' }).addTo(map)
@@ -199,17 +244,24 @@ onMounted(() => {
   coverLayer = L.layerGroup().addTo(map)
   parcelLayer = L.layerGroup().addTo(map)
   pointLayer = L.layerGroup().addTo(map)
+  labelLayer = L.layerGroup().addTo(map)
+  map.on('zoomend moveend', drawLabels)
   map.on('click', onClick)
-  map.on('zoomanim', e => clip(true, ll => map._latLngToNewLayerPoint(ll, e.zoom, e.center)))
-  map.on('zoom move viewreset', () => clip(false))
+  tracker = L.DomUtil.create('div', 'leaflet-zoom-animated', map.getPane('mapPane'))
+  tracker.style.cssText = 'position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0'
+  map.on('zoomanim', followZoom)
+  map.on('zoom move viewreset zoomend moveend', clip)
   addEventListener('resize', onResize)
   showArea()
+  findPlaces()
+  drawLabels()
   drawPoint()
   showData()
 })
-onBeforeUnmount(() => { removeEventListener('resize', onResize); mapUi.drawing = false; map?.remove() })
+onBeforeUnmount(() => { cancelAnimationFrame(following); removeEventListener('resize', onResize); mapUi.drawing = false; map?.remove() })
 
-watch(() => state.area, () => { mapApi.clearOutline(); showArea() })
+watch(() => state.area, () => { mapApi.clearOutline(); showArea(); findPlaces(); drawLabels() })
+watch(() => mapUi.labels, () => drawLabels())
 watch(() => [state.point, props.squares, props.tint], drawPoint)
 watch(() => cell.value?.squares, drawCover)
 watch(() => [state.layer, state.month, state.scen, db.power, db.ndvi], paint)

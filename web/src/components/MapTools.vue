@@ -20,6 +20,7 @@ import { formatArea } from '../lib/geo.js'
       <button type="button" class="btn !w-9 !px-0" :aria-label="t('Show the whole territory again')" :title="t('Show the whole territory again')" @click="mapApi.refit()">
         <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg>
       </button>
+      <button type="button" class="btn" :aria-pressed="mapUi.labels" :title="t('Show or hide town names')" @click="mapUi.labels = !mapUi.labels">{{ t('Names') }}</button>
       <button type="button" class="btn" @click="mapApi.locateMe()">{{ t('My location') }}</button>
       <button v-if="!state.parcel" type="button" class="btn" :title="t('Outline your land to get its size and read NASA data at its center.')" @click="mapApi.startOutline()">{{ t('Outline my field') }}</button>
       <template v-else>

@@ -40,24 +40,29 @@ Everything the project uses, why, and how the pieces connect. Versions are the o
 | @fontsource-variable/bricolage-grotesque | 5.3.0 | Headings | OFL-1.1 font |
 | @fontsource/ibm-plex-mono | 5.3.0 | HUD labels, numbers, Sprout's text | OFL-1.1 font |
 | @fontsource/pixelify-sans | 5.3.0 | Sprout's name tag | OFL-1.1 font |
+| tailwindcss · @tailwindcss/vite | 4.3.5 | Layout, spacing and responsive classes (only the DESIGN.md colors) | MIT |
 
-Node 20+ (tested on 24.21). No CSS framework: plain CSS with the variables of `DESIGN.md` in `web/src/style.css`.
+Node 20+ (tested on 24.21). Tailwind 4 in the templates; `web/src/style.css` holds the DESIGN.md tokens (also exposed as Tailwind
+colors) and what Tailwind cannot do: pixel art, Leaflet overrides, keyframes and the print layout.
 
 ### Source map
 
 | File | Role |
 |---|---|
-| `src/main.js` · `src/App.vue` | Entry, top bar (language, Farmer/Pro, theme), section order, page atmosphere |
-| `src/content.js` | **All text**: layers and their plain-language readings, Farmer words (`levelWord`), crops, rotations, glossary, Sprout's `SCRIPTS` |
-| `src/store.js` | State, live data loading (`selectPoint`), the Lambayeque grid (`local`, `cell`), rotation `ranking`, `risks`, `history` |
-| `src/guide.js` | Sprout's dialogue queue, which section is talking, what each `<Reveal>` shows |
+| `src/main.js` · `src/App.vue` | Entry; the one screen: night sky, top bar, the current stage, Sprout's dock and the hidden print report |
+| `src/content.js` | **All text**: layers and their plain-language readings, Farmer words (`levelWord`), crops, rotations, glossary, the topics (`SLIDES`) and Sprout's `SCRIPTS` |
+| `src/store.js` | State and stages (`intro` → `where` → `explore`), live data loading (`selectPoint`), the Lambayeque grid (`local`, `cell`), `ranking`, `chosen`, `confidence`, `risks`, `history` |
+| `src/guide.js` | Sprout's dialogue: lines, answers to pick, guide on/off, the `!` flag, open questions |
+| `src/lib/admin.js` · `src/data/*.json` | Lambayeque department, provinces, districts and place names (OpenStreetMap, ODbL) |
+| `src/lib/ask.js` | "Ask something else": optional AI endpoint `VITE_ASK_URL` (keeps the key on a server), else local answers |
 | `src/lib/nasa.js` | NASA POWER, ORNL MODIS, POWER daily, GIBS layer list, place search, grid-cell geometry, El Niño year lists |
-| `src/lib/geo.js` | Field outline math (area, perimeter, center) and coordinate parsing |
+| `src/lib/geo.js` | Field outline math (area, perimeter, center, sample points) and coordinate parsing |
 | `src/lib/palette.js` | `PAL` and `RAMP` (DESIGN.md colors) for Leaflet, D3 and canvas |
 | `src/lib/pixelIcons.js` · `src/lib/landmask.js` | 16 × 16 pixel icons · 120 × 60 Earth land mask (from GRACE) for the pixel globe |
 | `src/lib/sound.js` · `src/lib/tween.js` | Synthesized meows and melody · number/array tweening |
-| `src/cat/` | Sprout's sprites (`sprites.js`), `CatSprite.vue`, the translator panel `CatDialogue.vue` |
-| `src/components/` | One component per section (`HeroSection`, `MapSection`, `SignalPanel`, `YearsSection`, `Priorities`, `Rotations`, `RotationDetail`, `Glossary`) plus building blocks (`Reveal`, `PixelIcon`, `Instrument`, `PixelGlobe`, `FieldRow`, `TradeOffs`, `Sparkline`, `OrbitSky`) |
+| `src/cat/` | Sprout's sprites (`sprites.js`), `CatSprite.vue`, the translator dock `SproutDock.vue` |
+| `src/components/` | Stages (`IntroStage`, `RegionPicker`, `ExploreStage`), the clipped map `MapStage` and `MapTools`, `TopBar`, `Backdrop`, `HudCard`, `SlideFrame`, `ReportSheet`, plus building blocks (`PixelIcon`, `Instrument`, `PixelGlobe`, `FieldRow`, `TradeOffs`, `Sparkline`, `OrbitSky`) |
+| `src/slides/` | One topic each: signals, ground, years, priorities, rotations, comparison, report |
 | `public/data/lambayeque.json` | The Lambayeque 0.1° grid (IMERG, NASADEM, GRACE) |
 
 ### Performance rules (why it does not lag)
@@ -66,6 +71,10 @@ Node 20+ (tested on 24.21). No CSS framework: plain CSS with the variables of `D
 - The 420 rain cells are painted on one 21 × 20 canvas and shown as **one image** (`L.imageOverlay`), not 420 shapes.
 - Files load only when needed (the grid only when the point is inside Lambayeque).
 - Animations use CSS and `requestAnimationFrame`; all of them stop with `prefers-reduced-motion`.
+- The territory cut is one CSS `clip-path` on Leaflet's map pane (no extra layers). During a zoom it is recomputed each frame from
+  an empty element that runs the same transition as the tiles.
+- Place names: only the ones inside the territory, re-placed on `zoomend`/`moveend` with a simple overlap test.
+- Dev aid: open the dev server with `?timerFrames=1` when testing in a browser that does not paint (hidden or headless panes).
 
 ## 3. Data pipeline (`pipeline/`)
 
