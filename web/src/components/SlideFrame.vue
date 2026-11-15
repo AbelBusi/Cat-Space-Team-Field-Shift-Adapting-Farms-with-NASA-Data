@@ -28,7 +28,7 @@ let sizes
 onBeforeUnmount(() => { removeEventListener('resize', measure); obs?.disconnect(); sizes?.disconnect() })
 const go = (k, i) => { const el = k === 'left' ? left.value : right.value; el?.children[i]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }) }
 // Every card has the same height on phones (both strips match), long lists inside swipe sideways (.swipe).
-const strip = 'max-lg:pointer-events-auto max-lg:absolute max-lg:inset-x-0 max-lg:h-[26dvh] max-lg:min-h-[170px] max-lg:flex-row max-lg:gap-2 max-lg:overflow-x-auto max-lg:overflow-y-hidden max-lg:snap-x max-lg:snap-mandatory max-lg:scroll-px-3 max-lg:px-3 strip ' +
+const strip = 'max-lg:pointer-events-auto max-lg:absolute max-lg:inset-x-0 max-lg:h-[18dvh] max-lg:min-h-[120px] max-lg:flex-row max-lg:gap-2 max-lg:overflow-x-auto max-lg:overflow-y-hidden max-lg:snap-x max-lg:snap-mandatory max-lg:scroll-px-3 max-lg:px-3 strip ' +
   'max-lg:[&>*]:h-full max-lg:[&>*]:w-[86vw] max-lg:[&>*]:max-w-[440px] max-lg:[&>*]:shrink-0 max-lg:[&>*]:snap-start max-lg:[&>*]:overflow-y-auto max-lg:[&>*]:overflow-x-hidden'
 const desk = 'lg:absolute lg:top-36 lg:max-h-[calc(100dvh-9rem-9.5rem)] lg:w-[clamp(280px,27vw,380px)] lg:overflow-y-auto lg:overflow-x-hidden lg:p-0.5'
 </script>
