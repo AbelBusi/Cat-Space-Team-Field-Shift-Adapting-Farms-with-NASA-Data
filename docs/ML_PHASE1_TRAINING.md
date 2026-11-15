@@ -1,7 +1,8 @@
 # Field Shift ML · Phase 1: Training (1998–2017)
 
-Status (Nov 15, 2026): **Training done. Validation (2018–2022) and Testing (2023–2026) not run.** No row from those years
-was used to fit, tune or choose anything. Every number below is an **internal training diagnostic**, not the accuracy the
+Status (Nov 15, 2026): **Training done. Validation (2018–2022) done afterwards with these frozen models: both pass, see
+[`ML_PHASE2_VALIDATION.md`](ML_PHASE2_VALIDATION.md). Testing (2023–2026) not run.** During Training no row from those
+years was used to fit, tune or choose anything. Every number below is an **internal training diagnostic**, not the accuracy the
 models will have on new years.
 
 Notebook: [`ml/notebooks/01_phase1_training.ipynb`](../ml/notebooks/01_phase1_training.ipynb) (run locally; how-to in
@@ -90,6 +91,10 @@ state of month *t − 1*. This design lets the simulator change the weather of a
 **Vegetation model** — NDVI of quarter *q* from that quarter's weather and the NDVI seen 1 and 4 quarters earlier.
 Features: `q_rain_mm`, `q_rain_mm_lag1`, `q_t2m_c`, `q_pet_mm`, `q_sm_root_m3m3`, `q_power_rh2m_pct`, `q_power_ws2m_ms`,
 `q_power_allsky_mj_m2_day`, `quarter`, `ndvi_lag1`, `ndvi_lag4`, and the 5 soil classes.
+
+No derived agronomic indices: **VPD** (vapour pressure deficit) and **GDD** (growing degree days, which need each crop's
+base temperature) are not computed. They need crop thresholds and field sampling we do not have; an earlier AI chat proposed
+them, the team decided against it.
 
 Never features: cell id, latitude, longitude, year (the model must learn from conditions, not memorize places or years).
 The target is never shifted forward, and no feature uses a later period than the target.
@@ -249,7 +254,8 @@ Same inputs, seed and library versions give the same models. The raw files are i
    formula is `NDSI_Salinidad`?
 2. Which mask leaves 564 cells without NDVI?
 3. GAEZ: which theme and input levels, and the legend of the codes? Were the identical High/Low files downloaded twice?
-4. NASA POWER 2018–2026 for the same 4 parameters and grid (needed for Validation and Testing).
+4. NASA POWER for the same 4 parameters and grid: 2018–2022 delivered and used in Validation; **2023–2026 still needed
+   for Testing**.
 5. Licenses: FAO GAEZ data are, as far as we know, CC BY-NC-SA 3.0 IGO (non-commercial) — confirm with the Local Lead like the
    Sentinel-2 basemap (AGENTS.md rule 8).
 

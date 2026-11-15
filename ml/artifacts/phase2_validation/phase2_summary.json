@@ -1,0 +1,39 @@
+{
+  "phase": "2 - validation",
+  "years": [
+    2018,
+    2022
+  ],
+  "lag_history_year": 2017,
+  "testing_used": false,
+  "models_refit": false,
+  "bootstrap": {
+    "n": 1000,
+    "block_deg": 0.2,
+    "level": 0.95,
+    "seed": 42
+  },
+  "library_versions": {
+    "python": "3.14.6",
+    "numpy": "2.5.4",
+    "pandas": "3.1.1",
+    "scipy": "1.18.1",
+    "xgboost": "3.4.1"
+  },
+  "new_files": [
+    "Clima y metereolog\u00eda/Temperature at 2 Meters_Monthly_2018_2022.csv",
+    "Clima y metereolog\u00eda/Relative Humidity at 2 Meters_Monthly_2018_2022.csv",
+    "Clima y metereolog\u00eda/Wind Speed at 2 Meters_Monthly_2018_2022.csv",
+    "Clima y metereolog\u00eda/All Sky Surface Shortwave Downward Irradiance_Monthly_2018_2022.csv"
+  ],
+  "models": {
+    "sm_root_monthly": {
+      "verdict": "ACCEPT: can feed the simulator, with intervals recalibrated on 2018-2022.",
+      "best_baseline": "persistence"
+    },
+    "ndvi_quarterly": {
+      "verdict": "ACCEPT: can feed the simulator, with intervals recalibrated on 2018-2022.",
+      "best_baseline": "climatology"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+criterion,rule,result,pass
+A,skill vs persistence >= 0.2,"0.519 [0.478, 0.554]",True
+B,lower 95% CI of that skill > 0,0.478,True
+C,RMSE <= 0.04,"0.0125 [0.0110, 0.0139]",True
+D,|bias| <= 0.01,"-0.0004 [-0.0009, 0.0000]",True
+E,skill >= 0 in every year and province,"worst year 0.452, worst province 0.276",True
+F,"90% interval coverage 2021-2022 in [0.87, 0.93]",0.872,True
+G,share of rows outside training p01-p99 (report),0.155,

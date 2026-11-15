@@ -1,0 +1,177 @@
+{
+  "model_sha256": "effe57ea2506d5097fbecc4314c24a228e663285ec2b686db9ee87a0bb05b5e1",
+  "n_rows": 50477,
+  "best_baseline": "climatology",
+  "verdict": "ACCEPT: can feed the simulator, with intervals recalibrated on 2018-2022.",
+  "criteria": [
+    {
+      "criterion": "A",
+      "rule": "skill vs climatology >= 0.1",
+      "result": "0.179 [0.100, 0.252]",
+      "pass": true
+    },
+    {
+      "criterion": "B",
+      "rule": "lower 95% CI of that skill > 0",
+      "result": "0.100",
+      "pass": true
+    },
+    {
+      "criterion": "C",
+      "rule": "RMSE (report only)",
+      "result": "0.1031 [0.0968, 0.1089]",
+      "pass": null
+    },
+    {
+      "criterion": "D",
+      "rule": "|bias| <= 0.03",
+      "result": "0.0015 [-0.0059, 0.0083]",
+      "pass": true
+    },
+    {
+      "criterion": "E",
+      "rule": "skill >= 0 in every year and province",
+      "result": "worst year 0.063, worst province 0.014",
+      "pass": true
+    },
+    {
+      "criterion": "F",
+      "rule": "90% interval coverage 2021-2022 in [0.87, 0.93]",
+      "result": "0.880",
+      "pass": true
+    },
+    {
+      "criterion": "G",
+      "rule": "share of rows outside training p01-p99 (report)",
+      "result": "0.160",
+      "pass": null
+    }
+  ],
+  "metrics_ci": [
+    {
+      "model": "XGBoost",
+      "metric": "MAE",
+      "value": 0.07469988306017693,
+      "ci_low": 0.06976037586633321,
+      "ci_high": 0.07937504678225624
+    },
+    {
+      "model": "XGBoost",
+      "metric": "RMSE",
+      "value": 0.10309281947354941,
+      "ci_low": 0.09675761028735476,
+      "ci_high": 0.10888206006691725
+    },
+    {
+      "model": "XGBoost",
+      "metric": "R2",
+      "value": 0.6623556441451768,
+      "ci_low": 0.6021073241642344,
+      "ci_high": 0.7158280567123684
+    },
+    {
+      "model": "XGBoost",
+      "metric": "bias",
+      "value": 0.0014920236364010292,
+      "ci_low": -0.0058738230636312195,
+      "ci_high": 0.008336380523634595
+    },
+    {
+      "model": "XGBoost",
+      "metric": "skill vs climatology",
+      "value": 0.17928889592453723,
+      "ci_low": 0.10001123639595409,
+      "ci_high": 0.25206231342116375
+    },
+    {
+      "model": "XGBoost",
+      "metric": "skill vs persistence",
+      "value": 0.3407077185476942,
+      "ci_low": 0.2822729107835577,
+      "ci_high": 0.3867407823173664
+    },
+    {
+      "model": "climatology",
+      "metric": "MAE",
+      "value": 0.08872592083485034,
+      "ci_low": 0.08023156522248957,
+      "ci_high": 0.09834560456783459
+    },
+    {
+      "model": "climatology",
+      "metric": "RMSE",
+      "value": 0.12561401808945213,
+      "ci_low": 0.11120629734533626,
+      "ci_high": 0.1412409632355523
+    },
+    {
+      "model": "climatology",
+      "metric": "R2",
+      "value": 0.4987217336344901,
+      "ci_low": 0.3624457034193548,
+      "ci_high": 0.6075548860632288
+    },
+    {
+      "model": "climatology",
+      "metric": "bias",
+      "value": -0.031192363653396445,
+      "ci_low": -0.045785830118582005,
+      "ci_high": -0.01868529655835394
+    },
+    {
+      "model": "persistence",
+      "metric": "MAE",
+      "value": 0.10715518640814183,
+      "ci_low": 0.09351906904646476,
+      "ci_high": 0.12017910093648387
+    },
+    {
+      "model": "persistence",
+      "metric": "RMSE",
+      "value": 0.15636891614513357,
+      "ci_low": 0.14099894795219797,
+      "ci_high": 0.16972337556853895
+    },
+    {
+      "model": "persistence",
+      "metric": "R2",
+      "value": 0.2232102046186778,
+      "ci_low": 0.05354164184891419,
+      "ci_high": 0.3746703901742819
+    },
+    {
+      "model": "persistence",
+      "metric": "bias",
+      "value": 0.004986927582681845,
+      "ci_low": 0.0033922977882585668,
+      "ci_high": 0.006621955827721597
+    }
+  ],
+  "out_of_range": {
+    "share_outside_p01_p99": 0.15977573944568813,
+    "share_outside_min_max": 0.014481843215722013,
+    "RMSE_inside": 0.10107104159488992,
+    "RMSE_outside": 0.11313184282059215,
+    "top_features": {
+      "q_power_rh2m_pct": 0.03974087208035343,
+      "q_t2m_c": 0.0355805614438259,
+      "q_pet_mm": 0.022842086494839233,
+      "q_power_ws2m_ms": 0.019394971967430712,
+      "ndvi_lag4": 0.01897894090377796
+    }
+  },
+  "intervals_final_2018_2022": {
+    "global_half_width": {
+      "80%": 0.12055701017379761,
+      "90%": 0.16933929920196533,
+      "95%": 0.21887847781181335
+    },
+    "by_season_half_width_90": {
+      "Q1": 0.1839611828327179,
+      "Q2": 0.20312862634658824,
+      "Q3": 0.15019413828849792,
+      "Q4": 0.12289537986119592
+    },
+    "note": "For Testing and the app only if the model is accepted. Coverage is checked once on 2023-2026."
+  }
+}

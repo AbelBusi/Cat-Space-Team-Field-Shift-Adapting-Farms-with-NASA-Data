@@ -27,6 +27,11 @@ RAW_FILES = {
     "power_rh2m": "Clima y metereología/Relative Humidity at 2 Meters_Monthly_1998_2017.csv",
     "power_ws2m": "Clima y metereología/Wind Speed at 2 Meters_Monthly_1998_2017.csv",
     "power_allsky": "Clima y metereología/All Sky Surface Shortwave Downward Irradiance_Monthly_1998_2017.csv",
+    # Validation years (2018-2022), same grid and parameters, delivered as separate files.
+    "power_t2m_2018_2022": "Clima y metereología/Temperature at 2 Meters_Monthly_2018_2022.csv",
+    "power_rh2m_2018_2022": "Clima y metereología/Relative Humidity at 2 Meters_Monthly_2018_2022.csv",
+    "power_ws2m_2018_2022": "Clima y metereología/Wind Speed at 2 Meters_Monthly_2018_2022.csv",
+    "power_allsky_2018_2022": "Clima y metereología/All Sky Surface Shortwave Downward Irradiance_Monthly_2018_2022.csv",
     "gaez_nutrient_low": "Suelos/Nutrient Availability low.json",
     "gaez_oxygen_high": "Suelos/Oxygen Availability High.json",
     "gaez_oxygen_low": "Suelos/Oxygen Availability Low.json",
@@ -154,6 +159,20 @@ def cells_from_ids(ids: pd.Series) -> pd.DataFrame:
     xy = u.str.split(",", expand=True).astype(int)
     return pd.DataFrame({"cell_id": u, "x": xy[0], "y": xy[1],
                          "lon": (xy[0] + 0.5) * GRID_STEP, "lat": (xy[1] + 0.5) * GRID_STEP})
+
+
+def provinces_of(cells: pd.DataFrame) -> pd.Series:
+    """Province of each cell center, from the OpenStreetMap boundaries the web app uses; 'outside' if none."""
+    from matplotlib.path import Path as Poly
+    admin = json.loads((Path(__file__).resolve().parents[2] / "web/src/data/lambayeque_admin.json").read_text(encoding="utf-8"))
+    pts = cells[["lon", "lat"]].to_numpy()
+    out = np.full(len(cells), "outside", dtype=object)
+    for prov in admin["provinces"]:
+        inside = np.zeros(len(cells), bool)
+        for ring in prov["rings"]:
+            inside ^= Poly(np.asarray(ring)).contains_points(pts)   # rings are [lon, lat]; holes cancel out
+        out[inside & (out == "outside")] = prov["name"]
+    return pd.Series(out, index=cells.index, name="province")
 
 
 def check_cell_geometry(n: int = 200) -> float:

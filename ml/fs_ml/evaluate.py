@@ -57,6 +57,55 @@ def out_of_range(X: pd.DataFrame, bounds: dict, strict: bool = False) -> pd.Seri
     return flags
 
 
+def spatial_blocks(lat, lon, size_deg: float = 0.2) -> np.ndarray:
+    """Block id of size_deg x size_deg squares (0.2° ≈ 22 km, larger than one ERA5-Land pixel)."""
+    return (np.floor(np.asarray(lat) / size_deg).astype(int) * 10000 + np.floor(np.asarray(lon) / size_deg).astype(int))
+
+
+def block_bootstrap(y, preds: dict, blocks, reference: str, n_boot: int = 1000, seed: int = 42,
+                    level: float = 0.95) -> pd.DataFrame:
+    """Confidence intervals of MAE, RMSE, R², bias and RMSE skill (vs every other entry of `preds`), resampling whole
+    spatial blocks with replacement (all years of a block move together, so neighbour cells that repeat the same
+    ERA5-Land pixel are not counted as independent evidence). `reference` is the model whose skill is reported."""
+    y = np.asarray(y, float)
+    code, _ = pd.factorize(pd.Series(blocks))
+    nb = code.max() + 1
+    rng = np.random.default_rng(seed)
+    W = rng.multinomial(nb, np.full(nb, 1 / nb), size=n_boot).astype(float)       # (n_boot, blocks)
+    sums = lambda v: np.bincount(code, weights=v, minlength=nb)
+    n = W @ sums(np.ones_like(y)); sy = W @ sums(y); syy = W @ sums(y * y)
+    ss_tot = syy - sy ** 2 / n
+    reps, point = {}, {}
+    for name, p in preds.items():
+        e = np.asarray(p, float) - y
+        se, sae, sbias = W @ sums(e * e), W @ sums(np.abs(e)), W @ sums(e)
+        reps[name] = {"MAE": sae / n, "RMSE": np.sqrt(se / n), "R2": 1 - se / ss_tot, "bias": sbias / n}
+        point[name] = regression_metrics(y, p)
+    for name in preds:
+        if name != reference:
+            reps[reference][f"skill vs {name}"] = 1 - reps[reference]["RMSE"] / reps[name]["RMSE"]
+            point[reference][f"skill vs {name}"] = skill(point[reference]["RMSE"], point[name]["RMSE"])
+    a = (1 - level) / 2
+    rows = []
+    for name, metrics in reps.items():
+        for m, v in metrics.items():
+            rows.append({"model": name, "metric": m, "value": point[name][m],
+                         "ci_low": float(np.quantile(v, a)), "ci_high": float(np.quantile(v, 1 - a))})
+    return pd.DataFrame(rows)
+
+
+def coverage_ci(inside, blocks, n_boot: int = 1000, seed: int = 42, level: float = 0.95) -> tuple[float, float, float]:
+    """Share of observations inside their interval, with a block-bootstrap confidence interval."""
+    inside = np.asarray(inside, float)
+    code, _ = pd.factorize(pd.Series(blocks))
+    nb = code.max() + 1
+    W = np.random.default_rng(seed).multinomial(nb, np.full(nb, 1 / nb), size=n_boot)
+    k = W @ np.bincount(code, weights=inside, minlength=nb)
+    n = W @ np.bincount(code, minlength=nb)
+    a = (1 - level) / 2
+    return float(inside.mean()), float(np.quantile(k / n, a)), float(np.quantile(k / n, 1 - a))
+
+
 def conformal_halfwidth(residuals, coverage: float) -> float:
     """Split-conformal half-width: the ceil((n + 1) * coverage)-th smallest absolute residual of a calibration set
     the model never trained on. Valid only if calibration and future errors are exchangeable."""
