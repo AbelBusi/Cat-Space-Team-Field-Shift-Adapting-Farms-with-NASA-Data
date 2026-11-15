@@ -40,6 +40,7 @@ Everything the project uses, why, and how the pieces connect. Versions are the o
 | @fontsource-variable/bricolage-grotesque | 5.3.0 | Headings | OFL-1.1 font |
 | @fontsource/ibm-plex-mono | 5.3.0 | HUD labels, numbers, Sprout's text | OFL-1.1 font |
 | @fontsource/pixelify-sans | 5.3.0 | Sprout's name tag | OFL-1.1 font |
+| three | 0.187.0 | 3D view of the outlined field, loaded on demand in its own file | MIT |
 | tailwindcss · @tailwindcss/vite | 4.3.5 | Layout, spacing and responsive classes (only the DESIGN.md colors) | MIT |
 
 Node 20+ (tested on 24.21). Tailwind 4 in the templates; `web/src/style.css` holds the DESIGN.md tokens (also exposed as Tailwind
@@ -62,6 +63,7 @@ colors) and what Tailwind cannot do: pixel art, Leaflet overrides, keyframes and
 | `src/lib/sound.js` · `src/lib/tween.js` | Synthesized meows and melody · number/array tweening |
 | `src/cat/` | Sprout's sprites (`sprites.js`), `CatSprite.vue`, the translator dock `SproutDock.vue` |
 | `src/components/` | Stages (`IntroStage`, `RegionPicker`, `ExploreStage`), the clipped map `MapStage` and `MapTools`, `TopBar`, `Backdrop`, `HudCard`, `SlideFrame`, `ReportSheet`, plus building blocks (`PixelIcon`, `Instrument`, `PixelGlobe`, `FieldRow`, `TradeOffs`, `Sparkline`, `OrbitSky`) |
+| `src/components/Field3D.vue` · `src/lib/terrain3d.js` | The 3D view of an outlined field: SRTM heights (Terrain Tiles) and the satellite photo of a square around it, built with three.js |
 | `src/slides/` | One topic each: signals, ground, years, priorities, rotations, comparison, report |
 | `public/data/lambayeque.json` | The Lambayeque 0.1° grid (IMERG, NASADEM, GRACE) |
 

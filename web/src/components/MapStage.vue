@@ -189,6 +189,7 @@ Object.assign(mapApi, {
     const [lat, lon] = vertexCenter(corners)
     selectPoint(lat, lon, 'Your field')
     map.flyToBounds(L.latLngBounds(corners).pad(0.8), { duration: 0.9, maxZoom: 17 })
+    mapUi.view3d = true   // a new field opens straight in 3D
   },
   locateMe() {
     if (!navigator.geolocation) return say('This browser can\'t share its location. You can tap the map instead.', 'sad', [], { level: 'force' })

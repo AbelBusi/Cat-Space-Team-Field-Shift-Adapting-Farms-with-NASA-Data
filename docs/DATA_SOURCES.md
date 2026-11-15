@@ -113,6 +113,7 @@ the tier B scripts. For GPM, open your Earthdata profile → *Applications → A
 | **OpenStreetMap Nominatim** | Place-name search | Data © OpenStreetMap contributors, ODbL. Usage policy: light use, cache results, show attribution |
 | **NASA GIBS** `MODIS_Terra_NDVI_8Day`, `MODIS_Terra_Land_Surface_Temp_Day`, `IMERG_Precipitation_Rate`, `SMAP_L3_Passive_Enhanced_Day_Soil_Moisture` | Optional NASA image layers over the photo | NASA open data |
 | **OpenStreetMap** administrative boundaries (admin levels 4, 6, 8) | Lambayeque, its 3 provinces and 38 districts (`web/src/data/lambayeque_admin.json`, `pipeline/build_districts.py`) | © OpenStreetMap contributors, **ODbL**: attribution shown on the map and in the report |
+| **Terrain Tiles** on AWS Open Data (Terrarium PNG) | Heights for the 3D view of an outlined field. In Peru the tiles come from **NASA SRTM** (30 m), as the tiles' `x-imagery-sources` header says | Open data; SRTM is NASA/USGS public domain. Credit shown in the 3D view |
 | **OpenStreetMap** place nodes (city, town, suburb, village, hamlet) | 650 town and village names on the map (`web/src/data/lambayeque_places.json`, `pipeline/build_places.py`) | © OpenStreetMap contributors, **ODbL** |
 
 ### Partner agencies (allowed and optional)
@@ -128,6 +129,7 @@ the tier B scripts. For GPM, open your Earthdata profile → *Applications → A
 | D3 | scales, shapes, colors | ISC |
 | Leaflet | world map | BSD-2-Clause |
 | Tailwind CSS | layout and responsive classes | MIT |
+| three.js | 3D view of the outlined field (loaded only when it opens) | MIT |
 | @fontsource packages | self-hosted fonts | MIT (package), fonts below |
 | Atkinson Hyperlegible, Bricolage Grotesque, Pixelify Sans | type | SIL Open Font License 1.1 |
 | earthaccess | Earthdata login and downloads | MIT |

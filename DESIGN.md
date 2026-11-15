@@ -99,6 +99,12 @@ Line icons (stroke SVG) are allowed only for UI controls (play, sound, close), d
 - Town and village names (OpenStreetMap) sit on the photo like on a road map: `--sky-ink` text with a thin dark outline. This text
   outline is the one allowed "shadow", because a label must read on any ground. Bigger places first, no overlapping names.
 - NASA data are **optional overlays** on top, with the ramps above, a legend and an opacity control.
+- **3D view of an outlined field:** it opens by itself when a field is finished (2D / 3D switch next to the field size). It is an
+  inspection mode, so the topic cards step aside. The land floats as a diorama in the night (earth-colored sides), the camera
+  starts straight above with north up, like the map, then tilts while the land rises, so it reads as the same place. The field
+  is marked three ways: darker surroundings, an orange edge on the ground and a see-through `--fire` fence, plus a beacon with
+  its name and size. A north arrow follows the camera. Small relief is raised and the factor is always shown (`Relief ×N`),
+  with the real heights and the source next to it.
 
 ## 7. One screen, like a game (layout since Nov 15, 2026)
 

@@ -24,6 +24,10 @@ import { formatArea } from '../lib/geo.js'
       <button v-if="!state.parcel" type="button" class="btn" :title="t('Outline your land to get its size and read NASA data at its center.')" @click="mapApi.startOutline()">{{ t('Outline my field') }}</button>
       <template v-else>
         <span class="border border-fire bg-panel/90 px-2 py-1.5 font-mono text-xs">{{ t('Your field:') }} {{ formatArea(state.parcel.areaM2) }}</span>
+        <div class="seg" role="group" :aria-label="t('View of your field')">
+          <button type="button" :aria-pressed="!mapUi.view3d" @click="mapUi.view3d = false">2D</button>
+          <button type="button" :aria-pressed="mapUi.view3d" :title="t('See your field in 3D, with its relief')" @click="mapUi.view3d = true">3D</button>
+        </div>
         <button type="button" class="btn" @click="mapApi.editOutline()">{{ t('Edit outline') }}</button>
         <button type="button" class="btn" @click="mapApi.clearOutline()">{{ t('Delete') }}</button>
       </template>
