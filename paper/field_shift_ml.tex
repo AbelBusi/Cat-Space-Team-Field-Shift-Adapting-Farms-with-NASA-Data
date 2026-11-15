@@ -1,5 +1,6 @@
 % Field Shift - research paper on the machine-learning models (NASA Space Apps Challenge 2026, Chiclayo, Peru)
-% Compile: pdflatex field_shift_ml.tex (twice, for references). Figures are in figures/ (copied from ml/artifacts).
+% Compile: pdflatex field_shift_ml.tex (twice, for references), or upload paper/field_shift_overleaf.zip to Overleaf.
+% Figures are in figures/ (copied from ml/artifacts; v3_overview.png from ml/scripts/paper_v3_figure.py).
 \documentclass[11pt,a4paper]{article}
 
 \usepackage[utf8]{inputenc}
@@ -23,11 +24,12 @@
 \setlist{nosep,leftmargin=*}
 \renewcommand{\arraystretch}{1.15}
 
-\title{\textbf{Learning the root-zone soil water and vegetation greenness of Lambayeque, Peru,\\
+\title{\includegraphics[width=2.8cm]{figures/space_apps_logo.png}\\[10pt]
+\textbf{Learning the root-zone soil water and vegetation greenness of Lambayeque, Peru,\\
 from NASA and Copernicus data: a pre-registered, phased evaluation\\ of gradient-boosted trees, with projections and scenarios for farmers}}
 \author{Cat Space Team \\[2pt]
 \small Field Shift: Adapting Farms with NASA Data --- NASA Space Apps Challenge 2026, Chiclayo, Peru}
-\date{November 15, 2026}
+\date{November 15, 2026 \\[2pt] \small Second version: adds the API checks, the v3 soil water model with ERA5-Land rain and the tool built on it}
 
 \begin{document}
 \maketitle
@@ -35,27 +37,28 @@ from NASA and Copernicus data: a pre-registered, phased evaluation\\ of gradient
 \begin{abstract}
 \noindent
 Farmers in the coastal department of Lambayeque (northern Peru) plan their crops between a desert climate, irrigation
-valleys and the extreme rains of the coastal El Niño. We built two XGBoost regression models on a 2\,km grid of
+valleys and the extreme rains of the coastal El Ni\~no. We built two XGBoost regression models on a 2\,km grid of
 1,950--3,149 cells: one for the monthly root-zone soil water (ERA5-Land layer 3, 28--100\,cm) and one for the quarterly
 vegetation greenness (NDVI), from CHIRPS rain, ERA5-Land temperature and evaporation, NASA POWER humidity, wind and
-sunlight, and FAO GAEZ soil classes. The work followed a protocol fixed before seeing the data of each phase: training on
+sunlight, and FAO GAEZ soil classes. We followed a protocol fixed before seeing the data of each phase: training on
 1998--2017, validation on 2018--2022 and a single test on 2023--2025, with acceptance criteria written in advance,
 spatial block bootstrap confidence intervals and conformal prediction intervals. The soil water model halves the error of
-the best simple rule in every phase (RMSE skill against persistence 0.48, 0.52 \ci{0.48}{0.55} and 0.46 \ci{0.44}{0.49};
-test RMSE 0.0198\,\sm, $R^2=0.962$). The NDVI model is weaker but useful (test skill against climatology 0.21
-\ci{0.14}{0.29}). Both pass the accuracy criteria on the test years, which include the 2023 coastal El Niño, but their
-90\,\% prediction intervals covered only 82--84\,\% of the test values. Follow-up experiments, each with rules committed
-before running it, showed that (i) the failure comes from errors that grow with rain and from drift, not from
-overfitting; conformalized quantile regression with monthly recalibration restores 90\,\% coverage on 2023--2025; (ii) adding
-the Ni\~no~1+2 index improves the El Ni\~no months but not the calm validation years, so the decision is left to the
-2026 El Ni\~no; (iii) an analog-ensemble projection of soil water beats a typical year for up to 6 months, and
-(iv) the model barely reacts to rain alone, so rain-only scenarios failed their sanity checks and are not offered to
-users. The tested models are served by a small FastAPI service to a web tool that explains them in plain language.
-We report every negative result and the data irregularities we found, because the tool is meant to be trusted by
-farmers, not to impress them.
+the best simple rule in every phase (test RMSE 0.0198\,\sm, $R^2=0.962$, skill against persistence 0.46
+\ci{0.44}{0.49}); the NDVI model is weaker but useful (test skill against climatology 0.21 \ci{0.14}{0.29}). Their 90\,\%
+prediction intervals, however, covered only 82--84\,\% of the test values. Every later step had its rules committed
+before it ran. Conformalized quantile regression with monthly recalibration restored 90\,\% coverage; the Ni\~no~1+2
+index helped only in El Ni\~no months; an analog-ensemble projection beats a typical year for up to 6 months. Ten checks
+written before we served new features showed that the first model barely reacted to rain or temperature on their own.
+We then trained a third soil water model (v3) that also reads ERA5-Land's own rain, with monotone constraints. It is
+clearly better than the tested model on the validation years (RMSE 0.0099 against 0.0125, skill $+0.21$
+\ci{0.17}{0.25}), halves the error of the March 2023 coastal El Ni\~no, and makes the temperature, drought and rain
+scenarios pass their checks; recovery after a drought still fails. v3 now drives every soil water number of the tool: a
+FastAPI service and a web application that explain the results in plain language, in English, Spanish and Quechua, with
+an AI guide that only interprets numbers computed by the models. We report every negative result and the data
+irregularities we found, because the tool is meant to be trusted by farmers, not to impress them.
 \end{abstract}
 
-\noindent\textbf{Keywords:} soil moisture, NDVI, XGBoost, conformal prediction, coastal El Ni\~no, ERA5-Land, NASA POWER, Lambayeque, decision support.
+\noindent\textbf{Keywords:} soil moisture, NDVI, XGBoost, monotone constraints, conformal prediction, coastal El Ni\~no, ERA5-Land, NASA POWER, Lambayeque, decision support.
 
 % ==================================================================================================================
 \section{Introduction}
@@ -67,31 +70,35 @@ sea off northern Peru and brings rains that the desert does not usually see: the
 anomaly passed $+3\,^\circ$C in 1998 and $+2.5\,^\circ$C in April 2023, and both years flooded fields and greened the
 desert.
 
-Field Shift is a web tool, built in 48 hours for the NASA Space Apps Challenge 2026, that turns NASA Earth data into
-plain language for farmers. Its first part shows what the satellites see today. This paper describes the second part:
-machine-learning models that estimate the water stored in the root zone and the greenness of the vegetation, how sure
-they are, and how they can be used to look a few months ahead or to ask ``what if''.
+Field Shift is a web tool, built during the NASA Space Apps Challenge 2026, that turns NASA Earth data into plain language
+for farmers. Its first part shows what the satellites see today. This paper describes the second part: machine-learning
+models that estimate the water stored in the root zone and the greenness of the vegetation, how sure they are, how they
+look a few months ahead or answer ``what if'', and how we turned them into a service and screens a farmer can use.
 
-Three choices shaped the work:
+Three choices shaped our work:
 \begin{enumerate}
 \item \textbf{A local, fine grid.} The models work on 2\,km cells over Lambayeque instead of the 55\,km cells of
 global climate services, while stating the true resolution of each input (Section~\ref{sec:data}).
 \item \textbf{A protocol fixed in advance.} Years were split in time, each phase was run once, and the acceptance
 criteria and every later experiment were written and committed to the repository \emph{before} the corresponding data
-were scored (Section~\ref{sec:protocol}).
-\item \textbf{Honesty over impressiveness.} No crop yield, profit or causal claim is made, because we have no data for
+were scored (Section~\ref{sec:protocol}, Appendix~\ref{app:timeline}).
+\item \textbf{Honesty over impressiveness.} We make no crop yield, profit or causal claim, because we have no data for
 them; negative results are reported and turned into product decisions.
 \end{enumerate}
+
+\noindent The paper follows the order in which the work happened: the data (Section~\ref{sec:data}), the three
+evaluation phases (Section~\ref{sec:results}), what we learned after the test (Section~\ref{sec:evolution}), the checks
+we ran before serving new features (Section~\ref{sec:checks}), the v3 model they led to (Section~\ref{sec:v3}), and the
+tool (Section~\ref{sec:tool}).
 
 % ==================================================================================================================
 \section{Study area and data}\label{sec:data}
 
 \subsection{Grid}
-The team exported, from Google Earth Engine, a regular grid of 3,149 cells of 2\,km
-($0.0179663^\circ$) covering Lambayeque and its surroundings. Cell centres were recovered from the cell identifiers and
-matched the exported polygons to $10^{-14}$ degrees. 1,176 cells (37\,\%) fall outside the department's OpenStreetMap
-boundary (towards Piura, Cajamarca and La Libertad); they were kept for training, and the products for users use the
-1,950--1,973 cells inside Lambayeque.
+We exported, from Google Earth Engine, a regular grid of 3,149 cells of 2\,km ($0.0179663^\circ$) covering Lambayeque and
+its surroundings. Cell centres were recovered from the cell identifiers and matched the exported polygons to
+$10^{-14}$ degrees. 1,176 cells (37\,\%) fall outside the department's OpenStreetMap boundary (towards Piura, Cajamarca
+and La Libertad); they were kept for training, and the products for users use the 1,950--1,973 cells inside Lambayeque.
 
 \subsection{Datasets}
 
@@ -105,6 +112,7 @@ Source & Variables & Native resolution & Use \\
 \midrule
 CHIRPS (UCSB) \citep{funk2015} & Monthly rain (mm) & $\approx$5.5\,km & feature \\
 ERA5-Land (ECMWF/Copernicus) \citep{munoz2021} & 2\,m temperature, potential evaporation, soil water layer 1 (0--7\,cm) and layer 3 (28--100\,cm) & $\approx$9\,km & features; layer 3 is the target \\
+ERA5-Land monthly aggregates (GEE) & Total precipitation; soil water layer 2 (7--28\,cm, checked, not used) & $\approx$9\,km & v3 model only (Section~\ref{sec:v3}) \\
 Satellite NDVI composite (GEE, sensor not documented) & Quarterly NDVI & 2\,km cells & target and lags \\
 NASA POWER (MERRA-2, CERES) & Relative humidity, wind at 2\,m (0.5$^\circ\times$0.625$^\circ$, 20 points); all-sky surface shortwave (1$^\circ$, 6 points) & 55--110\,km & features \\
 FAO GAEZ v4 \citep{fischer2021} & Five soil quality classes (nutrients, oxygen, lime/gypsum, salinity/sodicity, rooting) & 5$'$ ($\approx$9\,km) & static features \\
@@ -113,13 +121,13 @@ NOAA PSL Ni\~no~1+2 anomaly & Monthly sea surface temperature anomaly off northe
 \end{tabularx}
 \end{table}
 
-Only unit conversions were applied (kelvin to $^\circ$C; potential evaporation from negative metres to positive
+Only unit conversions were applied (kelvin to $^\circ$C; potential evaporation and precipitation from metres to
 millimetres; NASA POWER wide tables to long form, without the annual column; $-999$ to missing). No derived agronomic
-index was computed: the team decided that vapour pressure deficit and growing degree days need crop thresholds and
-field sampling that we do not have.
+index was computed: we decided that vapour pressure deficit and growing degree days need crop thresholds and field
+sampling that we do not have.
 
 \subsection{Irregularities found}
-Inspecting the real files, before modelling, revealed several issues (Table~\ref{tab:irreg}). They are reported because
+Inspecting the real files, before modelling, revealed several issues (Table~\ref{tab:irreg}). We report them because
 they limit what the models can say, and because an earlier AI-generated description of the data listed columns and
 accuracy values that do not exist in any file.
 
@@ -139,6 +147,8 @@ Only 2,585 of 3,149 cells ever have NDVI; the mask is undocumented & Reported to
 GAEZ: identical ``High'' and ``Low'' files for 3 layers; one constant layer; no legend & Duplicates and constant layer dropped; codes used as classes \\
 MIDAGRI producer tables: 18 files are 3 unique tables truncated at 2,000 rows, without coordinates, dates or yields & Not used: no yield or crop labels exist \\
 One ERA5-Land pixel spans $\approx$20 cells & Rows never split at random; uncertainty by spatial blocks \\
+A file requested as ERA5 precipitation is the \emph{hourly} product with one hour per day (00\,UTC) & Not used (Section~\ref{sec:nino}) \\
+ERA5-Land monthly rain is 3--6 times larger than CHIRPS on this coast (Section~\ref{sec:v3}) & Used as a model input only, never shown as rain \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -224,7 +234,7 @@ G & Share of rows with an input outside the training p01--p99 range & report & r
 \end{table}
 
 % ==================================================================================================================
-\section{Results of the three phases}
+\section{Results of the three phases}\label{sec:results}
 
 \subsection{Training (1998--2017)}
 On the internal early-stopping years 2016--2017, the soil water model reached RMSE 0.0224\,\sm{} ($R^2=0.955$) against
@@ -338,7 +348,7 @@ did) and the second quarter of 2023 for NDVI (bias $-0.15$: the greening after t
 
 \begin{table}[H]
 \centering\small
-\caption{The same models across the three phases.}
+\caption{The same (v1) models across the three phases.}
 \label{tab:phases}
 \begin{tabular}{lccc}
 \toprule
@@ -353,11 +363,11 @@ NDVI skill vs climatology & 0.08 & 0.18 \ci{0.10}{0.25} & 0.21 \ci{0.14}{0.29} \
 \end{table}
 
 % ==================================================================================================================
-\section{Evolution of the research after the test}
-The test answered ``is it accurate?'' but opened three questions from the team: why did the intervals fail, can El
-Ni\~no be taught to the model, and can the models look ahead? Each experiment below left the tested models untouched and
-had its rules committed before it ran. Because 2023--2025 had already been used by the test, results on those years are
-a \emph{second look}, not an independent test.
+\section{Evolution of the research after the test}\label{sec:evolution}
+The test answered ``is it accurate?'' but opened three questions from the team and the event mentors: why did the
+intervals fail, can El Ni\~no be taught to the model, and can the models look ahead? Each experiment below left the
+tested models untouched and had its rules committed before it ran. Because 2023--2025 had already been used by the test,
+results on those years are a \emph{second look}, not an independent test.
 
 \subsection{Why the intervals failed}
 The soil water model fits its own years 2--3 times better than new years (in-sample RMSE 0.007 against 0.013 and 0.020),
@@ -410,12 +420,12 @@ monthly recalibration (ACI). The dashed line is the nominal 90\,\%.}
 \end{figure}
 
 \subsection{Teaching El Ni\~no to the model}\label{sec:nino}
-The team then supplied two datasets. The NOAA PSL Ni\~no~1+2 anomaly (monthly, 1870--September 2026) was complete for
+We then received two datasets. The NOAA PSL Ni\~no~1+2 anomaly (monthly, 1870--September 2026) was complete for
 1998--2025; its header declares $-99.99$ as missing but the last months use $-9999$, both treated as missing. The second
 file, requested from the Copernicus data store as ERA5 precipitation, turned out to be the \emph{hourly} ERA5 product at
 0.25$^\circ$ for 1998--2004 with a single hour per day (00\,UTC): its ``rain'' is one hour out of 24, and scaled to a month it
-gave 955\,mm a year against 220\,mm from CHIRPS. It was not used, and the right request (ERA5-Land monthly means) was
-documented for the team.
+gave 955\,mm a year against 220\,mm from CHIRPS. It was not used, and we documented the right request (ERA5-Land monthly
+aggregates), which later led to the v3 model (Section~\ref{sec:v3}).
 
 New features were added and nothing else changed: the Ni\~no~1+2 anomaly of the month, of the previous month and its
 three-month mean (soil water), and the quarter mean and previous quarter (NDVI). The decision rule, committed before
@@ -442,7 +452,7 @@ Calm years (2024, 2025) & unchanged & slightly worse in 2025 \\
 
 The index cuts the error of the El Ni\~no peak by a fifth to a quarter but adds nothing, or some noise, in the calm
 validation years (Figure~\ref{fig:nino}), where no strong event occurred. With only a few events in 1998--2017, the trees
-can use the index partly as a label for those years. By the rules, v1 remains the standard model; the soil water v2 waits
+can use the index partly as a label for those years. By the rules, v1 remained the standard model; the soil water v2 waits
 for 2026, whose Ni\~no~1+2 anomaly reached $+3.85\,^\circ$C in September 2026, stronger than 2023.
 
 \begin{figure}[H]
@@ -453,7 +463,7 @@ The dotted line separates Validation from the second look at 2023--2025.}
 \label{fig:nino}
 \end{figure}
 
-\subsection{Projections and what-if scenarios}
+\subsection{Projections and what-if scenarios}\label{sec:proj}
 The tested models describe a month from \emph{that month's} weather; looking ahead needs the weather of months that have
 not happened. We used an analog ensemble, known in hydrology as Ensemble Streamflow Prediction \citep{day1985}: from the
 observed state of each cell, the coming months are simulated once with the weather of each past year, feeding each
@@ -467,7 +477,7 @@ the longest lead whose skill against the better simple rule has a lower 95\,\% b
 
 \begin{table}[H]
 \centering\small
-\caption{Projection skill by lead (95\,\% CI). Validation hindcasts decide; 2023--2025 is reported only.}
+\caption{Projection skill by lead with the v1 models (95\,\% CI). Validation hindcasts decide; 2023--2025 is reported only.}
 \label{tab:lead}
 \begin{tabular}{lcc|lcc}
 \toprule
@@ -486,64 +496,249 @@ The useful lead is 6 months for soil water and 4 quarters for NDVI, with most of
 El Ni\~no period 2023--2025 soil water projections beat climatology only for 2 months. The 90\,\% bands covered 80\,\%
 \ci{79}{82} (soil water) and 84\,\% \ci{83}{86} (NDVI) of the 2023--2025 values, again too narrow in an extreme period.
 
-\paragraph{Scenario sanity checks.} Two checks were pre-registered: two months without rain must not raise soil water, and
+\paragraph{First scenario sanity checks.} Two checks were pre-registered: two months without rain must not raise soil water, and
 doubling the rain must not lower it, in more than 1\,\% of the cells. Both \textbf{failed} (25\,\% and 38\,\% of the cells on
 average). The drought scenario, which removes the rain and sets the surface soil to its driest observed value, does dry
 the soil clearly ($-0.04$\,\sm{} for January starts), and the cells that ``rise'' show small tree-step changes. Rain alone,
-however, barely moves the model: doubling it changes soil water by at most $+0.003$\,\sm{} on average, less than the model
-error, and in the dry months in the wrong direction about as often as in the right one. The reason is in the model
-itself: last month's root-zone soil water carries 68\,\% of the gain and the surface soil 24\,\%, while the four rain
-inputs add up to 2.4\,\%. Following the rule, rain-only scenarios are computed but not offered to users; the El Ni\~no
-and dry-months scenarios are.
+however, barely moved the v1 model: doubling it changed soil water by at most $+0.003$\,\sm{} on average, less than the model
+error. The reason is in the model itself: last month's root-zone soil water carries 68\,\% of the gain and the surface
+soil 24\,\%, while the four rain inputs add up to 2.4\,\%. Following the rule, rain-only scenarios were not offered to
+users at that point; Sections~\ref{sec:checks} and~\ref{sec:v3} show how this was later solved.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{figures/projections_overview.png}
-\caption{Left: projection skill by lead, Validation hindcasts (with 95\,\% CI) and 2023--2025. Centre and right: projections
+\caption{Left: projection skill by lead (v1), Validation hindcasts (with 95\,\% CI) and 2023--2025. Centre and right: projections
 from December 2025 for Chiclayo province (mean of cells) in a normal year, in El Ni\~no years and with two months without
 rain; the dotted line marks the useful lead.}
 \label{fig:proj}
 \end{figure}
 
 % ==================================================================================================================
-\section{From models to a tool for farmers}
-The tested models are served by an independent FastAPI service that loads them once at startup, checks that each model
-file matches the hash in its model card and that the feature order matches training, and answers:
-\texttt{/health}, \texttt{/model/info} (metrics with confidence intervals, tested interval coverage, known limitations; the
-training date is reported as unavailable rather than invented), \texttt{/predictions} (one prediction from a complete,
-validated feature set), \texttt{/projections} (every Lambayeque cell, computed at startup and identical, cell by cell, to
-the research notebook) and \texttt{/simulations/climate} (a what-if for one cell against a normal year).
+\section{Checks before serving new features}\label{sec:checks}
+A teammate proposed a full API with predictions by cell, typed simulations (drought, El Ni\~no, temperature, rain,
+recovery), territorial analysis, alerts and explanations. Before writing any endpoint we wrote, for each new feature, a
+check that decides whether it may be served as validated or only with the label \emph{experimental}
+(Table~\ref{tab:checks}). The first scenario checks had counted any move above $10^{-4}$\,\sm{} as ``wrong direction'';
+those results stand. The new checks, written knowing that result, ask a different question: \emph{does a scenario move
+soil water in the wrong direction by more than the model's own error} (validation RMSE 0.0125\,\sm)? All scenario checks
+start at the end of every month from December 2017 to December 2021 (49 starts), on the 1,950 Lambayeque cells.
 
-Each simulation response separates the user's changes from the model's answer, flags differences smaller than the model's
-validation RMSE as indistinguishable from noise, states the useful lead and the measured coverage, and puts the rain-only
-warning first when it applies. Its summary is generated from the computed numbers only.
+\begin{table}[H]
+\centering\small
+\caption{Checks written before the API expansion, run with the tested v1 models (notebook 07).}
+\label{tab:checks}
+\begin{tabularx}{\textwidth}{l>{\raggedright\arraybackslash}p{3.3cm}>{\raggedright\arraybackslash}Xl}
+\toprule
+& Feature & Rule (shortened) and result & Verdict \\
+\midrule
+S1 & Temperature what-if & $+2\,^\circ$C must not raise soil water by more than the error in $>1$\,\% of cells. It did in 9.7\,\% (mean $+0.0024$, the wrong way) & fail \\
+S2 & Droughts of 1--6 months & Mean change negative, longer not wetter, $\le1$\,\% of cells rising. Lengths 1--4 pass; 5 and 6 months reach 1.4 and 2.5\,\% & fail \\
+S3 & Rain-only what-if & Few wrong-way moves (0.15 / 0.46\,\%), but mean effect $\pm0.0006$\,\sm, a twentieth of the error (needs $\ge0.003$) & fail \\
+S4 & Recovery after 3 dry months & Difference at lead 12 smaller than at lead 3 in $\ge90$\,\% of cells: 83\,\% & fail \\
+S5 & Drought risk (share of analog members below the cell's 20th percentile) & Calibration within 0.10 in every bin: predicted 0.95 $\to$ observed 0.65. Brier skill 0.18 against a constant 0.20 & fail \\
+S6 & Alerts (value below the lead-1 band) & Share of cells flagged in 2018--2022 between 2.5 and 10\,\%: 4.7\,\% soil water, 3.7\,\% NDVI & \textbf{pass} \\
+S7 & NDVI greener than expected (possible irrigation) & No independent irrigated-area data: 591 cells above the model in $\ge3$ of 8 quarters, unverified & not testable \\
+S8 & The 1,176 cells outside Lambayeque & Criteria A--E on 2018--2022: soil water skill 0.54 \ci{0.50}{0.58}, NDVI 0.12 \ci{0.05}{0.18} & \textbf{pass} \\
+S9 & Adaptive ranges in the API & Needs complete 2026 data & deferred \\
+S10 & Per-cell confidence & Spearman correlation between a place's validation and test error: 0.65 over 226 ERA5-Land pixel groups & \textbf{pass} \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
-The web tool presents these results in a ``What's ahead'' section: the coming months of deep soil water at the chosen
-2\,km cell, the El Ni\~no and drought what-ifs, greenness ahead, the districts where the deep soil is expected to keep the
-most water in the dry season, and a page on how sure the model is. In farmer mode no decimal is shown: soil water appears
-as dry, usual or wet ground for that place and month, and a change as an arrow, or a dot when it is within the model error.
+Three checks passed and five failed. The API serves alerts, per-cell confidence and the outer cells as validated (level
+\texttt{warning}, never \texttt{ok}, because they are still model outputs), and everything else as
+\texttt{experimental} with the reason. The lesson was concrete: the v1 model answers a change of one input mostly through
+last month's soil water, so it moves little and sometimes the wrong way. Simulations need a model that \emph{reacts} to
+the weather it is given.
+
+% ==================================================================================================================
+\section{A third soil water model with ERA5-Land's own rain (v3)}\label{sec:v3}
+
+\subsection{The new data}
+Following our request, the team exported from Google Earth Engine the ERA5-Land monthly aggregates
+(\texttt{ECMWF/ERA5\_LAND/MONTHLY\_AGGR}) on a 2\,km covering grid: 9,016 cells $\times$ 346 months (January 1998 to October
+2026), 3.1 million rows, no duplicates. Our 3,149 cells are all present with the same identifiers; 22 coastal cells have no
+value (the same land--sea mask). Soil water layer 2 (7--28\,cm) is coherent ($r=0.94$ with layer 3, between layers 1 and 3 in
+92\,\% of cell-months).
+
+The precipitation follows CHIRPS over time ($r=0.81$ for the monthly grid mean, 0.54 cell by cell) but is \textbf{3--6 times
+larger}: 923 against 221\,mm in 2000, 3,069 against 337\,mm in 1998, 650 against 153\,mm in 2024. It is not a unit error:
+the hourly file had given the same order. Reanalysis rain is known to be too wet over this coast and the Andes. We
+nevertheless used it, \emph{as a model input only}, because it is the rain that drives the ERA5-Land soil water we predict;
+it is never shown to users as ``the rain''.
+
+\subsection{Rules written before training}
+v3 changes only the soil water model; the NDVI model stays the tested v1. Features: the 19 v1 features plus
+\texttt{era5\_rain\_mm}, its two lags and its six-month sum, built like the CHIRPS ones inside each cell. Layer 2 was
+\emph{not} used: a same-month value sits next to the target, and a lagged one would be another state the projections
+cannot predict. We added \textbf{monotone constraints} \citep{chen2016}: $+1$ for the eight rain features (more rain never
+lowers the prediction) and $-1$ for potential evaporation and temperature (more evaporative demand or heat never raises
+it). Everything else as v1: target, hyperparameters, seed, fit 1998--2015, early stopping on 2016--2017, refit on 1998--2017.
+
+The decision rules were: \textbf{R1}, criteria A--F with the same thresholds; \textbf{R2}, v3 not clearly worse than v1
+(the upper 95\,\% bound of the skill of v3 over v1 is $\ge0$); \textbf{R3}, rerun checks S1--S4, each pass removing the
+\texttt{experimental} label of that scenario when v3 runs it; \textbf{R4}, projection hindcasts for v3's own useful lead and
+range corrections; \textbf{R5}, 2023--2025 reported only. If R1 or R2 failed, v3 would not be used.
+
+\subsection{Results}
+
+\begin{table}[H]
+\centering\small
+\caption{v1 against v3 (soil water). Validation decides; 2023--2025 is a second look.}
+\label{tab:v3}
+\begin{tabular}{lcc}
+\toprule
+& v1 & \textbf{v3} \\
+\midrule
+Trees & 1,122 & 1,877 \\
+Validation 2018--2022 RMSE (\sm) & 0.0125 \ci{0.0110}{0.0139} & \textbf{0.0099} \ci{0.0087}{0.0110} \\
+Skill vs persistence (A, B) & 0.52 \ci{0.48}{0.55} & \textbf{0.62} \ci{0.59}{0.64} \\
+Skill of v3 over v1 (R2) & --- & $\mathbf{+0.21}$ \ci{0.17}{0.25} \\
+Criteria A--F (R1) & pass (F at the edge, 0.872) & pass (bias $-0.0013$, worst year 0.56, worst province 0.44, F 0.884) \\
+2023--2025 RMSE & 0.0198 & \textbf{0.0142} (skill over v1 $+0.28$ \ci{0.24}{0.32}) \\
+March 2023 RMSE / bias & 0.053 / $-0.037$ & \textbf{0.024} / $-0.007$ \\
+90\,\% one-step interval, wet / dry season & $\pm0.030$ / $\pm0.013$ & $\pm$\textbf{0.020} / $\pm0.013$ \\
+Its coverage in 2023--2025 & 82\,\% & 82\,\% \\
+Share of gain: last month's soil / surface / rain & 68 / 24 / 2.4\,\% & 65 / 22 / \textbf{8.3}\,\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+R1 and R2 pass, and not just as ``not worse'': v3 cuts the validation error by a fifth with a confidence interval far from
+zero. The gain is largest where v1 failed: the March 2023 coastal El Ni\~no error is halved and its bias almost vanishes.
+The rain inputs now carry 8.3\,\% of the gain (8.0\,\% from ERA5-Land rain, 0.3\,\% from CHIRPS), so the model learned
+to use the rain that drives its target.
+
+\begin{table}[H]
+\centering\small
+\caption{Scenario checks (Section~\ref{sec:checks}) rerun with v3, same rules and starts.}
+\label{tab:v3checks}
+\begin{tabularx}{\textwidth}{l>{\raggedright\arraybackslash}p{4.2cm}X}
+\toprule
+Check & v1 & v3 \\
+\midrule
+S1 temperature $\pm2\,^\circ$C & fail (9.7\,\% wrong way) & \textbf{pass}: 0\,\% wrong way; $+2\,^\circ$C lowers soil water by 0.003 on average, $-2\,^\circ$C raises it by 0.003 \\
+S2 droughts of 1--6 months & fail (5--6 months) & \textbf{pass}: $-0.007$, $-0.019$, $-0.030$, $-0.039$, $-0.046$, $-0.052$\,\sm{} at the end of the drought; $\le0.01$\,\% of cells rise \\
+S3 rain $\times0.5$ / $\times2$ & fail (effect $\pm0.0006$) & \textbf{pass}: $-0.012$ / $+0.019$\,\sm, no cell the wrong way \\
+S4 recovery after 3 dry months & fail (83\,\%) & \textbf{fail} (76\,\%): the effect fades by month 12 on average ($-0.030 \to -0.007$), but not in $\ge90$\,\% of cells \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Projections and intervals with v3.} The hindcasts of R4 give v3 the same useful lead as v1 (6 months; skill
+0.43 at lead 1 against persistence, 0.17 at lead 2 against climatology) and a 90\,\% band that covered 81\,\% of the
+2023--2025 values (v1: 80\,\%). In 2023--2025 the projection beats climatology only for the first 2 months, as v1 did:
+v3 describes a month better, but it cannot know next year's weather any better than the analog years do. Two more
+measurements were needed to put v3 in the whole tool, both with the same code and rules as v1: the NDVI projections fed
+with v3's soil water stay useful for 4 quarters (skill 0.17, 0.11, 0.11, 0.10, every lower bound above zero) and their
+band covered 84\,\% in 2023--2025, as with v1; the one-step interval, computed with the code that reproduces v1's stored
+widths exactly, is $\pm0.020$\,\sm{} in the wet season instead of $\pm0.030$, with the same real coverage (82\,\%).
+Figure~\ref{fig:v3} summarises the comparison.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/v3_overview.png}
+\caption{v1 against v3. (a) One-step error by period. (b) Mean change of soil water at lead 3 when one input changes;
+the dotted lines are the size check S3 asks for. (c) Mean change at the end of droughts of 1--6 months. (d) Projection skill
+by lead in the Validation hindcasts (95\,\% CI); both models are useful for 6 months.}
+\label{fig:v3}
+\end{figure}
+
+\paragraph{What passing means.} The checks S1--S3 ask whether the model moves in the physically expected direction and by
+a visible amount; they cannot tell whether $-0.030$\,\sm{} after three dry months is the \emph{right} amount, because no
+year offers the same months with and without rain. The scenarios therefore remain the model's answer to a made-up
+situation, not a forecast. With these results, and following the rules, the team decided on November 15, 2026 to use v3
+for every soil water number of the tool (Section~\ref{sec:tool}); the alerts stay on v1 because check S6 was validated with it.
+
+% ==================================================================================================================
+\section{From models to a tool for farmers}\label{sec:tool}
+
+\subsection{The ML service}
+The models are served by an independent FastAPI service (\texttt{ml-api}). At startup it loads them once, checks that each
+model file matches the SHA-256 hash in its card and that the feature order matches training, loads a compact data cube of
+the 3,149 cells (inputs 1998--2025, ERA5-Land rain included), and precomputes the projections of every Lambayeque cell
+and the one-step predictions of every cell and month. If anything fails, \texttt{/health} reports the error and inference
+answers 503 instead of guessing. The endpoints are grouped as in Table~\ref{tab:api}.
+
+\begin{table}[H]
+\centering\small
+\caption{Endpoints of the service (\texttt{/api/v1}) and the model behind each.}
+\label{tab:api}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.0cm}>{\raggedright\arraybackslash}p{5.6cm}X}
+\toprule
+Group & Endpoints & Model and status \\
+\midrule
+Predictions & \texttt{/predictions}, \texttt{/soil-water}, \texttt{/ndvi}, \texttt{/complete}, \texttt{/batch}, \texttt{/\{cell\}/history}, \texttt{/\{cell\}/confidence} & v3 for cells; v1 for requests with v1's 19 features. Confidence validated (S10) \\
+Projections & \texttt{/projections}, \texttt{/projections/cell} & v3 soil water, NDVI fed with it; normal year, El Ni\~no years, two dry months, half and double rain \\
+Simulations & \texttt{/simulations/climate}, \texttt{/custom}, \texttt{/drought}, \texttt{/el-nino}, \texttt{/temperature}, \texttt{/rainfall}, \texttt{/recovery} & one scenario engine, v3; recovery and evaporation, wind or sunlight changes experimental \\
+Territorial analysis & \texttt{/analysis/districts}, \texttt{/water-retention}, \texttt{/vegetation}, \texttt{/drought-risk}, \texttt{/anomalies}, \texttt{/hotspots} & medians of the cells of each district (OpenStreetMap boundaries); risk, anomalies and hotspots experimental \\
+Alerts & \texttt{/alerts/drought}, \texttt{/alerts/vegetation} & v1 (S6 passed) \\
+Explanations & \texttt{/explanations/\{id\}} & exact TreeSHAP: base value plus contributions equals the prediction \\
+Monitoring & \texttt{/health}, \texttt{/model/info}, \texttt{/models/metrics}, \texttt{/models/validation} & metrics per period with CI; never presented as the precision of one prediction \\
+Sprout & \texttt{/ask} & AI guide, Section~\ref{sec:sprout} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Every simulation runs the same engine: take the cell's observed state, build the analog weather, change only the inputs
+the user asked for (nothing is derived from another input, so a temperature change does not recompute evaporation, and
+the answer says so), run the soil water model month by month, run the NDVI model on whole quarters, compare with the
+normal year, add the conformal band and check the inputs against the training range. The answer carries a reliability
+level (\texttt{ok}, \texttt{warning}, \texttt{out\_of\_domain} or \texttt{experimental}) with its reasons, flags differences
+smaller than the model error as indistinguishable from noise, states the useful lead and the measured coverage, and has a
+deterministic identifier so it can be explained or reused. Its summary is generated from the computed numbers only.
+Fourteen integration tests run on the real models and data; one of them checks that the grid served to the web equals the
+projection engine run with v3, cell by cell, and that half the rain never gives wetter soil than double the rain.
+
+\subsection{Sprout, an AI guide that does not invent}\label{sec:sprout}
+Sprout is the tool's guide, a small pixel-art character. Open questions go to the service, which sends a large language
+model (\texttt{openai/gpt-oss-120b} through Groq's OpenAI-compatible endpoint) a written persona and the numbers that
+matter: what is on screen, the cell's projections in every scenario and, when the user has run one, the full simulation or
+the explanation of a prediction. The persona forbids inventing numbers, diagnoses or crop advice and asks Sprout to say
+what it does not know. The API key lives only on the server. An early answer quoted a number that was not in its context;
+we then gave Sprout every scenario and made the persona stricter.
+
+\subsection{The web}
+The web tool (Vue and Leaflet) presents the results in a ``What's ahead'' track: the coming months of deep soil water at
+the chosen 2\,km cell, the what-ifs (El Ni\~no years, two dry months, and since v3 half and double the rain), greenness
+ahead, the districts where the deep soil is expected to keep the most water in the dry season, and a page on how sure the
+model is, which now shows the v1 $\to$ v3 improvement sent by the service. Every number on these screens comes from the
+service; none is written in the page. In \emph{farmer mode} no decimal or percentage is shown: soil water appears as dry,
+usual or wet ground for that place and month, drawn as a furrow of pixel icons, and a change as an arrow, or a dot when it
+is within the model error. \emph{Pro mode} shows the numbers, bands and skill bars. The interface is in English, Spanish and
+Quechua (a beta written with AI help, to be reviewed by native speakers), works on phones, and has a guided tour.
 
 % ==================================================================================================================
 \section{Discussion}
 
 \paragraph{What works.} A transparent pipeline with modest models gives a soil water estimate that halves the error of
 the simplest rule in every period, including an El Ni\~no year, with honest uncertainty. A 1--3 month outlook of the
-root zone and an El Ni\~no what-if are realistic products for a prototype.
+root zone and scenario answers that move in the expected direction are realistic products for a prototype.
 
-\paragraph{What the models cannot see.} ERA5-Land soil water is itself a model and knows nothing about irrigation, so in
-the Tinajones and Olmos valleys it describes rain-fed soil, not a watered field. Inputs are coarser than the 2\,km grid
-(9\,km soil and climate, 55--110\,km NASA POWER). NDVI is drifting greener than in the training years, plausibly because of new
-irrigated land, which no input describes. Changing an input shows the model's response learned from 1998--2017, not a
-proven cause.
+\paragraph{From persistence to response.} The v1 model was accurate as a monthly estimator but weak as a simulator,
+because it leaned on last month's state. Giving it the rain that drives its target, with monotone constraints, made the
+temperature, drought and rain scenarios behave and also improved accuracy. Writing the scenario checks before building
+the simulator is what exposed the problem; without them the tool would have shown noise as an answer.
 
-\paragraph{The persistence trap.} Because the root zone changes slowly, the soil water model leans on last month's state.
-This makes it accurate as a monthly estimator but weak as a simulator of rain alone. Monotone constraints on the rain
-features, or an input on ERA5-Land's own precipitation (which drives the target), are the next steps; they need the new
-data and a new pre-registered validation.
+\paragraph{A model of a model.} ERA5-Land soil water is itself the output of a land model forced by ERA5-Land rain. Part of
+v3's gain may come from learning that land model more closely, not the real soil. This is acceptable for our target, but
+it means that our numbers are as good as ERA5-Land is on this coast, where its rain is 3--6 times too large. A comparison
+with satellite soil moisture (SMAP) would tell how far the reanalysis is from the field.
 
-\paragraph{Uncertainty in extreme years.} Every interval we built was too narrow in the El Ni\~no period, and adaptive
-recalibration recovers the average but not the month of the shock. The tool therefore labels every band with its measured
-coverage and says plainly that extreme years are less predictable.
+\paragraph{What the models cannot see.} ERA5-Land knows nothing about irrigation, so in the Tinajones and Olmos valleys it
+describes rain-fed soil, not a watered field. Inputs are coarser than the 2\,km grid (9\,km soil and climate, 55--110\,km
+NASA POWER). NDVI is drifting greener than in the training years, plausibly because of new irrigated land, which no input
+describes. Changing an input shows the model's response learned from 1998--2017, not a proven cause.
+
+\paragraph{Uncertainty in extreme years.} Every interval we built was too narrow in the El Ni\~no period, v3 included, and
+adaptive recalibration recovers the average but not the month of the shock. The tool therefore labels every band with
+its measured coverage and says plainly that extreme years are less predictable.
+
+\paragraph{Independence of the evidence.} The idea for v3 came from failures we saw, partly in 2023--2025, so those years
+are no longer an independent test for it; v3 was accepted on 2018--2022 by rules written in advance. The decisive test is
+2026, a strong coastal El Ni\~no year: the projections that start in December 2025 can then be scored, and the tool can
+start from the newest month.
 
 \paragraph{For Lambayeque.} The models give conditions a crop depends on, not the harvest. We have no yield, crop-type,
 price or export data, so the tool does not rank crops or profits. Collecting yields by district and campaign would turn
@@ -555,26 +750,33 @@ these conditions into a decision model.
 \item Two XGBoost models for root-zone soil water and NDVI of Lambayeque passed a pre-registered, three-phase evaluation
 on accuracy; their prediction intervals were overconfident by 6--8 points in the test years.
 \item Conformalized quantile regression with monthly recalibration restores 90\,\% coverage on average; the Ni\~no~1+2 index
-helps in El Ni\~no months but not in calm years; projections are useful for up to 6 months; rain-only scenarios are
-not reliable with these models.
-\item The models are deployed through an API and a web tool that state their limits in plain language.
+helps in El Ni\~no months but not in calm years; projections are useful for up to 6 months.
+\item Checks written before serving each feature showed that the first model could not simulate changed weather. A v3
+model with ERA5-Land's own rain and monotone constraints is clearly more accurate (validation error $-21$\,\%, March 2023
+halved) and passes the temperature, drought and rain checks; recovery after a drought is still experimental.
+\item v3 drives every soil water number of an API and a web tool that state their limits in plain language, in three
+languages, with an AI guide that only interprets computed numbers.
 \end{itemize}
 
-\noindent Next steps: (1) score the December 2025 projection and the soil water v2 model on the complete 2026 data, a
-strong coastal El Ni\~no year; (2) add ERA5-Land monthly precipitation and soil layer 2; (3) add land cover or irrigated
-area per year; (4) compare ERA5-Land with SMAP soil moisture; (5) obtain yield data to move from conditions to crops.
+\noindent Next steps: (1) complete 2026 with the same sources and score the December 2025 projections, v2 and v3 on it,
+with rules written before; (2) start the projections from the newest month; (3) serve the adaptive intervals once
+check S9 can run; (4) add irrigated area per year to test the ``greener than expected'' signal; (5) compare ERA5-Land with
+SMAP soil moisture; (6) obtain yield data to move from conditions to crops.
 
 % ==================================================================================================================
 \section*{Data and code availability}
 All code, notebooks with their outputs, model artifacts, reports and the API are in the project repository
 (\url{https://github.com/AbelBusi/Cat-Space-Team-Field-Shift-Adapting-Farms-with-NASA-Data}): notebooks
-\texttt{ml/notebooks/01}--\texttt{06}, reports \texttt{docs/ML\_*.md}, models in \texttt{ml/artifacts/final\_model},
-service in \texttt{ml-api}. Raw data come from public sources (Table~\ref{tab:data}); the exported tables are identified by
-SHA-256 in the model metadata. FAO GAEZ data are believed to be licensed CC BY-NC-SA 3.0 IGO (to be confirmed).
+\texttt{ml/notebooks/01}--\texttt{08}, scripts \texttt{ml/scripts/} (including the v3 NDVI chain, the v3 intervals and the
+v3 figure), reports \texttt{docs/ML\_*.md}, models in \texttt{ml/artifacts/final\_model} (v1) and
+\texttt{ml/artifacts/v3\_era5\_rain} (v3), service in \texttt{ml-api} with its Spanish roadmap. Raw data come from public
+sources (Table~\ref{tab:data}); the exported tables are identified by SHA-256 in the model metadata. FAO GAEZ data are
+believed to be licensed CC BY-NC-SA 3.0 IGO (to be confirmed).
 
 \section*{Acknowledgements}
 We thank the NASA Space Apps Challenge Chiclayo organisers and mentors, whose questions about simulation, El Ni\~no and
-local crops shaped the second half of this work.
+local crops shaped the second half of this work. The NASA International Space Apps Challenge logo identifies the event in
+which this work was made; it does not imply endorsement by NASA.
 
 % ==================================================================================================================
 \begin{thebibliography}{99}\small
@@ -613,22 +815,33 @@ Commit & Step & Outcome \\
 \texttt{abb3b51} & Rules for projections and scenarios & committed before hindcasts \\
 \texttt{0851876} & Projections, hindcasts, scenario checks; web screens & useful lead 6 months; rain-only scenarios fail \\
 \texttt{55a446a} & ML API serving models, projections and simulator & projections equal to the notebook cell by cell \\
+\texttt{2ed37dd} & First version of this paper & --- \\
+\texttt{df845d8} & Sprout's AI answers through the ML API & key only on the server \\
+\texttt{2a5f9eb} & Specification and roadmap of the API expansion & existing, partial and proposed features separated \\
+\texttt{6ccc253} & Rules for checks S1--S10 & committed before running them \\
+\texttt{029f60b} & API expansion and checks (notebook 07) & 3 pass, 5 fail, 1 not testable, 1 deferred \\
+\texttt{8d87fe5} & Rules for the v3 model (R1--R5) & committed before training \\
+\texttt{92c61e2} & v3 trained and validated (notebook 08) & R1, R2 pass; S1--S3 pass, S4 fails \\
+\texttt{27d051a} & Simulations run with v3 & rain and temperature no longer experimental \\
+\texttt{d42ea85} & v3 in the whole tool; NDVI chain and one-step intervals measured & useful 4 quarters, 84\,\%; interval $\pm0.020$, 82\,\% \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-Two corrections were made before any result of the step was read: the El Ni\~no analog years follow the pre-registered
+Corrections were made before any result of the step was read: the El Ni\~no analog years follow the pre-registered
 rule (1998, 2016, 2017, 2023, 2024; a hand-written list had omitted 2024), and the NDVI climatology baseline falls back to
-the regional mean of the quarter where a cell has no NDVI, as in Phases 2 and 3.
+the regional mean of the quarter where a cell has no NDVI, as in Phases 2 and 3. One statement was corrected after it was
+made: an early version of the API said the drought scenario had passed its check, which was false (commit \texttt{c269c61}).
 
-\section{Features of the final models}
+\section{Features of the models}
 \begin{table}[H]
 \centering\small
 \begin{tabularx}{\textwidth}{lX}
 \toprule
 Model & Features in training order \\
 \midrule
-Soil water (19) & \texttt{rain\_mm}, \texttt{rain\_mm\_lag1}, \texttt{rain\_mm\_lag2}, \texttt{rain\_mm\_sum6}, \texttt{t2m\_c}, \texttt{pet\_mm}, \texttt{pet\_mm\_lag1}, \texttt{sm\_root\_m3m3\_lag1}, \texttt{sm\_surface\_m3m3\_lag1}, \texttt{power\_rh2m\_pct}, \texttt{power\_ws2m\_ms}, \texttt{power\_allsky\_mj\_m2\_day}, \texttt{month\_sin}, \texttt{month\_cos}, five soil classes \\
+Soil water v1 (19) & \texttt{rain\_mm}, \texttt{rain\_mm\_lag1}, \texttt{rain\_mm\_lag2}, \texttt{rain\_mm\_sum6}, \texttt{t2m\_c}, \texttt{pet\_mm}, \texttt{pet\_mm\_lag1}, \texttt{sm\_root\_m3m3\_lag1}, \texttt{sm\_surface\_m3m3\_lag1}, \texttt{power\_rh2m\_pct}, \texttt{power\_ws2m\_ms}, \texttt{power\_allsky\_mj\_m2\_day}, \texttt{month\_sin}, \texttt{month\_cos}, five soil classes \\
+Soil water v3 (23) & the 19 of v1, then \texttt{era5\_rain\_mm}, \texttt{era5\_rain\_mm\_lag1}, \texttt{era5\_rain\_mm\_lag2}, \texttt{era5\_rain\_mm\_sum6}; monotone $+1$ on the 8 rain features, $-1$ on \texttt{pet\_mm} and \texttt{t2m\_c} \\
 NDVI (16) & \texttt{q\_rain\_mm}, \texttt{q\_rain\_mm\_lag1}, \texttt{q\_t2m\_c}, \texttt{q\_pet\_mm}, \texttt{q\_sm\_root\_m3m3}, \texttt{q\_power\_rh2m\_pct}, \texttt{q\_power\_ws2m\_ms}, \texttt{q\_power\_allsky\_mj\_m2\_day}, \texttt{quarter}, \texttt{ndvi\_lag1}, \texttt{ndvi\_lag4}, five soil classes \\
 \bottomrule
 \end{tabularx}
