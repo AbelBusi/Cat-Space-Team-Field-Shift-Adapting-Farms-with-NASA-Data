@@ -6,6 +6,7 @@ import { t } from '../i18n.js'
 import { PAL } from '../lib/palette.js'
 import { loadTerrain } from '../lib/terrain3d.js'
 import { distanceM, formatArea, formatLength } from '../lib/geo.js'
+import FieldTimeline from './FieldTimeline.vue'
 
 // The outlined field rises out of the map as a floating block of land, in the free space between the cards.
 // On the map the field stays lit and everything around it gets darker; a soft beam of light joins the field to the
@@ -28,6 +29,7 @@ const beam = ref(null)
 
 let THREE, renderer, scene, camera, controls, raf = 0, observer, data
 let piece, surface, sides, rim, notes, intro = 0, bottomRing = [], turn = null
+let soilCanvas = null, soilTex = null, fills = []   // per layer: 0-1 water, null = no value (hatched), missing = plain earth
 const UNITS = 1000            // the field's square is 1000 units wide, whatever its size in meters
 const BASE = 70               // depth of the soil block below the surface, in units
 const INTRO_MS = 1600
@@ -35,15 +37,21 @@ const INTRO_MS = 1600
 const lift = (h, rise = 1) => (h - data.min) * data.exaggeration * (UNITS / data.size) * rise
 const xz = (u, v) => [(u - 0.5) * UNITS, (v - 0.5) * UNITS]
 
+// The time bar under the block (FieldTimeline) takes the bottom of the free space; it reports its real height.
+const tlHeight = ref(innerWidth < 1024 ? 150 : 128)
 // The free space between the cards (wide screens) or above the bottom sheet (phones). The block floats in its upper
-// part; the field sits on the map in its lower part.
+// part; the field sits on the map in its lower part; the time bar sits under both.
 function freeBox() {
+  const b = freeSpace()
+  return { ...b, bottom: b.bottom - tlHeight.value - 8, floor: b.bottom }
+}
+function freeSpace() {
   const hud = document.querySelector('[data-hud-top]')?.getBoundingClientRect().bottom ?? 140
   // Phones: the free band between the top strip of cards and the bottom one (SlideFrame)
   if (innerWidth < 1024) {
     const edge = (sel, side, fb) => document.querySelector(sel)?.getBoundingClientRect()[side] ?? fb
     const top = Math.max(hud, edge('.col-left', 'bottom', hud)) + 16, bottom = Math.min(innerHeight - 10, edge('.col-right', 'top', innerHeight * 0.7)) - 16
-    return { left: 8, right: innerWidth - 8, top, bottom: Math.max(bottom, top + 220) }
+    return { left: 8, right: innerWidth - 8, top, bottom: Math.max(bottom, top + 200 + tlHeight.value + 8) }   // the block keeps ≥ 200 px
   }
   const col = Math.min(380, Math.max(280, innerWidth * 0.27))
   return { left: 56 + col + 20, right: innerWidth - 56 - col - 20, top: hud + 8, bottom: innerHeight - 110 }
@@ -54,30 +62,56 @@ const hostStyle = computed(() => {
   const b = box.value
   return { left: b.left + 'px', top: b.top + 'px', width: b.right - b.left + 'px', height: (b.bottom - b.top) * blockShare() + 'px' }
 })
+const tlBox = computed(() => ({ left: box.value.left, right: box.value.right, bottom: innerHeight - (box.value.floor ?? innerHeight) }))
+function onTlSize(h) { if (Math.abs(h - tlHeight.value) > 2) { tlHeight.value = h; placeBox() } }
 function placeBox() {
   const b = freeBox()
   box.value = { ...b, split: b.top + (b.bottom - b.top) * blockShare() + (innerWidth < 1024 ? 28 : 0) }
   mapApi.frameField?.(box.value)
 }
 
-// The side of the block: soil layers drawn in the palette (dark topsoil, sandy layers, pebbles).
-function soilTexture() {
-  const cv = document.createElement('canvas')
-  cv.width = 256
-  cv.height = 128
-  const ctx = cv.getContext('2d')
-  for (const [a, b, c] of [[0, 0.14, PAL.soil], [0.14, 0.45, '#8A6E44'], [0.45, 0.72, PAL.sand], [0.72, 1, '#6E5634']]) { ctx.fillStyle = c; ctx.fillRect(0, a * 128, 256, (b - a) * 128) }
+// The side of the block: the three ERA5-Land soil layers, top to bottom 0-7, 7-28 and 28-100 cm (the thin top ones a
+// little thicker than to scale, so they can be seen), drawn as earth with pebbles. The time bar fills each layer with
+// that month's water: the wetter the layer is for this place, the more water-blue it gets; hatched = no value.
+const BANDS = [[0, 0.1, PAL.soil], [0.1, 0.3, '#8A6E44'], [0.3, 1, '#6E5634']]
+function paintSoil() {
+  const ctx = soilCanvas.getContext('2d'), w = soilCanvas.width, h = soilCanvas.height
+  BANDS.forEach(([a, b, c], k) => {
+    const y0 = a * h, bh = (b - a) * h
+    ctx.fillStyle = c; ctx.fillRect(0, y0, w, bh)
+    const f = fills[k]
+    if (f === null) {
+      ctx.strokeStyle = 'rgba(11,16,38,.35)'; ctx.lineWidth = 2
+      ctx.save(); ctx.beginPath(); ctx.rect(0, y0, w, bh); ctx.clip()
+      for (let x = -h; x < w; x += 10) { ctx.beginPath(); ctx.moveTo(x, y0 + bh); ctx.lineTo(x + bh, y0); ctx.stroke() }
+      ctx.restore()
+    } else if (f != null) {
+      ctx.globalAlpha = 0.1 + 0.75 * f; ctx.fillStyle = PAL.deep; ctx.fillRect(0, y0, w, bh); ctx.globalAlpha = 1
+    }
+    if (k) { ctx.fillStyle = 'rgba(242,232,213,.35)'; ctx.fillRect(0, y0, w, 1) }
+  })
   let seed = 7
   const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647
   for (let k = 0; k < 900; k++) {
     ctx.fillStyle = rnd() < 0.5 ? 'rgba(11,16,38,.22)' : 'rgba(242,232,213,.16)'
     const s = 1 + Math.floor(rnd() * 3)
-    ctx.fillRect(Math.floor(rnd() * 256), Math.floor(rnd() * 128), s, s)
+    ctx.fillRect(Math.floor(rnd() * w), Math.floor(rnd() * h), s, s)
   }
-  const tex = new THREE.CanvasTexture(cv)
-  tex.colorSpace = THREE.SRGBColorSpace
-  tex.wrapS = THREE.RepeatWrapping
-  return tex
+  if (soilTex) soilTex.needsUpdate = true
+}
+function soilTexture() {
+  soilCanvas = document.createElement('canvas')
+  soilCanvas.width = 256
+  soilCanvas.height = 128
+  paintSoil()
+  soilTex = new THREE.CanvasTexture(soilCanvas)
+  soilTex.colorSpace = THREE.SRGBColorSpace
+  soilTex.wrapS = THREE.RepeatWrapping
+  return soilTex
+}
+function onLayers(f) {
+  fills = f
+  if (soilCanvas) paintSoil()
 }
 
 async function buildBlock() {
@@ -329,6 +363,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <FieldTimeline :box="tlBox" @layers="onLayers" @size="onTlSize" />
   <svg class="pointer-events-none fixed inset-0 z-[11] size-full" aria-hidden="true">
     <template v-if="beam">
       <polygon :points="beam.pts" fill="var(--teal)" fill-opacity=".07" />

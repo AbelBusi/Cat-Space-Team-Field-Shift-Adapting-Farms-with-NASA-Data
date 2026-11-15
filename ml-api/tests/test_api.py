@@ -217,3 +217,17 @@ def test_cells_outside_lambayeque_are_served_with_their_own_validation():
     cid = c[(c.province == "outside")].cell_id.iloc[100]
     r = client.post("/api/v1/predictions/soil-water", json={"location": {"cell_id": cid}, "period": "2020-03"}).json()
     assert r["location"]["inside_lambayeque"] is False and any(w["code"] == "outside_lambayeque" for w in r["warning_details"])
+
+
+def test_timeline_keeps_observed_model_and_projection_apart():
+    tl = client.get("/api/v1/timeline", params=LOC).json()
+    n = len(tl["months"])
+    assert tl["months"][0] == "1998-01" and tl["months"][-1] == "2025-12" and len(tl["split"]) == n
+    assert [(l["top_cm"], l["bottom_cm"]) for l in tl["layers"]] == [(0, 7), (7, 28), (28, 100)]
+    assert all(len(l["observed"]) == n and len(l["usual_by_month"]) == 12 for l in tl["layers"])
+    assert tl["layers"][1]["model_input"] is False and tl["layers"][2]["model_input"] is True
+    h = client.get(f"/api/v1/predictions/{tl['location']['cell_id']}/history", params={"from": "2019-02", "to": "2019-02"}).json()["rows"][0]
+    k = tl["months"].index("2019-02")
+    assert tl["layers"][2]["observed"][k] == round(h["observed"], 4) and tl["model"]["predicted"][k] == round(h["predicted"], 4)
+    assert tl["future"]["soil_water"]["periods"][0] == "2026-01" and len(tl["future"]["ndvi"]["periods"]) == 4
+    assert client.get("/api/v1/timeline", params={"lat": 0, "lon": 0}).status_code == 400

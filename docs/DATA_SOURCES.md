@@ -111,7 +111,7 @@ Exported by the team from Google Earth Engine and other portals (folder *Datos p
 | Source | Variables | Grid | License / cite |
 |---|---|---|---|
 | **CHIRPS** (UCSB Climate Hazards Center) | Monthly rain | ~5.5 km | Public domain-like open data. Funk et al. (2015), doi:10.1038/sdata.2015.66 |
-| **ERA5-Land** (ECMWF / Copernicus) | 2 m temperature, potential evaporation, soil water layers 1 (0–7 cm) and 3 (28–100 cm) | ~9 km | Copernicus licence (free, attribution). Muñoz-Sabater et al. (2021), doi:10.5194/essd-13-4349-2021 |
+| **ERA5-Land** (ECMWF / Copernicus) | 2 m temperature, potential evaporation, soil water layers 1 (0–7 cm) and 3 (28–100 cm); monthly precipitation (v3 model input only) and layer 2 (7–28 cm, shown in the field's time bar only) from the GEE monthly aggregates | ~9 km | Copernicus licence (free, attribution). Muñoz-Sabater et al. (2021), doi:10.5194/essd-13-4349-2021 |
 | Quarterly **NDVI / NDSI** composite (sensor not documented, probably Landsat: NASA/USGS public domain) | NDVI | 2 km cells | To confirm with the exporter |
 | **NASA POWER** regional monthly (MERRA-2, CERES) | RH2M, WS2M, ALLSKY_SFC_SW_DWN (T2M kept, not used) | 0.5° × 0.625° / 1° | NASA open data |
 | **FAO GAEZ v4** soil qualities | Nutrient, oxygen, lime/gypsum, salinity/sodicity, rooting classes | 5′ (~9 km) | ⚠️ As far as we know CC BY-NC-SA 3.0 IGO (non-commercial): confirm with the Local Lead. Fischer et al. (2021), doi:10.4060/cb4744en |

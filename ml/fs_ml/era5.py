@@ -23,6 +23,19 @@ def load_era5_rain(cells=None, path: Path | None = None) -> pd.DataFrame:
                          "era5_rain_mm": (d.total_precipitation_sum * 1000).to_numpy()})
 
 
+def load_era5_layer2(cells, dates, path: Path | None = None):
+    """Soil water of ERA5-Land layer 2 (7-28 cm), (cells, months) in the given order; NaN where missing. Shown in the
+    app next to layers 1 and 3 (the field's timeline); not an input of any model."""
+    import numpy as np
+    path = Path(path) if path else D.raw_dir() / ERA5_FILE
+    d = pd.read_csv(path, usecols=["system:index", "fecha_mensual", "volumetric_soil_water_layer_2"])
+    d["cell_id"] = d["system:index"].str.split("_", n=1).str[1]
+    d = d[d.cell_id.isin(set(cells))]
+    wide = d.pivot_table(index="cell_id", columns="fecha_mensual", values="volumetric_soil_water_layer_2", aggfunc="first")
+    cols = [f"{x:%Y-%m}" for x in pd.DatetimeIndex(dates)]
+    return wide.reindex(index=list(cells), columns=cols).to_numpy(dtype=float)
+
+
 def add_to_monthly(panel: pd.DataFrame, era5: pd.DataFrame) -> pd.DataFrame:
     """Same-month value, lags 1-2 and the 6-month sum, inside each cell (as fs_ml.features does for CHIRPS)."""
     out = panel.merge(era5, on=["cell_id", "date"], how="left", validate="one_to_one").sort_values(["cell_id", "date"])

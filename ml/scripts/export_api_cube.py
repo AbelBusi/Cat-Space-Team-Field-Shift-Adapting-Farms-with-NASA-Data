@@ -39,6 +39,7 @@ QP = pd.concat([p[1] for p in parts], ignore_index=True)
 MP = R.add_to_monthly(MP, R.load_era5_rain(MP.cell_id.unique()))   # ERA5-Land rain: input of the v3 model only
 cube = P.build_cube(MP, QP)
 c = cube.cells
+layer2 = R.load_era5_layer2(c.cell_id.to_numpy(), cube.dates)   # 7-28 cm, shown in the field's timeline only
 pts = c[["lon", "lat"]].to_numpy()
 district = np.full(len(c), "", dtype=object)
 for prov in ADMIN["provinces"]:
@@ -57,5 +58,6 @@ np.savez_compressed(
     dates=cube.dates.strftime("%Y-%m-%d").to_numpy(str),
     quarters=np.array([str(q) for q in cube.quarters]), ndvi=cube.ndvi.astype(np.float32),
     **{f"v__{k}": v.astype(np.float32) for k, v in cube.v.items()},
+    v__sm_layer2_m3m3=layer2.astype(np.float32),
 )
 print(OUT, f"{OUT.stat().st_size / 1e6:.1f} MB,", len(c), "cells,", cube.dates[0].date(), "->", cube.dates[-1].date())

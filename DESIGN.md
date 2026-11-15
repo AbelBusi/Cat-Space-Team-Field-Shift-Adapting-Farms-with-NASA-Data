@@ -101,8 +101,8 @@ Line icons (stroke SVG) are allowed only for UI controls (play, sound, close), d
 - Town and village names (OpenStreetMap) sit on the photo like on a road map: `--sky-ink` text with a thin dark outline. This text
   outline is the one allowed "shadow", because a label must read on any ground. Bigger places first, no overlapping names.
 - NASA data are **optional overlays** on top, with the ramps above, a legend and an opacity control.
-- **3D view of an outlined field:** it opens by itself when a field is finished; the 2D / 3D switch next to the field size is
-  the only control (no extra panel, titles or buttons). The cards stay on screen. On the map the field stays lit and everything
+- **3D view of an outlined field:** it opens by itself when a field is finished; the 2D / 3D switch next to the field size and
+  the time bar under the block (below) are its only controls (no other panel, titles or buttons). The cards stay on screen. On the map the field stays lit and everything
   around it goes almost dark; the field moves to the lower part of the free space and **the field rises out of it as a floating
   block of land**, joined to it by a faint `--teal` beam, like a projection, but the block is full quality: the satellite photo
   over the real relief, soil layers on the sides, the `--fire` outline on top. It floats gently and turns slowly (drag to turn,
@@ -112,6 +112,13 @@ Line icons (stroke SVG) are allowed only for UI controls (play, sound, close), d
   frame, and each side shows its real length on its edge (only when the side is long enough on screen). Everything on the map except the field
   sits under a dark veil (86 %), so only the field and its block stand out; the cards stay readable. A compass rose turns with
   the view; tapping it swings the block back to north up.
+- **Time bar of the field (since Nov 15, 2026):** a HUD strip under the block, in the free space. One line of the deep soil
+  water (28–100 cm) of the 2 km square at the field's centre, every month since 1998, in `--teal`; El Niño years as `--line`
+  blocks; the projection after the last data dashed with its band; the chosen month in `--fire` (the screen's one highlight),
+  with a play button and a slider. The block's sides are the three ERA5-Land layers (0–7, 7–28, 28–100 cm, the thin top ones
+  drawn a little thicker): each fills with `--deep` water as that layer gets wetter for this place that month, and is hatched
+  where there is no value (the projection only knows the deep layer). Farmer mode names each layer drier / usual / wetter
+  than usual for that month; Pro mode shows the values. On phones the strip is compact (no words, no footnote).
 
 ## 7. One screen, like a game (layout since Nov 15, 2026)
 

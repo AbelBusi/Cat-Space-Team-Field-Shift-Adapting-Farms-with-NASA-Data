@@ -22,6 +22,8 @@ async function call(path, { method = 'GET', body, signal } = {}) {
 /** @returns {Promise<object>} every Lambayeque cell: 12 months of soil water, 4 quarters of NDVI, per scenario */
 export const getProjections = signal => call('/projections', { signal })
 export const getHealth = signal => call('/health', { signal })
+/** @returns {Promise<object>} one cell since 1998: observed soil water (3 layers), rain, NDVI, the model's months and the projection */
+export const getTimeline = ({ lat, lon }, signal) => call(`/timeline?lat=${lat.toFixed(5)}&lon=${lon.toFixed(5)}`, { signal })
 
 /**
  * A what-if for one cell, compared with a normal year.
