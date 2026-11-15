@@ -5,6 +5,7 @@ import { say } from '../guide.js'
 import { t } from '../i18n.js'
 import { PAL } from '../lib/palette.js'
 import { loadTerrain } from '../lib/terrain3d.js'
+import { distanceM, formatArea, formatLength } from '../lib/geo.js'
 
 // The outlined field rises out of the map as a floating block of land, in the free space between the cards.
 // On the map the field stays lit and everything around it gets darker; a soft beam of light joins the field to the
@@ -13,7 +14,13 @@ import { loadTerrain } from '../lib/terrain3d.js'
 // line on the uphill side and the slope angle on the downhill side. Drag to turn, wheel or pinch to zoom.
 // three.js loads only when this opens.
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
-const host = ref(null), heightTag = ref(null), slopeTag = ref(null), needle = ref(null)
+const host = ref(null), heightTag = ref(null), slopeTag = ref(null), areaTag = ref(null), needle = ref(null)
+// The field's sides with their real length: how its area is measured. Only for outlines with few corners.
+const sideTags = ref([])
+const sides3d = computed(() => {
+  const r = state.parcel?.ring || []
+  return r.length > 10 ? [] : r.map((p, k) => ({ k, len: formatLength(distanceM(p, r[(k + 1) % r.length])) }))
+})
 const phase = ref('loading')   // loading | ready | error
 const info = ref(null)
 const box = ref({ left: 0, top: 0, right: 0, bottom: 0 })
@@ -168,6 +175,14 @@ function buildNotes() {
   for (let k = 0; k <= 16; k++) { const th = seen * k / 16; arc.push(o.clone().addScaledVector(dir, 90 * Math.cos(th)).addScaledVector(down, 90 * Math.sin(th))) }
   line(arc)
   notes.userData.slope = o.clone().addScaledVector(dir, len + 18)
+  const [ax, az] = xz(cu, cv)
+  notes.userData.area = new THREE.Vector3(ax, lift(data.min + data.relief) + 30, az)
+  const onTop = (u, v) => { const [x, z] = xz(u, v); return new THREE.Vector3(x, lift(data.sample(u, v)), z) }
+  notes.userData.sides = data.fieldUV.map(([u0, v0], k) => {
+    const [u1, v1] = data.fieldUV[(k + 1) % data.fieldUV.length], um = (u0 + u1) / 2, vm = (v0 + v1) / 2
+    const outward = new THREE.Vector3(um - cu, 0, vm - cv).normalize().multiplyScalar(28)
+    return { mid: onTop(um, vm).add(new THREE.Vector3(0, 4, 0)).add(outward), a: onTop(u0, v0), b: onTop(u1, v1) }
+  })
   piece.add(notes)
 }
 
@@ -215,6 +230,15 @@ function frame(now) {
   if (notes) {
     place(heightTag.value, notes.userData.height.clone().add(piece.position), rect, 'translate(-100%, -50%)')
     place(slopeTag.value, notes.userData.slope.clone().add(piece.position), rect, 'translate(0, -50%)')
+    place(areaTag.value, notes.userData.area.clone().add(piece.position), rect, 'translate(-50%, -100%)')
+    // A side's length shows only when that side is long enough on screen to carry it.
+    notes.userData.sides.forEach((s, k) => {
+      const el = sideTags.value[k]
+      if (!el) return
+      const a = toScreen(s.a, rect), b = toScreen(s.b, rect)
+      place(el, s.mid.clone().add(piece.position), rect, 'translate(-50%, -50%)')
+      if (Math.hypot(a.x - b.x, a.y - b.y) < 90) el.style.opacity = 0
+    })
   }
   const c = controls.target.clone().project(camera), n = controls.target.clone().add(new THREE.Vector3(0, 0, -100)).project(camera)
   if (needle.value) needle.value.style.transform = `rotate(${Math.atan2((n.x - c.x) * rect.width, (n.y - c.y) * rect.height)}rad)`
@@ -312,6 +336,11 @@ onBeforeUnmount(() => {
         {{ state.mode === 'pro' ? t('Height {min}–{max} m', { min: info.min, max: info.max }) : t('About {m} m above the sea', { m: Math.round((info.min + info.max) / 2) }) }}
         <span v-if="info.ex > 1" class="block text-[10px] text-muted">{{ t('Relief ×{n}', { n: info.ex }) }}</span>
       </span>
+      <span ref="areaTag" class="pointer-events-none absolute left-0 top-0 whitespace-nowrap border border-fire bg-bg/85 px-2 py-0.5 text-center font-mono text-xs leading-tight text-ink">
+        {{ t('Area {a}', { a: formatArea(state.parcel.areaM2) }) }}
+        <span v-if="state.mode === 'pro'" class="block text-[10px] text-muted">{{ t('perimeter {p}', { p: formatLength(state.parcel.perimeterM) }) }}</span>
+      </span>
+      <span v-for="s in sides3d" :key="s.k" :ref="el => (sideTags[s.k] = el)" class="pointer-events-none absolute left-0 top-0 whitespace-nowrap bg-bg/70 px-1 font-mono text-[10px] text-sky-ink opacity-0">{{ s.len }}</span>
       <span ref="slopeTag" class="pointer-events-none absolute left-0 top-0 whitespace-nowrap border-l-2 border-teal bg-bg/80 px-1.5 py-0.5 font-mono text-xs leading-tight text-ink">
         {{ state.mode === 'pro' ? t('Mean slope {deg}°', { deg: info.slope }) : t(info.slope < 2 ? 'Flat ground' : info.slope < 6 ? 'Gentle slope' : 'Steep ground') }}
       </span>

@@ -23,6 +23,9 @@ export function t(s, params) {
 }
 
 const ES = {
+  "Next: {topic}": "Sigue: {topic}",
+  "Area {a}": "Área {a}",
+  "perimeter {p}": "perímetro {p}",
   "W": "O",
   "Compass · tap to put north up": "Brújula · toca para poner el norte arriba",
   "About {m} m above the sea": "Unos {m} m sobre el mar",
@@ -396,6 +399,9 @@ const ES = {
 }
 
 const QU = {
+  "Next: {topic}": "Qatiqnin: {topic}",
+  "Area {a}": "Hatun kaynin {a}",
+  "perimeter {p}": "muyuynin {p}",
   "W": "O",
   "Compass · tap to put north up": "Brújula · llamiy chinchayta hanaqman churanaykipaq",
   "About {m} m above the sea": "Quchamanta {m} m hina hanaqpi",

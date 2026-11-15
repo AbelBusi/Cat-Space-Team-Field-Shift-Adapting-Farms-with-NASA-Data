@@ -2,6 +2,11 @@
 // Colors come only from the design palette (see DESIGN.md). 'c' is cream and can be recolored with the `color` prop.
 export const ICON_PALETTE = {"t": "#2E6E86", "L": "#4FC1B6", "l": "#9CC5A1", "s": "#D8C08E", "S": "#A88B5A", "a": "#F2A541", "e": "#E0703A", "c": "#F2E8D5", "m": "#8C9BC4", "v": "#A99BE8", "b": "#1E2A52", "d": "#2E6E86"}
 export const PIXEL_ICONS = {
+"satellite": ["................", "....a......a....", ".....a....a.....", "......a..a......", ".......mm.......", "tLLLtmccccmtLLLt", "tLbLt.cddc.tLbLt", "tLLLtmccccmtLLLt", "tLbLt.cddc.tLbLt", "tLLLtmccccmtLLLt", "......cccc......", ".......mm.......", "......smms......", ".....s....s.....", "................", "................"],
+"calendar": ["................", "...m.......m....", ".mmmmmmmmmmmmmm.", ".maaaaaaaaaaaam.", ".maaaaaaaaaaaam.", ".mccccccccccccm.", ".mcLcLcLcLcLccm.", ".mccccccccccccm.", ".mcLcLcacLcLccm.", ".mccccccccccccm.", ".mcLcLcLcLcLccm.", ".mccccccccccccm.", ".mmmmmmmmmmmmmm.", "................", "................", "................"],
+"heart": ["................", "................", "...eee...eee....", "..eaaae.eaaae...", ".eaacaaeaaaaae..", ".eacaaaaaaaaae..", ".eaaaaaaaaaaae..", "..eaaaaaaaaae...", "...eaaaaaaae....", "....eaaaaae.....", ".....eaaae......", "......eae.......", ".......e........", "................", "................", "................"],
+"compare": ["................", ".......m........", "..mmmmmmmmmmm...", "..m....m....m...", ".m.m...m...m.m..", "m...m..m..m...m.", "LLLLL..m..aaaaa.", ".LLL...m...aaa..", ".......m........", ".......m........", ".......m........", ".....ccccc......", "....ccccccc.....", "................", "................", "................"],
+"report": ["................", "...ccccccc......", "...cccccccm.....", "...cccccccmm....", "...cccccccccc...", "...cmmmmmmmmc...", "...cccccccccc...", "...cmmmmmmmmc...", "...cccccccccc...", "...cmmmmmcccc...", "...cccccccccc...", "...ccccccLLLc...", "...ccccccLLLc...", "...cccccccccc...", "................", "................"],
 "plant_ok": [
 "................",
 "......tt........",

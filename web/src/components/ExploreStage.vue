@@ -2,6 +2,7 @@
 import { computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import MapStage from './MapStage.vue'
 import MapTools from './MapTools.vue'
+import PixelIcon from './PixelIcon.vue'
 import Field3D from './Field3D.vue'
 import SlideSignals from '../slides/SlideSignals.vue'
 import SlideGround from '../slides/SlideGround.vue'
@@ -41,10 +42,18 @@ watch(() => state.slide, () => enter(slide.value.id), { immediate: true })
         <button type="button" class="btn !min-h-8 !px-2 lg:hidden" :disabled="state.slide === 0" :aria-label="t('Previous topic')" @click="go(-1)">‹</button>
         <div class="text-center">
           <Transition name="flip" mode="out-in"><h2 :key="slide.id" class="text-base md:text-lg">{{ t(slide.title) }}</h2></Transition>
-          <div class="mt-1 flex items-center justify-center gap-1.5">
-            <button v-for="(s, i) in SLIDES" :key="s.id" type="button" class="size-2.5 border transition-colors" :class="i === state.slide ? 'border-fire bg-fire' : i < state.slide ? 'border-teal bg-teal' : 'border-muted'"
-                    :aria-label="t(s.title)" :aria-current="i === state.slide ? 'step' : null" :title="t(s.title)" @click="state.slide = i" />
-          </div>
+          <!-- The path of topics: one pixel icon each, joined by a line. Done in teal, here in campfire, ahead dimmed. -->
+          <ol class="mt-1 flex items-center justify-center">
+            <li v-for="(s, i) in SLIDES" :key="s.id" class="flex items-center">
+              <span v-if="i" class="h-px w-2 sm:w-3" :class="i <= state.slide ? 'bg-teal' : 'bg-line'" aria-hidden="true" />
+              <button type="button" class="flex size-7 items-center justify-center border transition-[border-color,background-color,opacity] duration-300"
+                      :class="i === state.slide ? 'border-fire bg-fire/15' : i < state.slide ? 'border-teal bg-teal/10' : 'border-line opacity-45 hover:opacity-100'"
+                      :aria-label="t(s.title)" :aria-current="i === state.slide ? 'step' : null" :title="t(s.title)" @click="state.slide = i">
+                <PixelIcon :name="s.icon" :size="1" />
+              </button>
+            </li>
+          </ol>
+          <div v-if="state.slide < last" class="mt-0.5 truncate font-mono text-[10px] uppercase tracking-wider text-muted">{{ t('Next: {topic}', { topic: t(SLIDES[state.slide + 1].title) }) }}</div>
         </div>
         <button type="button" class="btn !min-h-8 !px-2 lg:hidden" :disabled="state.slide === last" :aria-label="t('Next topic')" @click="go(1)">›</button>
       </nav>

@@ -27,7 +27,7 @@ export function polygonAreaM2(ring) {
   return Math.abs(sum * EARTH_RADIUS_M ** 2 / 2)
 }
 
-function distanceM([lat1, lon1], [lat2, lon2]) {
+export function distanceM([lat1, lon1], [lat2, lon2]) {
   const a = Math.sin(toRad(lat2 - lat1) / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(toRad(lon2 - lon1) / 2) ** 2
   return 2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(a))
 }

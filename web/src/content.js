@@ -146,13 +146,13 @@ export const GLOSSARY = [
 
 // The topics of the map screen, in order. One topic on screen at a time: little to read, arrows to move on.
 export const SLIDES = [
-  { id: 'signals', title: 'What the satellites see' },
-  { id: 'ground', title: 'Your ground and recent weather' },
-  { id: 'years', title: 'Your place, year by year' },
-  { id: 'prio', title: 'What matters most to you?' },
-  { id: 'rots', title: 'How your year could look' },
-  { id: 'detail', title: 'Compare with today' },
-  { id: 'report', title: 'Your report' },
+  { id: 'signals', title: 'What the satellites see', icon: 'satellite' },
+  { id: 'ground', title: 'Your ground and recent weather', icon: 'soil_moist' },
+  { id: 'years', title: 'Your place, year by year', icon: 'calendar' },
+  { id: 'prio', title: 'What matters most to you?', icon: 'heart' },
+  { id: 'rots', title: 'How your year could look', icon: 'seed' },
+  { id: 'detail', title: 'Compare with today', icon: 'compare' },
+  { id: 'report', title: 'Your report', icon: 'report' },
 ]
 
 // What Sprout says the first time each screen opens (only with the guide on). Sprout is gentle, a little shy and

@@ -79,6 +79,7 @@ They speak the farmer's language: a plant that is fine, thirsty or dead says mor
 | `plant_dead` | Crop loss, high risk |
 | `seed` · `harvest` · `bare` | Sowing month · harvest month · bare soil |
 | `sun` · `drop` · `rain` · `frost` | Heat · irrigation water · heavy rain · frost |
+| `satellite` · `calendar` · `heart` · `compare` · `report` | The topics of the map screen: what the satellites see · year by year · what matters to you · compare with today · your report |
 | `up` · `down` · `flat` | Trend. Color = what it means for the crop: `--ember` worse, `--teal` better, `--ink` neutral |
 
 Line icons (stroke SVG) are allowed only for UI controls (play, sound, close), drawn in `--ink` or `--muted`.
@@ -106,7 +107,8 @@ Line icons (stroke SVG) are allowed only for UI controls (play, sound, close), d
   over the real relief, soil layers on the sides, the `--fire` outline on top. It floats gently and turns slowly (drag to turn,
   wheel or pinch to zoom). Measurements are drawn, not written: a `--teal` height line on the uphill side and the slope angle
   (level line dashed, land line solid, an arc between) on the downhill side, each with a short label. Small relief is raised and
-  the factor is always shown (`Relief ×N`); the height source is in the map credits. Everything on the map except the field
+  the factor is always shown (`Relief ×N`); the height source is in the map credits. The area sits over the block in a `--fire`
+  frame, and each side shows its real length on its edge (only when the side is long enough on screen). Everything on the map except the field
   sits under a dark veil (86 %), so only the field and its block stand out; the cards stay readable. A compass rose turns with
   the view; tapping it swings the block back to north up.
 
@@ -119,7 +121,8 @@ No page scrolling. Three stages on the same night sky:
    province, the camera glides into it and shows its districts with their names; tap a district to fly in. "Use my location"
    and "Free mode" are always there.
 3. **Explore:** the clipped satellite map fills the screen. One **topic** at a time floats over it: cards on the left and right
-   edges (at most two per side, one idea per card), the topic title and dots at the top, and large `‹ ›` arrows on the sides
+   edges (at most two per side, one idea per card), the topic title at the top over a path of pixel icons (one per topic: done
+   in `--teal`, current in `--fire`, ahead dimmed) and a "Next: …" line, and large `‹ ›` arrows on the sides
    (keyboard arrows too). On phones the cards become one bottom sheet and the map stays on top.
 
 Attention rule: never show everything at once. A topic shows only what its title promises; details go in a `<details>` or the
