@@ -587,7 +587,7 @@ range corrections; \textbf{R5}, 2023--2025 reported only. If R1 or R2 failed, v3
 \centering\small
 \caption{v1 against v3 (soil water). Validation decides; 2023--2025 is a second look.}
 \label{tab:v3}
-\begin{tabular}{lcc}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.4cm}>{\raggedright\arraybackslash}p{3.9cm}>{\raggedright\arraybackslash}X}
 \toprule
 & v1 & \textbf{v3} \\
 \midrule
@@ -602,7 +602,7 @@ March 2023 RMSE / bias & 0.053 / $-0.037$ & \textbf{0.024} / $-0.007$ \\
 Its coverage in 2023--2025 & 82\,\% & 82\,\% \\
 Share of gain: last month's soil / surface / rain & 68 / 24 / 2.4\,\% & 65 / 22 / \textbf{8.3}\,\% \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 R1 and R2 pass, and not just as ``not worse'': v3 cuts the validation error by a fifth with a confidence interval far from
