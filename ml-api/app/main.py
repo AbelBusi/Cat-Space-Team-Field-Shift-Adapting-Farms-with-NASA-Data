@@ -17,7 +17,12 @@ from .routers import analysis, ask, explanations, models, predictions, projectio
 from .services import state
 from .services.common import BadRequest, ModelUnavailable, NotFound
 
-from voice_assistant.router import router as voice_assistant_router
+# Sprout's voice assistant (ml-api/voice_assistant). Optional: if its dependencies are missing, the rest of the API runs.
+try:
+    from voice_assistant.router import router as voice_assistant_router
+except Exception as exc:  # noqa: BLE001
+    voice_assistant_router = None
+    logging.getLogger("ml-api").warning("voice assistant disabled: %s", exc)
 
 logging.basicConfig(level=settings.log_level.upper(), format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("ml-api")
@@ -73,5 +78,6 @@ async def internal(_: Request, e: Exception):
 v1 = APIRouter(prefix="/api/v1")
 for r in (models, predictions, projections, simulations, analysis, explanations, ask, timeline):
     v1.include_router(r.router)
-v1.include_router(voice_assistant_router)
+if voice_assistant_router is not None:
+    v1.include_router(voice_assistant_router)
 app.include_router(v1)

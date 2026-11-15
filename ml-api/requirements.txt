@@ -10,9 +10,8 @@ scipy==1.18.1      # imported by ml/fs_ml/features.py (shared feature code)
 pytest==9.2.0
 httpx==0.28.1
 
-#ml voice
-faster-whisper
-piper-tts
-httpx
-python-multipart
-groq
+# Sprout's voice assistant (ml-api/voice_assistant). The LLM and Whisper go through httpx (above) with LLM_API_KEY.
+python-multipart==0.0.33  # audio uploads (POST /assistant/voice)
+# Optional, only for STT_ENGINE=local or TTS_ENGINE=piper (see ml-api/README.md, "Sprout's voice"):
+# faster-whisper==1.1.1
+# piper-tts==1.3.0

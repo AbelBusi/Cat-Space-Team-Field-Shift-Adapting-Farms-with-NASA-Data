@@ -16,6 +16,8 @@ class ScreenContext(BaseModel):
     month: str | None = Field(None, max_length=10)
     topic: str | None = Field(None, max_length=60)
     readings: dict[str, Any] | None = None
+    province: str | None = Field(None, max_length=80)
+    track: str | None = Field(None, max_length=10)
 
 
 class HistoryTurn(BaseModel):
@@ -32,13 +34,14 @@ class ChatRequest(BaseModel):
     context: ScreenContext | None = None
     history: list[HistoryTurn] = Field(default_factory=list, max_length=10)
     speak: bool = False
+    lang: Literal["es", "en"] = "es"   # idioma de la web; la respuesta sigue al idioma en que habló el usuario
 
 
 class AssistantAction(BaseModel):
     """Acción estructurada para el mapa/dashboard. 'type' + parámetros propios de cada tipo."""
     model_config = ConfigDict(extra="allow")
 
-    type: Literal["select_cell", "run_simulation", "compare_cells", "show_analysis", "show_alerts"]
+    type: Literal["select_cell", "run_simulation", "compare_cells", "show_analysis", "show_alerts", "go_to_place", "open_topic"]
 
 
 class ChatResponse(BaseModel):
@@ -49,6 +52,7 @@ class ChatResponse(BaseModel):
     audio_base64: str | None = None
     audio_mime: str | None = None
     speak_error: str | None = None
+    lang: str = "es"                   # idioma de la respuesta: la web elige la voz con él
 
 
 class VoiceResponse(ChatResponse):

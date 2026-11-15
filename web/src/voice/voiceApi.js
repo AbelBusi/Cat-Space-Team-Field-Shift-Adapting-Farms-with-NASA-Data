@@ -1,7 +1,8 @@
-// Cliente del asistente de voz (ml-api/voice_assistant). La clave de Groq nunca llega aquí: vive en el backend.
-// TODO: cuando me pases lib/mlApi.js, tomar la URL de ahí en vez de leer la variable de entorno.
-const ROOT = (import.meta.env.VITE_ML_API_URL || 'http://localhost:8000').replace(/\/+$/, '').replace(/\/api\/v1$/, '')
-const BASE = `${ROOT}/api/v1/assistant`
+// Cliente del asistente de voz (ml-api/voice_assistant). La clave del modelo nunca llega aquí: vive en el backend.
+import { ML_API } from '../lib/mlApi.js'
+import { speak } from './speech.js'
+
+const BASE = `${ML_API || 'http://localhost:8000/api/v1'}/assistant`
 
 // El backend rechaza campos desconocidos: solo se envía lo que el schema acepta.
 export function toVoiceContext(c = {}) {
@@ -11,6 +12,8 @@ export function toVoiceContext(c = {}) {
     if (c.month != null) out.month = String(c.month).slice(0, 10)
     if (c.topic) out.topic = String(c.topic).slice(0, 60)
     if (c.readings && typeof c.readings === 'object') out.readings = c.readings
+    if (c.province) out.province = String(c.province).slice(0, 80)
+    if (c.track) out.track = String(c.track).slice(0, 10)
     return out
 }
 
@@ -29,12 +32,13 @@ async function readError(res) {
 const ext = type => (type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm')
 
 // Audio -> { transcript, text, mood, actions, tools_used, audio_base64, audio_mime }
-export async function askByVoice(blob, { context, history, speak = true, signal } = {}) {
+export async function askByVoice(blob, { context, history, speak = true, lang = 'es', signal } = {}) {
     const fd = new FormData()
     fd.append('audio', blob, `voice.${ext(blob.type)}`)
     if (context && Object.keys(context).length) fd.append('context', JSON.stringify(context))
     if (history?.length) fd.append('history', JSON.stringify(history))
     fd.append('speak', String(speak))
+    fd.append('lang', lang === 'en' ? 'en' : 'es')
     let res
     try { res = await fetch(`${BASE}/voice`, { method: 'POST', body: fd, signal }) }
     catch (e) { if (e.name === 'AbortError') throw e; throw new Error('No se pudo conectar con el asistente.') }
@@ -43,20 +47,22 @@ export async function askByVoice(blob, { context, history, speak = true, signal 
 }
 
 // Texto -> misma respuesta (sin transcript). Útil para probar o para escribirle al asistente con herramientas.
-export async function askByText(message, { context, history, speak = false, signal } = {}) {
+export async function askByText(message, { context, history, speak = false, lang = 'es', signal } = {}) {
     const res = await fetch(`${BASE}/chat`, {
         method: 'POST', signal, headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, context, history, speak }),
+        body: JSON.stringify({ message, context, history, speak, lang: lang === 'en' ? 'en' : 'es' }),
     })
     if (!res.ok) throw await readError(res)
     return res.json()
 }
 
-// Reproduce el audio de la respuesta. onStart/onEnd permiten que el gato mueva la boca mientras suena.
-export function playReply(reply, { onStart, onEnd } = {}) {
+// Reproduce la respuesta: el audio del servidor (Piper) si vino, o la voz de gatito del navegador.
+// onStart/onEnd permiten que el gato mueva la boca mientras suena.
+export function playReply(reply, { onStart, onEnd, silent = false } = {}) {
     let ended = false
     const end = () => { if (!ended) { ended = true; onEnd?.() } }
-    if (!reply?.audio_base64) { end(); return { stop: end } }
+    if (silent || !reply?.text) { end(); return { stop: end } }
+    if (!reply.audio_base64) return speak(reply.text, { lang: reply.lang, onStart, onEnd: end })
     const audio = new Audio(`data:${reply.audio_mime || 'audio/wav'};base64,${reply.audio_base64}`)
     audio.onplay = () => onStart?.()
     audio.onended = end

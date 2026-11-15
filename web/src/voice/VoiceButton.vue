@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onBeforeUnmount } from 'vue'
-import { t } from '../i18n.js'
+import PixelIcon from '../components/PixelIcon.vue'
+import { t, lang } from '../i18n.js'
 import { supported, startRecording } from './recorder.js'
 import { askByVoice, toVoiceContext, toHistory, playReply } from './voiceApi.js'
 
@@ -10,6 +11,7 @@ const props = defineProps({
   context: { type: Function, default: () => ({}) },   // devuelve lo que el usuario ve en pantalla
   history: { type: Function, default: () => [] },     // devuelve [{ role, content }]
   speak: { type: Boolean, default: true },            // false = solo texto (por ejemplo, con el sonido apagado)
+  muted: { type: Boolean, default: false },           // con el sonido apagado, Sprout responde solo con texto
 })
 const emit = defineEmits(['listening', 'thinking', 'reply', 'speaking', 'idle', 'error'])
 
@@ -42,10 +44,11 @@ async function send() {
     if (blob.size < 1500) throw new Error(t('I did not hear anything. Try again.'))
     const reply = await askByVoice(blob, {
       context: toVoiceContext(props.context()), history: toHistory(props.history()),
-      speak: props.speak, signal: controller.signal,
+      speak: props.speak && !props.muted, lang: lang.value === 'en' ? 'en' : 'es', signal: controller.signal,
     })
     emit('reply', reply)
     player = playReply(reply, {
+      silent: props.muted,
       onStart: () => { phase.value = 'speaking'; emit('speaking', true) },
       onEnd: () => { phase.value = 'idle'; emit('speaking', false); emit('idle') },
     })
@@ -76,9 +79,6 @@ onBeforeUnmount(cancel)
           :aria-label="t(phase === 'listening' ? 'Stop and send' : phase === 'idle' ? 'Talk to Sprout' : 'Cancel')"
           :title="t(phase === 'listening' ? 'Stop and send' : phase === 'idle' ? 'Talk to Sprout' : 'Cancel')"
           @click="toggle">
-    <svg width="20" height="20" viewBox="0 0 12 12" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true">
-      <rect x="4" y="1" width="4" height="6" /><rect x="2" y="5" width="1" height="3" /><rect x="9" y="5" width="1" height="3" />
-      <rect x="3" y="8" width="6" height="1" /><rect x="5" y="9" width="2" height="2" /><rect x="3" y="11" width="6" height="1" />
-    </svg>
+    <PixelIcon :name="phase === 'thinking' ? 'ai' : 'mic'" color="currentColor" :size="1.25" />
   </button>
 </template>

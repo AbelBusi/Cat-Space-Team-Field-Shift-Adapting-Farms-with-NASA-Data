@@ -259,45 +259,133 @@ async def _model_info(client, args, ctx):
     return await client.call("GET", _MODEL_PATHS[kind]), []
 
 
+
+# ---------------------------------------------------------------- navegación por la web
+# Lugares de Lambayeque (OpenStreetMap, los mismos archivos que usa la web) y los temas de cada recorrido.
+_PLACES: dict | None = None
+
+
+def _fold(text: str) -> str:
+    import unicodedata
+    return "".join(c for c in unicodedata.normalize("NFD", str(text).lower()) if unicodedata.category(c) != "Mn").strip()
+
+
+def _places() -> dict:
+    global _PLACES
+    if _PLACES is None:
+        admin = json.loads((settings.places_dir / "lambayeque_admin.json").read_text(encoding="utf-8"))
+        towns = json.loads((settings.places_dir / "lambayeque_places.json").read_text(encoding="utf-8"))
+        provinces = {_fold(p["name"]): p["name"] for p in admin["provinces"]}
+        districts = {_fold(d["name"]): {"name": d["name"], "province": p["name"], "lat": d["center"][1], "lon": d["center"][0]}
+                     for p in admin["provinces"] for d in p["districts"]}
+        _PLACES = {"provinces": provinces, "districts": districts,
+                   "towns": {_fold(t[0]): {"name": t[0], "lat": t[1], "lon": t[2]} for t in towns}}
+    return _PLACES
+
+
+def _best(query: str, names: dict):
+    import difflib
+    if query in names:
+        return names[query]
+    close = difflib.get_close_matches(query, list(names), n=1, cutoff=0.82)
+    return names[close[0]] if close else None
+
+
+async def _go_to_place(client, args, ctx):
+    raw = str(args.get("name") or "").strip()
+    if not raw:
+        raise ToolError("Falta el nombre del lugar.")
+    q, P = _fold(raw), _places()
+    for prefix in ("provincia de ", "province of ", "distrito de ", "district of ", "el ", "la "):
+        if q.startswith(prefix):
+            q = q[len(prefix):]
+    kind = str(args.get("kind") or "").lower()
+    if kind != "town" and kind != "district" and (prov := _best(q, P["provinces"])):
+        if kind == "province" or not _best(q, P["districts"]) or q in P["provinces"]:
+            return ({"found": "province", "name": prov, "note": "La web abre el mapa de la provincia con sus distritos."},
+                    [{"type": "go_to_place", "kind": "province", "name": prov}])
+    if kind != "town" and (d := _best(q, P["districts"])):
+        return ({"found": "district", **d}, [{"type": "go_to_place", "kind": "district", "name": d["name"], "province": d["province"]}])
+    if (t := _best(q, P["towns"])):
+        return ({"found": "town", **t}, [{"type": "go_to_place", "kind": "town", "name": t["name"], "lat": t["lat"], "lon": t["lon"]}])
+    raise ToolError(f"No encontré '{raw}' en Lambayeque. Solo conozco sus 3 provincias, 38 distritos y 650 pueblos.")
+
+
+TOPICS = {
+    # recorrido "Hoy": lo que ven los satélites
+    "signals": ("today", "Lo que ven los satélites: calor, lluvia, humedad del suelo, verdor y agua subterránea del lugar."),
+    "ground": ("today", "Tu suelo y el clima reciente (últimos 30 días)."),
+    "years": ("today", "Tu lugar año por año: franjas de calor desde 1981, el año más lluvioso y el más seco."),
+    "prio": ("today", "Qué es lo más importante para ti (ahorrar agua, ganar más, cuidar el suelo...)."),
+    "rots": ("today", "Cómo podría verse tu año: rotaciones de cultivos de ejemplo."),
+    "detail": ("today", "Comparar una rotación con la actual."),
+    "report": ("today", "Tu reporte para imprimir."),
+    # recorrido "Lo que viene": los modelos
+    "outlook": ("ahead", "Los próximos meses: agua del suelo profundo proyectada para 2026."),
+    "trends": ("ahead", "Hacia 2030: tendencias 1998-2025 de temperatura, lluvia, agua del suelo y verdor."),
+    "whatif": ("ahead", "Qué pasaría si: El Niño, meses sin lluvia, la mitad o el doble de lluvia."),
+    "green": ("ahead", "El verdor (NDVI) que viene por trimestre."),
+    "spots": ("ahead", "Dónde aguanta el agua: ranking de distritos y pueblos en la época seca."),
+    "trust": ("ahead", "Qué tan seguro está Sprout: acierto de los modelos y sus límites."),
+}
+
+
+def _facts(topic: str) -> dict:
+    """The key numbers of a screen, straight from what the API computed at startup (never typed by hand)."""
+    try:
+        from app.services import state
+        s = state.get()
+    except Exception:  # noqa: BLE001
+        return {}
+    meta = s.bundle["meta"]
+    if topic == "trust":
+        up = meta.get("model_upgrade") or {}
+        return {"useful_months_soil_water": meta["useful_lead"]["soil_water_months"], "useful_quarters_ndvi": meta["useful_lead"]["ndvi_quarters"],
+                "share_of_real_values_inside_the_90pct_range_2023_2025": meta["coverage_2023_2025"],
+                "soil_water_error_m3m3_v1_to_v3": up.get("rmse_validation_2018_2022"), "march_2023_error_v1_to_v3": up.get("rmse_march_2023"),
+                "scenario_checks_passed": up.get("scenario_checks_passed")}
+    if topic == "trends":
+        out = {}
+        for name, tr in s.bundle.get("trends", {}).items():
+            if isinstance(tr, dict) and "clear" in tr:
+                flags = [(c, v) for c, v in zip(tr["clear"], tr["per_decade"]) if c is not None]
+                out[name] = {"share_clear_up": round(sum(1 for c, v in flags if c and v > 0) / max(1, len(flags)), 2),
+                             "share_clear_down": round(sum(1 for c, v in flags if c and v < 0) / max(1, len(flags)), 2)}
+        return {"lambayeque_1998_2025": out, "note": "a straight trend did not predict 2018-2025 better than no change: 2030 is a direction"}
+    if topic == "outlook":
+        return {"starts": meta["start"], "useful_months": meta["useful_lead"]["soil_water_months"]}
+    if topic == "spots":
+        rows = sorted((r for r in s.bundle["district_summary"] if r["scenario"] == "base" and r["cells"] >= 3), key=lambda r: -r["dry_season_soil_water"])
+        return {"most_water_in_dry_season": [r["district"] for r in rows[:3]], "least": [r["district"] for r in rows[-2:]]}
+    return {}
+
+
+async def _open_topic(client, args, ctx):
+    topic = str(args.get("topic") or "")
+    if topic not in TOPICS:
+        raise ToolError(f"Tema no válido. Opciones: {sorted(TOPICS)}")
+    track, what = TOPICS[topic]
+    return {"opened": topic, "shows": what, **_facts(topic)}, [{"type": "open_topic", "topic": topic, "track": track}]
+
+_CELL = {"type": "object", "properties": {"lat": {"type": "number"}, "lon": {"type": "number"}},
+         "description": "Omit lat/lon to use the square on screen."}
+
 TOOLS: dict[str, Tool] = {t.name: t for t in [
-    Tool("get_cell_projection",
-         "Proyección de agua del suelo profunda (28-100 cm, 'Soil Memory') y NDVI (verdor) de una celda de 2 km para los próximos meses, con rangos y avisos. Úsala para preguntas sobre humedad del suelo, NDVI o datos de una celda.",
-         {"type": "object", "properties": _CELL_PROPS}, _projection_cell),
-    Tool("get_cell_history",
-         "Serie histórica 1998-2025 de una celda: valor observado vs predicho por el modelo.",
-         {"type": "object", "properties": {**_CELL_PROPS, "variable": {"type": "string", "enum": ["soil_water", "ndvi"]}}}, _cell_history),
-    Tool("get_cell_confidence",
-         "Qué tan bien ha funcionado históricamente el modelo en esa celda (error medido, no probabilidad de acierto).",
-         {"type": "object", "properties": _CELL_PROPS}, _cell_confidence),
-    Tool("get_cell_timeline",
-         "Línea de tiempo de una celda: tendencias 1998-2025 de agua del suelo, temperatura, lluvia y NDVI, años de El Niño y proyección.",
-         {"type": "object", "properties": _CELL_PROPS}, _timeline),
-    Tool("run_simulation",
-         "Simula un escenario 'qué pasaría si' en una celda y lo compara con un año normal. kind: drought (meses sin lluvia), el_nino, temperature, rainfall o custom. dry_months son meses de adelanto (1 = primer mes tras 'start'). t2m_delta en °C (-2 a 3), rain_factor multiplicador (0 a 3), rh_delta en puntos de humedad.",
-         {"type": "object", "properties": {**_CELL_PROPS,
+    Tool("go_to_place", "Move the map to a province, district or town of Lambayeque.",
+         {"type": "object", "properties": {"name": {"type": "string"}, "kind": {"type": "string", "enum": ["province", "district", "town"]}},
+          "required": ["name"]}, _go_to_place),
+    Tool("open_topic", "Open a screen or insight of the web; returns its key facts.",
+         {"type": "object", "properties": {"topic": {"type": "string", "enum": list(TOPICS)}}, "required": ["topic"]}, _open_topic),
+    Tool("get_cell_projection", "Deep soil water and NDVI of a 2 km square for the coming months, with ranges.", _CELL, _projection_cell),
+    Tool("get_cell_timeline", "A square since 1998: trends of soil water, temperature, rain and NDVI; El Niño years.", _CELL, _timeline),
+    Tool("run_simulation", "What if for a square vs a normal year. kind: drought (dry_months = months ahead, 1 = first), el_nino, temperature (t2m_delta °C), rainfall (rain_factor 0-3).",
+         {"type": "object", "properties": {"lat": {"type": "number"}, "lon": {"type": "number"},
               "kind": {"type": "string", "enum": ["drought", "el_nino", "temperature", "rainfall", "custom"]},
-              "start": {"type": "string", "description": "Mes de inicio AAAA-MM (por defecto 2025-12)."},
-              "horizon": {"type": "integer", "description": "Meses a simular, 1 a 12 (por defecto 6)."},
-              "dry_months": {"type": "array", "items": {"type": "integer"}},
-              "t2m_delta": {"type": "number"}, "rain_factor": {"type": "number"}, "rh_delta": {"type": "number"}}},
+              "dry_months": {"type": "array", "items": {"type": "integer"}}, "t2m_delta": {"type": "number"}, "rain_factor": {"type": "number"}}},
          _simulation),
-    Tool("compare_cells",
-         "Compara las proyecciones de 2 o 3 celdas.",
-         {"type": "object", "properties": {"cells": {"type": "array", "items": {"type": "object", "properties": _CELL_PROPS}}}, "required": ["cells"]},
-         _compare_cells),
-    Tool("get_district_analysis",
-         "Análisis territorial por distrito (mediana de celdas). kind: districts, water-retention, vegetation, drought-risk, anomalies, hotspots.",
-         {"type": "object", "properties": {"kind": {"type": "string", "enum": sorted(_ANALYSIS)},
-                                            "scenario": {"type": "string"}, "province": {"type": "string"}}, "required": ["kind"]},
-         _district_analysis),
-    Tool("get_alerts",
-         "Celdas con alerta: drought (agua del suelo bajo lo esperado) o vegetation (NDVI bajo lo esperado).",
-         {"type": "object", "properties": {"kind": {"type": "string", "enum": ["drought", "vegetation"]}}, "required": ["kind"]},
-         _alerts),
-    Tool("get_model_info",
-         "Métricas, validación y estado de los modelos. kind: info (todo sobre los modelos), metrics (error por periodo), validation (criterios y habilidad de proyección), health.",
-         {"type": "object", "properties": {"kind": {"type": "string", "enum": sorted(_MODEL_PATHS)}}, "required": ["kind"]},
-         _model_info),
+    Tool("get_district_analysis", "Districts ranked: water-retention, vegetation, drought-risk.",
+         {"type": "object", "properties": {"kind": {"type": "string", "enum": ["water-retention", "vegetation", "drought-risk"]},
+                                            "province": {"type": "string"}}, "required": ["kind"]}, _district_analysis),
 ]}
 
 

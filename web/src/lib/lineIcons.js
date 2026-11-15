@@ -37,6 +37,7 @@ const RAW = {
   speaker: `<path d="M4 9.500h3.500L12 5.500v13l-4.500-4H4z"/><g class="i-pulse"><path class="c-teal" d="M15 9a4.500 4.500 0 0 1 0 6M17.500 6.500a8 8 0 0 1 0 11"/></g>`,
   speaker_off: `<path d="M4 9.500h3.500L12 5.500v13l-4.500-4H4z"/><path class="c-ember" d="M15.500 9.500l5 5M20.500 9.500l-5 5"/>`,
   close: `<path d="M6 6l12 12M18 6L6 18"/>`,
+  mic: `<path d="M9 5.500a3 3 0 0 1 6 0v6a3 3 0 0 1-6 0z"/><path d="M5.500 11a6.500 6.500 0 0 0 13 0M12 17.500V21M8.500 21h7"/><g class="i-pulse"><path class="c-teal" d="M2.500 9v3M21.500 9v3"/></g>`,
   ai: `<g class="i-twinkle"><path class="c-teal" d="M11 4l1.600 4.900 4.900 1.600-4.900 1.600L11 17l-1.600-4.900-4.900-1.600 4.900-1.600z"/></g><g class="i-twinkle" style="--d:.8s"><path class="c-fire" d="M18 14.500l.8 2.200 2.200.8-2.200.8-.8 2.200-.8-2.200-2.200-.8 2.200-.8z"/></g>`,
   // ---- the mark of Field Shift: a sprout over two furrows (two frames for the animated logo)
   logo_a: `<path class="c-sand" d="M3 20.500h18M5.500 17.500h13"/><path class="c-teal" d="M12 17.500V10M12 12.500c-3.200 0-4.500-2-4.500-4.200 3 0 4.500 1.600 4.500 4.200zM12 10.500c3.200 0 4.500-2 4.500-4.200-3 0-4.500 1.600-4.500 4.200z"/>`,

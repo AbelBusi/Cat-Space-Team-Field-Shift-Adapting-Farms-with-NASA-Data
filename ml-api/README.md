@@ -199,6 +199,39 @@ One code path for any OpenAI-compatible endpoint (`LLM_BASE_URL`, `LLM_MODEL`, `
 | OpenRouter (`https://openrouter.ai/api/v1`, models ending in `:free`) | Free models, rate-limited | Account and key |
 | Paid APIs (Anthropic Claude, OpenAI…) | Per token | Best quality; Claude is reachable through its own API or OpenAI-compatible gateways |
 
+## Sprout's voice (`/assistant/voice`, `/assistant/chat`)
+
+Talk to Sprout with the microphone button in its panel (or type in the question box): it answers in **Spanish or
+English** (the language you spoke in, detected by Whisper), with a **high, soft kitten voice**, and it can **move the
+web**: fly to a province, district or town of Lambayeque, or open a screen or insight (the coming months, towards
+2030, what if, where water holds, how sure Sprout is…). Code: `voice_assistant/` (backend) and `web/src/voice/` (web).
+
+```
+🎙️ browser (MediaRecorder) ──audio──► /assistant/voice ──► Whisper (speech → text, language detected)
+                                                      ──► chat model with 6 tools (go_to_place, open_topic, projection,
+                                                          timeline, what-if, district ranking), only read-only
+                                                      ◄── { text, mood, actions, lang }
+web: Sprout types the answer, speaks it (browser voice, pitch 1.75) and runs the actions (map, topic)
+```
+
+**Quick local run** (no download beyond `pip install -r requirements.txt`; one key for everything):
+
+1. In `ml-api/.env`: `LLM_BASE_URL=https://api.groq.com/openai/v1`, `LLM_API_KEY=<your Groq key>`,
+   `VOICE_LLM_MODEL=openai/gpt-oss-20b` (fast, with its own rate limit). Defaults: `STT_ENGINE=groq` (Whisper in the
+   cloud with the same key) and `TTS_ENGINE=browser` (the browser speaks).
+2. Start the API and the web as above; open http://localhost:5173 (the microphone needs `localhost` or https).
+3. Tap 🎙️ in Sprout's panel, speak, tap again. Try: *"Llévame a Olmos"*, *"Take me to the Towards 2030 insight"*,
+   *"¿Qué tan seguro estás?"*, *"¿Cómo estará el agua del suelo en marzo?"*. Check: `GET /api/v1/assistant/status?check=true`.
+
+**Fully local (optional):** `STT_ENGINE=local` uses `faster-whisper` (model `small`, ~460 MB the first time);
+`TTS_ENGINE=piper` speaks on the server with `piper-tts` and one voice per language
+(`PIPER_VOICE_ES`, `PIPER_VOICE_EN`, from [rhasspy/piper-voices](https://huggingface.co/rhasspy/piper-voices)),
+raised by `TTS_PITCH` (1.3 ≈ 4.5 semitones) to sound like a kitten.
+
+**Free tier limits:** Groq's free models allow about 8,000 tokens per minute each; one question uses 2–4 thousand. The
+assistant keeps prompts short, waits once when Groq asks for a short pause, and switches to `LLM_MODEL` when the voice
+model is busy. Numbers come only from the tools; navigation never changes data.
+
 ## Known limitations
 
 - Not a yield, crop or profit model; no irrigation in the data; one value per 2 km cell.

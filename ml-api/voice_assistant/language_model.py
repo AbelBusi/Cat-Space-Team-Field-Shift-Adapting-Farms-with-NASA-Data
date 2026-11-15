@@ -1,12 +1,12 @@
-"""Cliente de Groq (SDK oficial `groq`). Aquí vive toda la comunicación con el proveedor LLM."""
+"""Cliente del modelo de lenguaje: cualquier endpoint compatible con OpenAI (Groq por defecto), con llamadas a
+herramientas. Usa httpx (ya instalado), así que no hace falta el SDK de Groq."""
 from __future__ import annotations
 
 import logging
 import re
 from typing import Any
 
-import groq
-from groq import AsyncGroq
+import httpx
 
 from .config import settings
 
@@ -14,7 +14,7 @@ logger = logging.getLogger("voice_assistant.llm")
 
 
 class LLMError(RuntimeError):
-    """Error del proveedor LLM ya traducido a algo que el router puede devolver."""
+    """Error del proveedor ya traducido a algo que el router puede devolver (sin la clave ni detalles internos)."""
 
     def __init__(self, kind: str, message: str, status_code: int = 503, retry_after: str | None = None):
         super().__init__(message)
@@ -23,51 +23,51 @@ class LLMError(RuntimeError):
         self.retry_after = retry_after
 
 
-_client: AsyncGroq | None = None
-
-
 def is_configured() -> bool:
-    return bool(settings.groq_api_key)
+    return bool(settings.llm_api_key and settings.llm_base_url)
 
 
-def _get_client() -> AsyncGroq:
-    global _client
-    if not settings.groq_api_key:
-        raise LLMError("not_configured", "Falta GROQ_API_KEY en el servidor (ml-api/.env).", 503)
-    if _client is None:
-        _client = AsyncGroq(
-            api_key=settings.groq_api_key,
-            timeout=settings.groq_timeout,
-            max_retries=settings.groq_max_retries,
-        )
-    return _client
+def _headers() -> dict:
+    if not is_configured():
+        raise LLMError("not_configured", "Falta la clave del modelo en el servidor (LLM_API_KEY en ml-api/.env).", 503)
+    return {"Authorization": f"Bearer {settings.llm_api_key}", "User-Agent": "field-shift-ml-api/0.1"}
 
 
-def _translate(exc: Exception) -> LLMError:
-    """Convierte excepciones del SDK en LLMError (sin filtrar la clave ni detalles internos)."""
-    if isinstance(exc, (groq.AuthenticationError, groq.PermissionDeniedError)):
-        return LLMError("auth", "Groq rechazó la clave API: GROQ_API_KEY es inválida o no tiene permisos.", 502)
-    if isinstance(exc, groq.RateLimitError):
-        retry = None
+def _translate(resp: httpx.Response) -> LLMError:
+    code = resp.status_code
+    if code in (401, 403):
+        return LLMError("auth", "El proveedor rechazó la clave: revisa LLM_API_KEY.", 502)
+    if code == 429:
+        return LLMError("rate_limit", "Se alcanzó el límite de solicitudes. Intenta de nuevo en unos segundos.", 429, resp.headers.get("retry-after"))
+    if code == 404:
+        return LLMError("model", f"El modelo '{settings.llm_model}' no existe o no está disponible.", 502)
+    logger.warning("LLM %s: %s", code, resp.text[:300])
+    return LLMError("upstream", f"El proveedor respondió con un error ({code}).", 502)
+
+
+async def post(path: str, *, json: dict | None = None, files: dict | None = None, data: dict | None = None, _retry: bool = True) -> dict:
+    try:
+        async with httpx.AsyncClient(timeout=settings.llm_timeout) as http:
+            resp = await http.post(f"{settings.llm_base_url}{path}", headers=_headers(), json=json, files=files, data=data)
+    except httpx.TimeoutException as exc:
+        raise LLMError("timeout", "El modelo tardó demasiado en responder.", 504) from exc
+    except httpx.HTTPError as exc:
+        raise LLMError("connection", "No se pudo conectar con el modelo. Revisa la conexión a internet.", 503) from exc
+    if resp.status_code == 429 and _retry:
+        # free tiers limit tokens per minute: when the provider asks for a short wait, wait once and try again
         try:
-            retry = exc.response.headers.get("retry-after")
-        except Exception:  # noqa: BLE001
-            pass
-        return LLMError("rate_limit", "Se alcanzó el límite de solicitudes de Groq. Intenta de nuevo en unos segundos.", 429, retry)
-    if isinstance(exc, groq.APITimeoutError):  # subclase de APIConnectionError: va primero
-        return LLMError("timeout", "Groq tardó demasiado en responder.", 504)
-    if isinstance(exc, groq.APIConnectionError):
-        return LLMError("connection", "No se pudo conectar con Groq. Revisa la conexión a internet.", 503)
-    if isinstance(exc, groq.NotFoundError):
-        return LLMError("model", f"El modelo '{settings.groq_model}' no existe o no está disponible para tu cuenta.", 502)
-    if isinstance(exc, groq.BadRequestError):
-        logger.warning("Groq 400: %s", str(exc)[:300])
-        return LLMError("bad_request", "Groq rechazó la solicitud del asistente.", 502)
-    if isinstance(exc, groq.APIStatusError):
-        logger.warning("Groq %s: %s", exc.status_code, str(exc)[:300])
-        return LLMError("upstream", f"Groq respondió con un error ({exc.status_code}).", 502)
-    logger.exception("Error inesperado del cliente Groq")
-    return LLMError("unknown", "Error inesperado al consultar el modelo de lenguaje.", 502)
+            wait = float(resp.headers.get("retry-after", "0"))
+        except ValueError:
+            wait = 0
+        if 0 < wait <= 12:
+            import asyncio
+            await asyncio.sleep(wait)
+            return await post(path, json=json, files=files, data=data, _retry=False)
+    if resp.status_code >= 400:
+        if resp.status_code == 400 and "tool_use_failed" in resp.text:
+            raise LLMError("tool_use_failed", "tool_use_failed", 502)
+        raise _translate(resp)
+    return resp.json()
 
 
 _THINK = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
@@ -77,55 +77,46 @@ def strip_think(text: str) -> str:
     return _THINK.sub("", text or "").strip()
 
 
-async def chat(
-    messages: list[dict[str, Any]],
-    tools: list[dict[str, Any]] | None = None,
-    tool_choice: str = "auto",
-) -> dict[str, Any]:
+async def chat(messages: list[dict[str, Any]], tools: list[dict[str, Any]] | None = None, tool_choice: str = "auto") -> dict[str, Any]:
     """Una llamada al modelo. Devuelve {"content": str, "tool_calls": [formato OpenAI]}."""
-    client = _get_client()
-    kwargs: dict[str, Any] = {
-        "model": settings.groq_model,
-        "messages": messages,
-        "temperature": 0.2,
-        "max_completion_tokens": settings.groq_max_tokens,
-    }
-    if settings.groq_reasoning_effort:
-        kwargs["reasoning_effort"] = settings.groq_reasoning_effort
+    body: dict[str, Any] = {"model": settings.llm_model, "messages": messages, "temperature": 0.3,
+                            "max_completion_tokens": settings.llm_max_tokens}
+    if settings.llm_reasoning_effort:
+        body["reasoning_effort"] = settings.llm_reasoning_effort
     if tools:
-        kwargs["tools"] = tools
-        kwargs["tool_choice"] = tool_choice
-
-    resp = None
-    for attempt in range(2):
+        body["tools"], body["tool_choice"] = tools, tool_choice
+    for attempt in range(3):
         try:
-            resp = await client.chat.completions.create(**kwargs)
+            data = await post("/chat/completions", json=body)
             break
-        except groq.BadRequestError as exc:
-            # Los modelos a veces generan una llamada a herramienta mal formada: un reintento suele bastar.
-            if attempt == 0 and "tool_use_failed" in str(exc):
+        except LLMError as exc:
+            fb = settings.llm_fallback_model
+            if exc.kind == "rate_limit" and fb and body["model"] != fb:
+                logger.info("rate limit on %s, using %s", body["model"], fb)
+                body["model"] = fb
+                if "gpt-oss" not in fb:
+                    body.pop("reasoning_effort", None)
+                continue
+            # A veces el modelo escribe una llamada a herramienta mal formada: un reintento suele bastar.
+            if exc.kind == "tool_use_failed" and attempt == 0:
                 logger.warning("tool_use_failed, reintentando una vez")
                 continue
-            raise _translate(exc) from exc
-        except groq.GroqError as exc:
-            raise _translate(exc) from exc
-
-    msg = resp.choices[0].message
-    calls = [
-        {
-            "id": tc.id,
-            "type": "function",
-            "function": {"name": tc.function.name, "arguments": tc.function.arguments or "{}"},
-        }
-        for tc in (msg.tool_calls or [])
-    ]
-    return {"content": strip_think(msg.content or ""), "tool_calls": calls}
+            if exc.kind == "tool_use_failed":
+                raise LLMError("bad_request", "El modelo no pudo usar sus herramientas.", 502) from exc
+            raise
+    msg = data["choices"][0]["message"]
+    calls = [{"id": tc["id"], "type": "function",
+              "function": {"name": tc["function"]["name"], "arguments": tc["function"].get("arguments") or "{}"}}
+             for tc in (msg.get("tool_calls") or [])]
+    return {"content": strip_think(msg.get("content") or ""), "tool_calls": calls}
 
 
 async def available_models() -> list[str]:
-    client = _get_client()
     try:
-        result = await client.models.list()
-    except groq.GroqError as exc:
-        raise _translate(exc) from exc
-    return [m.id for m in result.data]
+        async with httpx.AsyncClient(timeout=settings.llm_timeout) as http:
+            resp = await http.get(f"{settings.llm_base_url}/models", headers=_headers())
+    except httpx.HTTPError as exc:
+        raise LLMError("connection", "No se pudo conectar con el modelo.", 503) from exc
+    if resp.status_code >= 400:
+        raise _translate(resp)
+    return [m["id"] for m in resp.json().get("data", [])]

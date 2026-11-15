@@ -2,12 +2,14 @@
 import PixelIcon from '../components/PixelIcon.vue'
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import CatSprite from './CatSprite.vue'
-import { guide, line, hasNext, next, close, summon, submitQuestion, openAsk } from '../guide.js'
+import { guide, line, hasNext, next, close, summon, submitQuestion, openAsk, say } from '../guide.js'
 import { state, valueAt, placeLabel, chosen } from '../store.js'
 import { LAYER_KEYS } from '../content.js'
 import { blip, meow, meowLength, unlock } from '../lib/sound.js'
 import { t, lang } from '../i18n.js'
 import VoiceButton from '../voice/VoiceButton.vue'
+import { runActions } from '../voice/actions.js'
+import { askByText, toVoiceContext, playReply } from '../voice/voiceApi.js'
 
 // Sprout's translator panel: typed lines, answers to pick, and a box for open questions.
 // A line is an English key, or a function for lines with names and numbers, so it re-translates when the language changes.
@@ -24,7 +26,7 @@ watch([line, lang, () => guide.open], ([l, , open]) => {
   if (!l || !open) return
   const [en, mood] = l
   const text = resolve(en)
-  const meows = mood !== lastMood && !guide.muted   // a meow when the mood changes, then the text starts
+  const meows = mood !== lastMood && !guide.muted && !guide.voicing   // a meow when the mood changes, then the text starts
   lastMood = mood
   if (meows) meow(mood)
   if (reduce) { typed.value = text; return }
@@ -34,7 +36,7 @@ watch([line, lang, () => guide.open], ([l, , open]) => {
   const tick = () => {
     typed.value = text.slice(0, ++i)
     const ch = text[i - 1]
-    if (!guide.muted && i % 2 && /\w/.test(ch)) blip(PITCH[mood])
+    if (!guide.muted && !guide.voicing && i % 2 && /\w/.test(ch)) blip(PITCH[mood])
     if (i >= text.length) { guide.talking = false; return }
     timer = setTimeout(tick, /[.!?]/.test(ch) ? 220 : /[,:]/.test(ch) ? 110 : 20)
   }
@@ -57,18 +59,46 @@ watch(() => [atEnd.value, guide.on, guide.choices, guide.asking, guide.open], ()
   if (guide.open && atEnd.value && !guide.on && !guide.choices && !guide.asking) restTimer = setTimeout(close, 7000)
 })
 
+// Voice: what the user sees goes with the question; the answer is typed in the panel, spoken, and its actions run
+// (the map flies to a place, a topic opens). The last turns go back as history so a conversation can continue.
 const voiceContext = () => ({
-  lat: state.point?.lat, lon: state.point?.lon, district: state.area?.name, month: state.month + 1, topic: guide.screen,
+  lat: state.point?.lat, lon: state.point?.lon, district: state.area?.name, province: state.area?.province ?? state.province,
+  month: state.month + 1, topic: guide.screen, track: state.track,
   readings: Object.fromEntries(LAYER_KEYS.map(k => [k, valueAt(k)])),
 })
+const voiceTurns = []
+const voiceHistory = () => voiceTurns
+const onListening = () => { unlock(); say(() => t('I\'m listening… tap the microphone again when you finish.'), 'happy', [], { level: 'force' }) }
+const onThinking = () => say(() => t('Let me think…'), 'thinking', [], { level: 'force' })
+function onReply(r) {
+  if (r.transcript) voiceTurns.push({ role: 'user', content: r.transcript })
+  voiceTurns.push({ role: 'assistant', content: r.text })
+  voiceTurns.splice(0, Math.max(0, voiceTurns.length - 10))
+  guide.voicing = !guide.muted
+  say(() => r.text, r.mood || 'neutral', [], { level: 'force' })
+  runActions(r.actions)
+}
+const onSpeaking = on => { guide.voicing = on }
+const onVoiceError = m => { guide.voicing = false; say(() => m, 'worried', [], { level: 'force' }) }
 
 const question = ref(''), box = ref(null)
 watch(() => guide.asking, on => on && nextTick(() => box.value?.focus()))
 
-function send() {
+// Typed questions go to the same assistant as the voice (it can move the map and open topics); if it does not answer,
+// the plain chat (/ask) takes over.
+let typedPlayer = null
+async function send() {
   const q = question.value.trim()
   if (!q) return
   question.value = ''
+  onThinking()
+  try {
+    const r = await askByText(q, { context: toVoiceContext(voiceContext()), history: voiceTurns, lang: lang.value === 'en' ? 'en' : 'es' })
+    onReply({ ...r, transcript: q })
+    typedPlayer?.stop()
+    typedPlayer = playReply(r, { silent: guide.muted, onStart: () => onSpeaking(true), onEnd: () => onSpeaking(false) })
+    return
+  } catch (e) { console.warn('assistant chat failed, using /ask:', e.message) }
   submitQuestion(q, {
     stage: state.stage, mode: state.mode, district: state.area?.name, place: state.point && placeLabel(state.point), month: state.month + 1, scenario: state.scen,
     readings: Object.fromEntries(LAYER_KEYS.map(k => [k, valueAt(k)])), rotation: state.stage === 'explore' ? chosen.value.r.name : null,
@@ -98,13 +128,14 @@ onBeforeUnmount(() => { clearTimeout(timer); clearTimeout(restTimer); removeEven
           <span><span class="font-pixel text-[13px]">Sprout</span> · {{ t('translator') }}</span>
           <span class="flex gap-1 text-muted [&_button]:uppercase">
             <button type="button" class="px-1.5 py-1 hover:text-ink" data-tour="ask" :class="{ 'text-teal': guide.asking }" :aria-pressed="guide.asking" :aria-label="t('Ask Sprout anything')" :title="t('Ask Sprout anything')" @click="openAsk"><PixelIcon name="ai" color="currentColor" :size="1.25" /></button>
-            <VoiceButton :context="voiceContext" @reply="r => console.log('voz:', r)" @error="m => console.warn('voz:', m)" />
+            <VoiceButton :context="voiceContext" :history="voiceHistory" :muted="guide.muted" data-tour="voice"
+                         @listening="onListening" @thinking="onThinking" @reply="onReply" @speaking="onSpeaking" @error="onVoiceError" />
             <button type="button" class="px-1.5 py-1 hover:text-ink" data-tour="sound" :aria-pressed="!guide.muted" :aria-label="t(guide.muted ? 'Turn voice sound on' : 'Turn voice sound off')" :title="t(guide.muted ? 'Turn voice sound on' : 'Turn voice sound off')" @click="unlock(); guide.muted = !guide.muted"><PixelIcon :name="guide.muted ? 'speaker_off' : 'speaker'" color="currentColor" :size="1.25" /></button>
             <button type="button" class="px-1.5 py-1 hover:text-ink" data-tour="close" :aria-label="t('Close Sprout')" :title="t('Close Sprout')" @click="close"><PixelIcon name="close" color="currentColor" :size="1.25" /></button>
           </span>
         </div>
         <div class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2.5 max-sm:gap-2 max-sm:py-1.5" @click="advance">
-          <div v-if="state.stage !== 'intro'" class="-mb-2.5 -mt-4 self-end max-sm:-mb-1.5 max-sm:-mt-2 max-sm:w-11"><CatSprite :mood="line[1]" :talking="guide.talking" :size="88" bust class="max-sm:!h-auto max-sm:!w-11" /></div>
+          <div v-if="state.stage !== 'intro'" class="-mb-2.5 -mt-4 self-end max-sm:-mb-1.5 max-sm:-mt-2 max-sm:w-11"><CatSprite :mood="line[1]" :talking="guide.talking || guide.voicing" :size="88" bust class="max-sm:!h-auto max-sm:!w-11" /></div>
           <span v-else />
           <p class="min-h-[3.1em] text-[14.5px] leading-normal max-sm:min-h-0 max-sm:text-[13px] max-sm:leading-snug" aria-hidden="true">{{ typed }}<span v-if="!done" class="animate-[caret_.8s_steps(2)_infinite] text-teal">▌</span></p>
           <p class="sr-only" aria-live="polite">{{ shown }}</p>

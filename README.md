@@ -96,6 +96,7 @@ flowchart LR
 | 🧊 | **3D field + field log** | The outlined field rises as a block of land over the real relief; its soil layers fill with water as you drag a ship-log-style timeline from 1998 to 2030 |
 | ⚖️ | **How sure is Sprout** | Skill by month ahead, the real coverage of the ranges, what changed with the newest model, what Sprout cannot tell you |
 | 🐱 | **Sprout** | Explains each screen once; answers open questions with an AI that only interprets numbers computed by the models |
+| 🎙️ | **Talk to Sprout** | Voice in Spanish or English with a soft kitten voice; "take me to Olmos" or "show me how sure you are" moves the map and opens the screen ([how](ml-api/README.md#sprouts-voice-assistantvoice-assistantchat)) |
 | 👩‍🌾 / 🔬 | **Farmer / Pro mode** | Farmer mode: words and icons, no decimals. Pro mode: numbers, units, bands, confidence intervals |
 | 🗣️ | **Three languages** | English, Spanish and Quechua (beta, written with AI help, to be reviewed by native speakers) |
 | 📱 | **Phones** | One screen like a game; on phones the cards become swipeable strips above and below the map |

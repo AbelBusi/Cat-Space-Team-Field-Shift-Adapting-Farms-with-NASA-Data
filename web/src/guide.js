@@ -17,6 +17,7 @@ export const guide = reactive({
   screen: null,         // id of the screen on show (a key of SCRIPTS)
   seen: {},             // screens already explained
   muted: false, talking: false,
+  voicing: false,       // Sprout's spoken voice is playing (voice assistant): the mouth moves, the typing blips stay quiet
 })
 let pending = null
 

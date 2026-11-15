@@ -16,6 +16,8 @@ COPY ml/artifacts/v3_era5_rain/summary.json ml/artifacts/v3_era5_rain/validation
 COPY ml/artifacts/v3_era5_rain/sm_root_monthly ml/artifacts/v3_era5_rain/sm_root_monthly
 COPY ml/artifacts/trends/trend_check.json ml/artifacts/trends/trend_check.json
 COPY ml-api/app ml-api/app
+COPY ml-api/voice_assistant ml-api/voice_assistant
+COPY web/src/data/lambayeque_admin.json web/src/data/lambayeque_places.json web/src/data/
 COPY ml-api/data ml-api/data
 WORKDIR /srv/ml-api
 RUN useradd --no-create-home api
