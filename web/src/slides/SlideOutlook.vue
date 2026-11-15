@@ -31,7 +31,7 @@ const fmt = v => v == null ? '–' : v.toFixed(3)
       <HudCard v-else-if="!proj"><p class="text-muted">{{ t('Loading the projections…') }}</p></HudCard>
       <HudCard v-else-if="!s"><p class="text-muted">{{ t('There is no projection for this spot. Tap a colored square inside Lambayeque.') }}</p></HudCard>
       <template v-else>
-        <HudCard :title="t('Deep soil water at your spot, 2026')">
+        <HudCard data-focus="outlook" :title="t('Deep soil water at your spot, 2026')">
           <template v-if="state.mode === 'farmer'">
             <!-- Two rows of 6 months: January-June (the months the projection is good for) and July-December (faded). -->
             <div v-for="half in [0, 6]" :key="half" class="grid grid-cols-6 gap-1">

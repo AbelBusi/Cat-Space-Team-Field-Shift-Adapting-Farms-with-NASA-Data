@@ -20,7 +20,7 @@ function bump(k) {
 <template>
   <SlideFrame>
     <template #left>
-      <HudCard :title="t('Tap to raise or lower')">
+      <HudCard data-focus="priorities" :title="t('Tap to raise or lower')">
         <div class="swipe flex flex-col gap-2">
         <button v-for="c in CRIT" :key="c.k" type="button" class="flex items-center gap-3 border border-line p-2 text-left transition-colors hover:border-teal"
                 :class="{ 'border-teal bg-teal/10': state.prio[c.k] === 3 }"
@@ -36,7 +36,7 @@ function bump(k) {
       </HudCard>
     </template>
     <template #right>
-      <HudCard :title="t('Best fit for you')">
+      <HudCard data-focus="best-fit" :title="t('Best fit for you')">
         <Transition name="flip" mode="out-in"><div :key="ranking[0].r.id" class="font-display text-xl font-semibold text-fire">{{ t(ranking[0].r.name) }}</div></Transition>
         <CropSequence :key="'c' + ranking[0].r.id" :cal="ranking[0].r.cal" />
         <FieldRow :key="ranking[0].r.id" :cal="ranking[0].r.cal" :score="ranking[0].score" :risks="risks" :month="state.month" :floods="!!ranking[0].r.floods" />

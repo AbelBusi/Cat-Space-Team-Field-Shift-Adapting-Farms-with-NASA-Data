@@ -42,7 +42,7 @@ const times = computed(() => H.value ? Math.max(1, Math.round(H.value.wettest.ra
     <template #left>
       <HudCard v-if="!H"><p class="text-muted">{{ t(db.error ? 'No NASA POWER data for this spot.' : 'Reading 44 years of NASA data…') }}</p></HudCard>
       <template v-else>
-        <HudCard :title="t('Afternoon heat, 1981 to 2024')">
+        <HudCard data-focus="heat-stripes" :title="t('Afternoon heat, 1981 to 2024')">
           <div class="stripes !h-24" role="img" :aria-label="t('Warming stripes 1981 to 2024. Recent afternoons are {n} degrees warmer than in 1981 to 2000.', { n: H.warming })">
             <i v-for="(d, i) in H.years" :key="d.y" :style="{ background: stripeColor(d.heat - H.heatMean), '--i': i }" :title="`${d.y}: ${d.heat.toFixed(1)} °C`" />
           </div>
@@ -81,21 +81,21 @@ const times = computed(() => H.value ? Math.max(1, Math.round(H.value.wettest.ra
     </template>
 
     <template v-if="H" #right>
-      <HudCard :title="t('Wettest year')">
+      <HudCard data-focus="wettest-year" :title="t('Wettest year')">
         <div class="flex items-center gap-3">
           <Instrument kind="rain" :value="H.wettest.rain" :domain="[0, H.wettest.rain]" :size="2" />
           <div><div class="font-display text-2xl font-semibold text-fire">{{ H.wettest.y }}</div>
             <div class="text-muted">{{ state.mode === 'farmer' ? t('About {n}× the rain of a normal year', { n: times }) : t('{n} mm · average {avg} mm', { n: H.wettest.rain, avg: H.meanRain }) }}</div></div>
         </div>
       </HudCard>
-      <HudCard :title="t('Driest year')">
+      <HudCard data-focus="driest-year" :title="t('Driest year')">
         <div class="flex items-center gap-3">
           <PixelIcon name="soil_dry" :size="3" />
           <div><div class="font-display text-2xl font-semibold">{{ H.driest.y }}</div>
             <div class="text-muted">{{ state.mode === 'farmer' ? t('The ground was at its thirstiest') : t('{n} mm of rain', { n: H.driest.rain }) }}</div></div>
         </div>
       </HudCard>
-      <HudCard :title="t('Afternoons now vs 1981–2000')">
+      <HudCard data-focus="warming" :title="t('Afternoons now vs 1981–2000')">
         <div class="flex items-center gap-3">
           <PixelIcon :name="H.warming > 0.1 ? 'up' : H.warming < -0.1 ? 'down' : 'flat'" :color="H.warming > 0.1 ? PAL.ember : PAL.teal" :size="3" />
           <div><div class="font-display text-2xl font-semibold">{{ H.warming > 0 ? '+' : '' }}{{ H.warming }} °C</div>

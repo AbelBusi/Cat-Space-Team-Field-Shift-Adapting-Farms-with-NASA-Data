@@ -50,7 +50,7 @@ const members = computed(() => proj.value?.soil_water[state.ahead.scen]?.members
       <HudCard v-else-if="!proj"><p class="text-muted">{{ t('Loading the projections…') }}</p></HudCard>
       <HudCard v-else-if="!base"><p class="text-muted">{{ t('There is no projection for this spot. Tap a colored square inside Lambayeque.') }}</p></HudCard>
       <template v-else>
-        <HudCard :title="t('{what}: deep soil water at your spot', { what: t(scen.label) })">
+        <HudCard data-focus="whatif-result" :title="t('{what}: deep soil water at your spot', { what: t(scen.label) })">
           <template v-if="state.ahead.scen === 'base'">
             <p>{{ t('Pick a "what if" on the right to compare it with this normal year.') }}</p>
           </template>
@@ -92,7 +92,7 @@ const members = computed(() => proj.value?.soil_water[state.ahead.scen]?.members
     </template>
 
     <template #right>
-      <HudCard :title="t('What if…')">
+      <HudCard data-focus="scenarios" :title="t('What if…')">
         <div class="flex flex-col gap-1">
           <button v-for="x in offered(proj)" :key="x.id" type="button" class="btn !justify-start !px-2 text-left" :aria-pressed="state.ahead.scen === x.id" :title="t(x.hint)" @click="state.ahead.scen = x.id">
             <PixelIcon :name="x.icon" :size="1" /><span>{{ t(x.label) }}</span>

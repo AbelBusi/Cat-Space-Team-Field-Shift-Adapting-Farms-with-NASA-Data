@@ -59,3 +59,19 @@ def test_speak_returns_sprouts_voice_or_tells_the_browser_to_speak():
         w = wave.open(io.BytesIO(r.content))
         assert r.headers["content-type"] == "audio/wav" and w.getnframes() / w.getframerate() > 0.5
     assert client.post("/api/v1/assistant/speak", json={"text": "", "lang": "es"}).status_code == 422
+
+
+def test_intents_become_navigation_even_when_the_model_skips_a_step():
+    from voice_assistant.assistant import _complete_navigation, _default_choices, _rescue_choices
+    # "I want to save water": the model only set the priorities -> the priorities screen opens and its card is pointed at
+    acts = _complete_navigation([{"type": "set_view", "priorities": {"water": 3}}])
+    assert acts[-1] == {"type": "open_topic", "topic": "prio", "track": "today"} and acts[0]["focus"] == "priorities"
+    # "I worry about the heat": signal -> the satellites screen
+    assert _complete_navigation([{"type": "set_view", "signal": "heat"}])[-1]["topic"] == "signals"
+    # an explicit topic is kept as it is
+    kept = _complete_navigation([{"type": "open_topic", "topic": "trends", "track": "ahead"}, {"type": "set_view", "signal": "rain"}])
+    assert [a["topic"] for a in kept if a["type"] == "open_topic"] == ["trends"]
+    # next steps: written by the model as text, or by screen in the reply's language
+    assert _rescue_choices('Listo. [ "Ver la lluvia", "Ver El Niño" ]') == ("Listo.", ["Ver la lluvia", "Ver El Niño"])
+    en = _default_choices([{"type": "open_topic", "topic": "whatif", "track": "ahead"}], "en")
+    assert en[-1]["type"] == "choices" and en[-1]["items"][0].startswith("And with half")

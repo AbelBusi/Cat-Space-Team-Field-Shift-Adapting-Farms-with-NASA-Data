@@ -200,6 +200,9 @@
 @keyframes edge-in { from { opacity: 0; stroke-width: 14; } }
 @keyframes nudge { 50% { transform: translateX(4px); } }
 @keyframes ping { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2.2); opacity: 0; } }
+/* Sprout points at a card it talks about: a campfire ring that pulses twice (voice/actions.js focusOn). */
+.voice-focus { outline: 2px solid var(--fire); outline-offset: 4px; animation: voice-focus 1.4s ease-out 2; }
+@keyframes voice-focus { 0% { outline-offset: 12px; outline-color: transparent; } 40% { outline-color: var(--fire); } 100% { outline-offset: 4px; } }
 @keyframes ln-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 @keyframes ln-spin { to { transform: rotate(360deg); } }
 @keyframes ln-bob { 50% { transform: translateY(1.5px) scale(1.04, .96); } }

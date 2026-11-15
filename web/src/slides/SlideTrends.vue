@@ -81,7 +81,7 @@ const ninoEvery = computed(() => tl.value ? Math.round(1 / tl.value.el_nino_shar
       <HudCard v-if="!state.point"><p class="text-muted">{{ t('Tap a square inside Lambayeque to see how that place has changed since 1998.') }}</p></HudCard>
       <HudCard v-else-if="err"><p>{{ /outside_grid/.test(err) ? t('This spot is outside the area my models cover (Lambayeque and its edges).') : t('I could not read this place\'s past. Is the model service running?') }}</p></HudCard>
       <HudCard v-else-if="!tl"><p class="text-muted">{{ t('Reading 28 years of this place…') }}</p></HudCard>
-      <HudCard v-else :title="t('Your place since 1998, and towards 2030')">
+      <HudCard data-focus="trends" v-else :title="t('Your place since 1998, and towards 2030')">
         <ul class="flex flex-col gap-2.5">
           <li v-for="r in rows" :key="r.id" class="flex flex-col gap-0.5">
             <div class="flex items-center gap-2">
@@ -109,7 +109,7 @@ const ninoEvery = computed(() => tl.value ? Math.round(1 / tl.value.el_nino_shar
     </template>
 
     <template #right>
-      <HudCard :title="t('Where it is changing')">
+      <HudCard data-focus="trend-map" :title="t('Where it is changing')">
         <div class="seg" role="group" :aria-label="t('Where it is changing')">
           <button v-for="v in VARS" :key="v.id" type="button" :aria-pressed="mapVar === v.id" :title="t(v.name)" @click="mapVar = v.id"><PixelIcon :name="v.icon" :size="1" /></button>
         </div>

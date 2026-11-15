@@ -78,7 +78,7 @@ onBeforeUnmount(() => { clearInterval(playTimer); clearInterval(listenTimer) })
     <template #left>
       <!-- All five signals at once, one row each: the tool a farmer knows, its word or number, and how it moves in the
            year (Pro). Tapping a row paints that signal on the map. -->
-      <HudCard :title="t('Satellite signals')">
+      <HudCard data-focus="signals" :title="t('Satellite signals')">
         <p class="flex items-start gap-2 text-[11px] leading-snug text-muted"><PixelIcon name="satellite" :size="1" class="mt-0.5" />{{ scope }}</p>
         <div class="swipe flex flex-col gap-1" role="radiogroup" :aria-label="t('Satellite signals')">
           <button v-for="(k, i) in LAYER_KEYS" :key="k" type="button" role="radio" :aria-checked="k === state.layer"
@@ -104,7 +104,7 @@ onBeforeUnmount(() => { clearInterval(playTimer); clearInterval(listenTimer) })
     </template>
 
     <template #right>
-      <HudCard :title="t('Month and kind of year')">
+      <HudCard data-focus="month" :title="t('Month and kind of year')">
         <div class="flex items-center gap-3">
           <button type="button" class="btn !size-10 shrink-0 !px-0" :aria-label="t(playing ? 'Pause' : 'Play the 12 months')" @click="togglePlay">
             <svg class="size-4" viewBox="0 0 24 24" aria-hidden="true" v-html="playing ? ICON.pause : ICON.play" />
@@ -120,7 +120,7 @@ onBeforeUnmount(() => { clearInterval(playTimer); clearInterval(listenTimer) })
           <button type="button" :aria-pressed="state.scen === 'nino'" @click="setScen('nino')">{{ t('El Niño years') }}</button>
         </div>
       </HudCard>
-      <HudCard :title="t('Color on the map')">
+      <HudCard data-focus="map-color" :title="t('Color on the map')">
         <label class="flex items-center gap-2 font-mono text-xs text-muted">{{ t('Paint') }}
           <select class="min-w-0 flex-1 border border-line bg-bg px-2 py-1.5 text-ink" :value="mapUi.data || ''" @change="mapUi.data = $event.target.value || null">
             <option value="">{{ t('The signal on the left') }}</option>

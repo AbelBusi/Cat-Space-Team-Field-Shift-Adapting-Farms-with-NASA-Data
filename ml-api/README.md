@@ -214,6 +214,14 @@ web**: fly to a province, district or town of Lambayeque, or open a screen or in
 web: Sprout types the answer, speaks it (browser voice, pitch 1.75) and runs the actions (map, topic)
 ```
 
+**A guide, not a chatbot:** Sprout reads the intent of what you say, not only commands, and takes you there in
+the same turn. *"Soy de Pomalca y me preocupa el calor"* flies to Pomalca, opens what the satellites see, paints the map
+with daytime heat and points at that card with a campfire ring; *"quiero ahorrar agua"* opens the priorities with water
+at the top; *"¿y si llega El Niño?"* opens the what-if on the El Niño scenario. Tools for it: `go_to_place`,
+`open_topic`, `set_view` (map signal, month, kind of year, scenario, priorities, mode, card to point at) and
+`offer_choices` (2–3 next steps shown as buttons; per-screen defaults when the model offers none). The answer stays on
+screen while the user is moved: the new screen's own lines wait a moment.
+
 **Sprout's voice:** every line Sprout says (the guide, typed answers, spoken answers) is also spoken with
 [Piper](https://github.com/rhasspy/piper) on the API (`POST /assistant/speak`, cached): a soft Spanish voice
 (`es_MX-claude-high`) and a soft English one (`en_US-amy-medium`), pitched up by `TTS_PITCH` (1.35) with the pace kept

@@ -18,6 +18,8 @@ class ScreenContext(BaseModel):
     readings: dict[str, Any] | None = None
     province: str | None = Field(None, max_length=80)
     track: str | None = Field(None, max_length=10)
+    view: dict[str, Any] | None = None      # signal, month, kind of year, scenario, mode now on screen
+    stage: str | None = Field(None, max_length=12)
 
 
 class SpeakRequest(BaseModel):
@@ -48,7 +50,7 @@ class AssistantAction(BaseModel):
     """Acción estructurada para el mapa/dashboard. 'type' + parámetros propios de cada tipo."""
     model_config = ConfigDict(extra="allow")
 
-    type: Literal["select_cell", "run_simulation", "compare_cells", "show_analysis", "show_alerts", "go_to_place", "open_topic"]
+    type: Literal["select_cell", "run_simulation", "compare_cells", "show_analysis", "show_alerts", "go_to_place", "open_topic", "set_view", "choices"]
 
 
 class ChatResponse(BaseModel):

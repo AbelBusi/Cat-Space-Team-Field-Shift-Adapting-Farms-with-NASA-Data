@@ -360,6 +360,42 @@ def _facts(topic: str) -> dict:
     return {}
 
 
+FOCUS = ["signals", "month", "year-kind", "map-color", "heat-stripes", "wettest-year", "driest-year", "warming",
+         "priorities", "best-fit", "scenarios", "whatif-result", "outlook", "trends", "trend-map", "water-ranking", "my-district"]
+_SCENARIOS = ["base", "el_nino", "drought_feb_mar", "rain_half", "rain_double"]
+
+
+async def _set_view(client, args, ctx):
+    """Adjusts what the screen shows. Only known values pass; the rest is ignored."""
+    act: dict[str, Any] = {"type": "set_view"}
+    if args.get("signal") in ("heat", "rain", "soil", "veg", "water"):
+        act["signal"] = args["signal"]
+    m = _to_float(args.get("month"))
+    if m is not None and 1 <= m <= 12:
+        act["month"] = int(m)
+    if args.get("year_kind") in ("typical", "el_nino"):
+        act["year_kind"] = args["year_kind"]
+    if args.get("scenario") in _SCENARIOS:
+        act["scenario"] = args["scenario"]
+    if args.get("mode") in ("farmer", "pro"):
+        act["mode"] = args["mode"]
+    pr = args.get("priorities")
+    if isinstance(pr, dict):
+        act["priorities"] = {k: int(_clamp(v, 0, 3, 2)) for k, v in pr.items() if k in ("water", "income", "soil", "pests", "climate")}
+    if args.get("focus") in FOCUS:
+        act["focus"] = args["focus"]
+    if len(act) == 1:
+        raise ToolError("Nothing to change: give a signal, month, year_kind, scenario, mode, priorities or focus.")
+    return {"done": {k: v for k, v in act.items() if k != "type"}}, [act]
+
+
+async def _offer_choices(client, args, ctx):
+    items = [str(x).strip()[:60] for x in (args.get("choices") or []) if str(x).strip()][:3]
+    if not items:
+        raise ToolError("Give 1 to 3 short choices.")
+    return {"offered": items}, [{"type": "choices", "items": items}]
+
+
 async def _open_topic(client, args, ctx):
     topic = str(args.get("topic") or "")
     if topic not in TOPICS:
@@ -376,6 +412,13 @@ TOOLS: dict[str, Tool] = {t.name: t for t in [
           "required": ["name"]}, _go_to_place),
     Tool("open_topic", "Open a screen or insight of the web; returns its key facts.",
          {"type": "object", "properties": {"topic": {"type": "string", "enum": list(TOPICS)}}, "required": ["topic"]}, _open_topic),
+    Tool("set_view", "Adjust the screen: map signal (heat, rain, soil = soil moisture, veg = greenness, water = groundwater), month 1-12, year_kind (typical / el_nino) of the satellite view, what-if scenario, farmer priorities 0-3, farmer/pro mode, and focus = the card to point at.",
+         {"type": "object", "properties": {"signal": {"type": "string", "enum": ["heat", "rain", "soil", "veg", "water"]}, "month": {"type": "integer"},
+              "year_kind": {"type": "string", "enum": ["typical", "el_nino"]}, "scenario": {"type": "string", "enum": _SCENARIOS},
+              "priorities": {"type": "object", "properties": {k: {"type": "integer"} for k in ("water", "income", "soil", "pests", "climate")}},
+              "mode": {"type": "string", "enum": ["farmer", "pro"]}, "focus": {"type": "string", "enum": FOCUS}}}, _set_view),
+    Tool("offer_choices", "Offer 2-3 short next steps as buttons, in the user's language, written as the user would say them.",
+         {"type": "object", "properties": {"choices": {"type": "array", "items": {"type": "string"}}}, "required": ["choices"]}, _offer_choices),
     Tool("get_cell_projection", "Deep soil water and NDVI of a 2 km square for the coming months, with ranges.", _CELL, _projection_cell),
     Tool("get_cell_timeline", "A square since 1998: trends of soil water, temperature, rain and NDVI; El Niño years.", _CELL, _timeline),
     Tool("run_simulation", "What if for a square vs a normal year. kind: drought (dry_months = months ahead, 1 = first), el_nino, temperature (t2m_delta °C), rainfall (rain_factor 0-3).",

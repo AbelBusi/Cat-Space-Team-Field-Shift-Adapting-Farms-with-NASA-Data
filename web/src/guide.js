@@ -17,6 +17,7 @@ export const guide = reactive({
   screen: null,         // id of the screen on show (a key of SCRIPTS)
   seen: {},             // screens already explained
   muted: false, talking: false,
+  holdUntil: 0,         // while Sprout answers and moves the user somewhere, the new screen's own lines wait
   voicing: false,       // Sprout's spoken voice is playing (voice assistant): the mouth moves, the typing blips stay quiet
 })
 let pending = null
@@ -32,6 +33,7 @@ function show(lines, choices = null) {
 // level 'info': a passing remark, dropped while the guide is off or a script is unfinished.
 // level 'note': worth knowing; with the guide off it raises Sprout's flag. level 'force': always shown (errors, answers).
 export function tell(lines, { choices = null, level = 'info' } = {}) {
+  if (level !== 'force' && Date.now() < guide.holdUntil) return
   if (level === 'force' || guide.on) {
     if (level === 'info' && guide.open && (hasNext.value || guide.choices || guide.asking)) return
     return show(lines, choices)
@@ -46,7 +48,7 @@ export function close() { guide.open = false; guide.asking = false; endTour() }
 // A screen came into view: explain it once if the guide is on.
 export function enter(id) {
   guide.screen = id
-  if (!guide.on || guide.seen[id] || !SCRIPTS[id]) return
+  if (!guide.on || guide.seen[id] || !SCRIPTS[id] || Date.now() < guide.holdUntil) return
   guide.seen[id] = true
   show(SCRIPTS[id])
 }

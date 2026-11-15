@@ -73,7 +73,8 @@ watch(() => [atEnd.value, guide.on, guide.choices, guide.asking, guide.open], ()
 // (the map flies to a place, a topic opens). The last turns go back as history so a conversation can continue.
 const voiceContext = () => ({
   lat: state.point?.lat, lon: state.point?.lon, district: state.area?.name, province: state.area?.province ?? state.province,
-  month: state.month + 1, topic: guide.screen, track: state.track,
+  month: state.month + 1, topic: guide.screen, track: state.track, stage: state.stage,
+  view: { signal: state.layer, month: state.month + 1, year_kind: state.scen === 'nino' ? 'el_nino' : 'typical', scenario: state.ahead.scen, mode: state.mode, priorities: { ...state.prio } },
   readings: Object.fromEntries(LAYER_KEYS.map(k => [k, valueAt(k)])),
 })
 const voiceTurns = []
@@ -84,7 +85,12 @@ function onReply(r) {
   if (r.transcript) voiceTurns.push({ role: 'user', content: r.transcript })
   voiceTurns.push({ role: 'assistant', content: r.text })
   voiceTurns.splice(0, Math.max(0, voiceTurns.length - 10))
-  tell([[() => r.text, r.mood || 'neutral', r.lang]], { level: 'force' })   // the line watcher speaks it in that language
+  // next steps the assistant offers become Sprout's answer buttons: tapping one asks it, as if the user had said it
+  const offered = (r.actions || []).find(a => a.type === 'choices')?.items ?? []
+  const choices = offered.length ? offered.map(label => ({ label, run: () => askText(label) })) : null
+  // if the answer moves the user (a place, a topic), the new screen's own lines wait, so this answer stays on screen
+  if ((r.actions || []).some(a => a.type !== 'choices')) guide.holdUntil = Date.now() + 3000
+  tell([[() => r.text, r.mood || 'neutral', r.lang]], { level: 'force', choices })   // the line watcher speaks it in that language
   runActions(r.actions)
 }
 const onVoiceError = m => { guide.voicing = false; say(() => m, 'worried', [], { level: 'force' }) }
@@ -98,6 +104,9 @@ async function send() {
   const q = question.value.trim()
   if (!q) return
   question.value = ''
+  return askText(q)
+}
+async function askText(q) {
   onThinking()
   try {
     const r = await askByText(q, { context: toVoiceContext(voiceContext()), history: voiceTurns, lang: lang.value === 'en' ? 'en' : 'es' })

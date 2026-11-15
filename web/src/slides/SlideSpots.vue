@@ -74,7 +74,7 @@ const scenLabel = computed(() => t(SCENARIOS.find(x => x.id === state.ahead.scen
       <HudCard v-if="projError"><p class="text-muted">{{ t('The model service is not available ({e}). Start ml-api and reload.', { e: projError }) }}</p></HudCard>
       <HudCard v-else-if="!proj"><p class="text-muted">{{ t('Loading the projections…') }}</p></HudCard>
       <template v-else>
-        <HudCard v-if="mine" :title="t('{d} in the dry months, Jul–Nov 2026', { d: state.area.name })">
+        <HudCard data-focus="my-district" v-if="mine" :title="t('{d} in the dry months, Jul–Nov 2026', { d: state.area.name })">
           <div class="flex items-center gap-3">
             <PixelIcon :name="mine.word === 'wetter' ? 'soil_wet' : mine.word === 'drier' ? 'soil_dry' : 'soil_moist'" :size="3" />
             <div>
@@ -93,7 +93,7 @@ const scenLabel = computed(() => t(SCENARIOS.find(x => x.id === state.ahead.scen
             </div>
           </div>
         </HudCard>
-        <HudCard :title="t('Most water in the deep soil, Jul–Nov 2026')">
+        <HudCard data-focus="water-ranking" :title="t('Most water in the deep soil, Jul–Nov 2026')">
           <p class="text-xs text-muted">{{ inView ? t('Districts of {p} · {s}', { p: state.area.province, s: scenLabel }) : t('All districts of Lambayeque · {s}', { s: scenLabel }) }}</p>
           <ol class="flex flex-col gap-1 text-xs">
             <template v-for="(r, i) in rows" :key="r.district">
