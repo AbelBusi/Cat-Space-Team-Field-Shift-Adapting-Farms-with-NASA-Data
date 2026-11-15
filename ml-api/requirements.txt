@@ -9,3 +9,10 @@ scipy==1.18.1      # imported by ml/fs_ml/features.py (shared feature code)
 # tests only
 pytest==9.2.0
 httpx==0.28.1
+
+#ml voice
+faster-whisper
+piper-tts
+httpx
+python-multipart
+groq

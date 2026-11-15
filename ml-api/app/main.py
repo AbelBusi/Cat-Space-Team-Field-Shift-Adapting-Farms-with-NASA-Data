@@ -17,6 +17,8 @@ from .routers import analysis, ask, explanations, models, predictions, projectio
 from .services import state
 from .services.common import BadRequest, ModelUnavailable, NotFound
 
+from voice_assistant.router import router as voice_assistant_router
+
 logging.basicConfig(level=settings.log_level.upper(), format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("ml-api")
 
@@ -71,4 +73,5 @@ async def internal(_: Request, e: Exception):
 v1 = APIRouter(prefix="/api/v1")
 for r in (models, predictions, projections, simulations, analysis, explanations, ask, timeline):
     v1.include_router(r.router)
+v1.include_router(voice_assistant_router)
 app.include_router(v1)

@@ -1,0 +1,1 @@
+"""Asistente de voz de Field Shift (STT + LLM + herramientas + TTS)."""
