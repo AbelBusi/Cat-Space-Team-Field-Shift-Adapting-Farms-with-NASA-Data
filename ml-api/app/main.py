@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
 from .config import settings
-from .routers import analysis, ask, explanations, models, predictions, projections, simulations, timeline
+from .routers import analysis, ask, explanations, history, models, predictions, projections, simulations, timeline
 from .services import state
 from .services.common import BadRequest, ModelUnavailable, NotFound
 
@@ -69,6 +69,6 @@ async def internal(_: Request, e: Exception):
 
 
 v1 = APIRouter(prefix="/api/v1")
-for r in (models, predictions, projections, simulations, analysis, explanations, ask, timeline):
+for r in (models, predictions, projections, simulations, analysis, explanations, ask, timeline, history):
     v1.include_router(r.router)
 app.include_router(v1)
