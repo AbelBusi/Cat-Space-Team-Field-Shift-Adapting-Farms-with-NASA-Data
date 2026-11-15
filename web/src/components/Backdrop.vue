@@ -1,5 +1,6 @@
 <script setup>
 import OrbitSky from './OrbitSky.vue'
+import Campfire from './Campfire.vue'
 
 // The night sky and the hills behind every screen. Once the visit starts the hills sink, so the sky is free
 // for the territory, like a camera tilting up from the campfire.
@@ -21,7 +22,7 @@ defineProps({ low: Boolean })
           <path d="M1330 298 L1332 270 L1316 262 L1334 264 L1338 246 L1352 262 L1368 258 L1350 272 L1350 298Z" />
         </g>
       </svg>
-      <div class="campfire absolute bottom-[28%] left-[calc(50%+4px)] h-[26px] w-[22px]"><i /><i /><i /></div>
+      <Campfire class="absolute bottom-[28%] left-[calc(50%-12px)] h-[56px] w-[48px]" />
     </div>
   </div>
 </template>

@@ -72,9 +72,6 @@
   .land .far { fill: #1E2A52; opacity: .85; }
   .land .mid { fill: #121A3A; }
   .land .near path { fill: #0B1026; }
-  .campfire i { position: absolute; bottom: 0; left: 50%; width: 10px; height: 18px; translate: -50% 0; background: var(--fire); animation: flame 1.1s steps(3) infinite; }
-  .campfire i:nth-child(2) { width: 6px; height: 12px; left: 30%; background: var(--ember); animation-delay: -.4s; }
-  .campfire i:nth-child(3) { width: 4px; height: 8px; left: 70%; background: var(--sky-ink); animation-delay: -.7s; }
 
   /* Sparkline, warming stripes, bars, confidence meter */
   .spark { width: 96px; height: 34px; overflow: visible; }
@@ -165,7 +162,6 @@
 @keyframes bob { 50% { transform: translateY(2.5%); } }
 @keyframes bob-ant { 50% { transform: translateY(1px); } }
 @keyframes pop { from { transform: scale(.94, 1.06); } }
-@keyframes flame { 50% { height: 22px; translate: -50% -2px; } }
 @keyframes caret { 50% { opacity: 0; } }
 @keyframes draw { from { stroke-dashoffset: 1; } }
 @keyframes grow { from { transform: scaleY(0); } }
