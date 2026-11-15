@@ -115,6 +115,7 @@ Exported by the team from Google Earth Engine and other portals (folder *Datos p
 | Quarterly **NDVI / NDSI** composite (sensor not documented, probably Landsat: NASA/USGS public domain) | NDVI | 2 km cells | To confirm with the exporter |
 | **NASA POWER** regional monthly (MERRA-2, CERES) | RH2M, WS2M, ALLSKY_SFC_SW_DWN (T2M kept, not used) | 0.5° × 0.625° / 1° | NASA open data |
 | **FAO GAEZ v4** soil qualities | Nutrient, oxygen, lime/gypsum, salinity/sodicity, rooting classes | 5′ (~9 km) | ⚠️ As far as we know CC BY-NC-SA 3.0 IGO (non-commercial): confirm with the Local Lead. Fischer et al. (2021), doi:10.4060/cb4744en |
+| **Niño 1+2 SST anomaly** (NOAA PSL monthly time series, `nino12.long.anom.csv`), v2 models only | Sea surface temperature anomaly off northern Peru (°C), one value per month | Index (0–10° S, 90–80° W) | NOAA data, US government work. ⚠️ The file does not name the SST dataset behind it or the base period: confirm on psl.noaa.gov/data/timeseries/month/ |
 
 ### Map imagery and place search (third-party, check before submission)
 | Source | Use in the app | License / terms |

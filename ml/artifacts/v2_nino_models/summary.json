@@ -1,0 +1,37 @@
+{
+ "decision": {
+  "sm_root_monthly": {
+   "passes_A_F": true,
+   "skill_vs_v1": [
+    -0.009443204748311729,
+    -0.03084774072730498,
+    0.01012154597409151
+   ],
+   "rmse_v2": 0.012644574681143007,
+   "rmse_v1": 0.01252628639398858,
+   "verdict": "no clear difference on Validation: decision waits for 2026"
+  },
+  "ndvi_quarterly": {
+   "passes_A_F": false,
+   "skill_vs_v1": [
+    -0.013093308405483395,
+    -0.021453046884337468,
+    -0.005024097782310869
+   ],
+   "rmse_v2": 0.10444264555330743,
+   "rmse_v1": 0.10309281947354941,
+   "verdict": "fails A-F: rejected"
+  }
+ },
+ "nino12": {
+  "file": "nino12.long.anom.csv",
+  "sha256": "94b7f5fb8fb6d014a7280b3dcd7ececf795a714085c9838b26fd177e4748fba7",
+  "header": "Date,   NINA12  missing value -99.99 https://psl.noaa.gov/data/timeseries/month/",
+  "first": "1870-01-01",
+  "last": "2026-09-01",
+  "months": 1881,
+  "missing_coded_values": 3,
+  "gaps": 0
+ },
+ "status": "candidate; v1 stays the standard model"
+}

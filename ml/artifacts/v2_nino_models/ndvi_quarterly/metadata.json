@@ -1,0 +1,201 @@
+{
+ "name": "ndvi_quarterly",
+ "version": "v2-nino (candidate, not adopted)",
+ "sha256": "fb3e43fcde6a24dba02c13065059d88ad0a12edec506244309fdd2c15df63c50",
+ "target": {
+  "column": "ndvi",
+  "unit": "index"
+ },
+ "new_features": [
+  "q_nino12_anom",
+  "q_nino12_anom_lag1"
+ ],
+ "hyperparameters": {
+  "learning_rate": 0.05,
+  "max_depth": 6,
+  "min_child_weight": 20,
+  "subsample": 0.8,
+  "colsample_bytree": 0.8,
+  "reg_alpha": 0.0,
+  "reg_lambda": 1.0,
+  "gamma": 0.0,
+  "objective": "reg:squarederror",
+  "tree_method": "hist",
+  "eval_metric": "rmse",
+  "random_state": 42,
+  "n_jobs": 16,
+  "n_estimators": 107
+ },
+ "trees": 107,
+ "training_years": "1998-2017 (early stopping on 2016-2017, refit on 1998-2017)",
+ "internal_es_rmse_2016_2017": 0.14479766501290195,
+ "nino12_source": {
+  "file": "nino12.long.anom.csv",
+  "sha256": "94b7f5fb8fb6d014a7280b3dcd7ececf795a714085c9838b26fd177e4748fba7",
+  "header": "Date,   NINA12  missing value -99.99 https://psl.noaa.gov/data/timeseries/month/",
+  "first": "1870-01-01",
+  "last": "2026-09-01",
+  "months": 1881,
+  "missing_coded_values": 3,
+  "gaps": 0
+ },
+ "validation_decision": {
+  "passes_A_F": false,
+  "skill_vs_v1": [
+   -0.013093308405483395,
+   -0.021453046884337468,
+   -0.005024097782310869
+  ],
+  "rmse_v2": 0.10444264555330743,
+  "rmse_v1": 0.10309281947354941,
+  "verdict": "fails A-F: rejected"
+ },
+ "criteria": [
+  {
+   "criterion": "A",
+   "rule": "skill vs climatology >= 0.1",
+   "result": "0.169 [0.086, 0.247]",
+   "pass": true
+  },
+  {
+   "criterion": "B",
+   "rule": "lower 95% CI of that skill > 0",
+   "result": "0.086",
+   "pass": true
+  },
+  {
+   "criterion": "C",
+   "rule": "RMSE (report only)",
+   "result": "0.1044 [0.0980, 0.1103]",
+   "pass": null
+  },
+  {
+   "criterion": "D",
+   "rule": "|bias| <= 0.03",
+   "result": "-0.0032 [-0.0100, 0.0031]",
+   "pass": true
+  },
+  {
+   "criterion": "E",
+   "rule": "skill >= 0 in every year and province",
+   "result": "worst year 0.061, worst province -0.016",
+   "pass": false
+  },
+  {
+   "criterion": "F",
+   "rule": "90% coverage 2021-2022 in [0.87, 0.93]",
+   "result": "0.881 (width \u00b10.1690)",
+   "pass": true
+  }
+ ],
+ "second_look_2023_2025": {
+  "metrics": [
+   {
+    "model": "v2",
+    "metric": "MAE",
+    "value": 0.08876448459181038,
+    "ci_low": 0.08490508995191723,
+    "ci_high": 0.09224518216529905
+   },
+   {
+    "model": "v2",
+    "metric": "RMSE",
+    "value": 0.12056463463280832,
+    "ci_low": 0.11528179215491118,
+    "ci_high": 0.12554791622808253
+   },
+   {
+    "model": "v2",
+    "metric": "R2",
+    "value": 0.5673160184365422,
+    "ci_low": 0.5252157118726923,
+    "ci_high": 0.6090965352357214
+   },
+   {
+    "model": "v2",
+    "metric": "bias",
+    "value": -0.02423960433768047,
+    "ci_low": -0.029840350039794735,
+    "ci_high": -0.018387199382962124
+   },
+   {
+    "model": "v2",
+    "metric": "skill vs v1",
+    "value": 0.04474209432217768,
+    "ci_low": 0.024463326316683666,
+    "ci_high": 0.06556138607216162
+   },
+   {
+    "model": "v1",
+    "metric": "MAE",
+    "value": 0.09375052403610543,
+    "ci_low": 0.08977733700460265,
+    "ci_high": 0.09727568448894394
+   },
+   {
+    "model": "v1",
+    "metric": "RMSE",
+    "value": 0.12621160622299094,
+    "ci_low": 0.12080955050813849,
+    "ci_high": 0.13079956858025024
+   },
+   {
+    "model": "v1",
+    "metric": "R2",
+    "value": 0.5258349536514418,
+    "ci_low": 0.4774446018129011,
+    "ci_high": 0.5722634923316878
+   },
+   {
+    "model": "v1",
+    "metric": "bias",
+    "value": -0.026397915352678977,
+    "ci_low": -0.03218468758727129,
+    "ci_high": -0.020375481906475767
+   }
+  ],
+  "aci": [
+   {
+    "model": "ndvi_quarterly",
+    "version": "v1",
+    "gamma": 0.0,
+    "coverage_2023_2025": 0.8693106201756721,
+    "ci_low": 0.8573419567461341,
+    "ci_high": 0.8828211469001177,
+    "mean_half_width": 0.18224850355489727,
+    "coverage_2023": 0.811219946571683,
+    "worst_period": "2023-04-01",
+    "worst_period_coverage": 0.6657566302652106
+   },
+   {
+    "model": "ndvi_quarterly",
+    "version": "v2",
+    "gamma": 0.0,
+    "coverage_2023_2025": 0.873635879691243,
+    "ci_low": 0.8624945223177374,
+    "ci_high": 0.886051046818921,
+    "mean_half_width": 0.17732909293104104,
+    "coverage_2023": 0.8598990798456515,
+    "worst_period": "2025-10-01",
+    "worst_period_coverage": 0.77870480731029
+   }
+  ],
+  "inputs_outside_range": {
+   "q_nino12_anom": {
+    "share_outside_p01_p99": 0.0,
+    "share_outside_min_max": 0.0
+   },
+   "q_nino12_anom_lag1": {
+    "share_outside_p01_p99": 0.0,
+    "share_outside_min_max": 0.0
+   },
+   "any_input_outside_p01_p99": 0.18438914027149322
+  }
+ },
+ "reference_v1_sha256": "effe57ea2506d5097fbecc4314c24a228e663285ec2b686db9ee87a0bb05b5e1",
+ "versions": {
+  "python": "3.14.6",
+  "xgboost": "3.4.1",
+  "pandas": "3.1.1"
+ }
+}

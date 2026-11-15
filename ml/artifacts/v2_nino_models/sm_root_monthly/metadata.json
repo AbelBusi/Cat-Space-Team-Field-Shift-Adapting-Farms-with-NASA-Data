@@ -1,0 +1,206 @@
+{
+ "name": "sm_root_monthly",
+ "version": "v2-nino (candidate, not adopted)",
+ "sha256": "e9fddbee8fb0dc7f72b2d059c787fe4a2db017a4eb109c014f79a34717351c98",
+ "target": {
+  "column": "sm_root_m3m3",
+  "unit": "m3/m3"
+ },
+ "new_features": [
+  "nino12_anom",
+  "nino12_anom_lag1",
+  "nino12_anom_3m"
+ ],
+ "hyperparameters": {
+  "learning_rate": 0.05,
+  "max_depth": 6,
+  "min_child_weight": 20,
+  "subsample": 0.8,
+  "colsample_bytree": 0.8,
+  "reg_alpha": 0.0,
+  "reg_lambda": 1.0,
+  "gamma": 0.0,
+  "objective": "reg:squarederror",
+  "tree_method": "hist",
+  "eval_metric": "rmse",
+  "random_state": 42,
+  "n_jobs": 16,
+  "n_estimators": 2171
+ },
+ "trees": 2171,
+ "training_years": "1998-2017 (early stopping on 2016-2017, refit on 1998-2017)",
+ "internal_es_rmse_2016_2017": 0.021209563416657508,
+ "nino12_source": {
+  "file": "nino12.long.anom.csv",
+  "sha256": "94b7f5fb8fb6d014a7280b3dcd7ececf795a714085c9838b26fd177e4748fba7",
+  "header": "Date,   NINA12  missing value -99.99 https://psl.noaa.gov/data/timeseries/month/",
+  "first": "1870-01-01",
+  "last": "2026-09-01",
+  "months": 1881,
+  "missing_coded_values": 3,
+  "gaps": 0
+ },
+ "validation_decision": {
+  "passes_A_F": true,
+  "skill_vs_v1": [
+   -0.009443204748311729,
+   -0.03084774072730498,
+   0.01012154597409151
+  ],
+  "rmse_v2": 0.012644574681143007,
+  "rmse_v1": 0.01252628639398858,
+  "verdict": "no clear difference on Validation: decision waits for 2026"
+ },
+ "criteria": [
+  {
+   "criterion": "A",
+   "rule": "skill vs persistence >= 0.2",
+   "result": "0.514 [0.474, 0.550]",
+   "pass": true
+  },
+  {
+   "criterion": "B",
+   "rule": "lower 95% CI of that skill > 0",
+   "result": "0.474",
+   "pass": true
+  },
+  {
+   "criterion": "C",
+   "rule": "RMSE <= 0.04",
+   "result": "0.0126 [0.0111, 0.0141]",
+   "pass": true
+  },
+  {
+   "criterion": "D",
+   "rule": "|bias| <= 0.01",
+   "result": "-0.0001 [-0.0005, 0.0002]",
+   "pass": true
+  },
+  {
+   "criterion": "E",
+   "rule": "skill >= 0 in every year and province",
+   "result": "worst year 0.458, worst province 0.314",
+   "pass": true
+  },
+  {
+   "criterion": "F",
+   "rule": "90% coverage 2021-2022 in [0.87, 0.93]",
+   "result": "0.885 (width \u00b10.0178)",
+   "pass": true
+  }
+ ],
+ "second_look_2023_2025": {
+  "metrics": [
+   {
+    "model": "v2",
+    "metric": "MAE",
+    "value": 0.01102796847686822,
+    "ci_low": 0.009952333086834108,
+    "ci_high": 0.01204571915048957
+   },
+   {
+    "model": "v2",
+    "metric": "RMSE",
+    "value": 0.018503459795264604,
+    "ci_low": 0.017175749999688492,
+    "ci_high": 0.019864490345493195
+   },
+   {
+    "model": "v2",
+    "metric": "R2",
+    "value": 0.9663936003752162,
+    "ci_low": 0.9594465109668288,
+    "ci_high": 0.9717731979807148
+   },
+   {
+    "model": "v2",
+    "metric": "bias",
+    "value": -0.0027320583742924797,
+    "ci_low": -0.003355855614304412,
+    "ci_high": -0.0021254163011350975
+   },
+   {
+    "model": "v2",
+    "metric": "skill vs v1",
+    "value": 0.06529902975141288,
+    "ci_low": 0.03943611224986975,
+    "ci_high": 0.09157079909364196
+   },
+   {
+    "model": "v1",
+    "metric": "MAE",
+    "value": 0.01134060096475833,
+    "ci_low": 0.010341520260246364,
+    "ci_high": 0.012290855851742102
+   },
+   {
+    "model": "v1",
+    "metric": "RMSE",
+    "value": 0.019796127728789605,
+    "ci_low": 0.018499567398792122,
+    "ci_high": 0.021051480986769414
+   },
+   {
+    "model": "v1",
+    "metric": "R2",
+    "value": 0.9615340378063948,
+    "ci_low": 0.9541493958620174,
+    "ci_high": 0.9676135258241162
+   },
+   {
+    "model": "v1",
+    "metric": "bias",
+    "value": -0.0030045215861297424,
+    "ci_low": -0.0036100816037451917,
+    "ci_high": -0.0024237498926721664
+   }
+  ],
+  "aci": [
+   {
+    "model": "sm_root_monthly",
+    "version": "v1",
+    "gamma": 0.1,
+    "coverage_2023_2025": 0.9030265870477003,
+    "ci_low": 0.8866189115676417,
+    "ci_high": 0.9196057608688293,
+    "mean_half_width": 0.03157827280573824,
+    "coverage_2023": 0.8696683727873747,
+    "worst_period": "2023-03-01",
+    "worst_period_coverage": 0.482085732565579
+   },
+   {
+    "model": "sm_root_monthly",
+    "version": "v2",
+    "gamma": 0.0,
+    "coverage_2023_2025": 0.8696417146513116,
+    "ci_low": 0.8498265200132141,
+    "ci_high": 0.8899970212766946,
+    "mean_half_width": 0.024659123438659437,
+    "coverage_2023": 0.8065152484538282,
+    "worst_period": "2023-05-01",
+    "worst_period_coverage": 0.41682661548304545
+   }
+  ],
+  "inputs_outside_range": {
+   "nino12_anom": {
+    "share_outside_p01_p99": 0.0,
+    "share_outside_min_max": 0.0
+   },
+   "nino12_anom_lag1": {
+    "share_outside_p01_p99": 0.0,
+    "share_outside_min_max": 0.0
+   },
+   "nino12_anom_3m": {
+    "share_outside_p01_p99": 0.0,
+    "share_outside_min_max": 0.0
+   },
+   "any_input_outside_p01_p99": 0.20644060567285136
+  }
+ },
+ "reference_v1_sha256": "a4bbaf1397c43e2c46716aae323fe5522159449e4a86f28cb341304732a6701e",
+ "versions": {
+  "python": "3.14.6",
+  "xgboost": "3.4.1",
+  "pandas": "3.1.1"
+ }
+}

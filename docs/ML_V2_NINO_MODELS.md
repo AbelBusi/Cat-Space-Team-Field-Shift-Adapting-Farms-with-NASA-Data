@@ -1,8 +1,10 @@
 # Field Shift ML · v2 models with the Niño 1+2 index
 
-Status (Nov 15, 2026): **rules written, models not trained yet.** Nothing from Phases 1–3 or the v2 intervals experiment
-is modified: the tested v1 models and `ml/artifacts/final_model/` stay as they are. Outputs will go to
-`ml/artifacts/v2_nino_models/`.
+Status (Nov 15, 2026): **trained and validated. No v2 model replaces v1.** Soil water: no difference on Validation, the
+decision waits for 2026. NDVI: rejected by the rules (§4). Nothing from Phases 1–3 or the v2 intervals experiment is
+modified: the tested v1 models and `ml/artifacts/final_model/` stay as they are (SHA-256 checked in the notebook).
+Notebook: [`ml/notebooks/05_v2_nino_models.ipynb`](../ml/notebooks/05_v2_nino_models.ipynb); outputs:
+`ml/artifacts/v2_nino_models/`. The rules in §3 were committed before training (commit `7843f08`).
 
 ## 1. New data received
 
@@ -62,3 +64,64 @@ recalibration (the v2 intervals experiment method, γ chosen on Validation), and
 **Overfitting risk stated in advance.** The index has one value per month for all cells, and 1998–2017 holds only two
 coastal El Niño events (1998 and 2017). The trees could use it to memorize those two years. Rule 2 on years without a
 strong event and the 2026 check guard against that.
+
+## 4. Results
+
+**The index in each period** (months above +1 °C / above +2 °C): Training 1998–2017: 22 / 12 (1998, 2015–16, 2017).
+Validation 2018–2022: 0 / 0 (calm years, maximum +0.79 °C). Testing 2023–2025: 11 / 5 (the 2023 coastal El Niño, peak
++2.55 °C). No Niño input in 2023–2025 is outside its 1998–2017 range.
+
+### 4.1 Validation 2018–2022 (this decides)
+
+| | Soil water (m³/m³) | NDVI |
+|---|---|---|
+| RMSE v1 → v2 | 0.0125 → 0.0126 | 0.103 → 0.104 |
+| Skill of v2 over v1 [95 % CI] | −0.009 [−0.031, 0.010] | −0.013 [−0.021, −0.005] |
+| Criteria A–F | all pass (F: 0.885) | **E fails**: one province with skill −0.016 vs climatology (v1: +0.01) |
+| Trees | 2,171 (v1: 1,122) | 107 (v1: 89) |
+| **Verdict (rules of §3)** | **No clear difference: the decision waits for 2026** | **Rejected** (fails E, and slightly worse than v1) |
+
+On calm years the index adds nothing to soil water, and it adds a little noise to NDVI. This is the overfitting risk
+stated in §3: with only a few events in Training, the index partly works as a label for those years.
+
+### 4.2 Second look at 2023–2025 (already seen by Phase 3: cannot decide anything)
+
+| | Soil water v1 → v2 | NDVI v1 → v2 |
+|---|---|---|
+| RMSE 2023–2025 | 0.0198 → **0.0185** (skill +0.065 [0.039, 0.092]) | 0.126 → **0.121** (skill +0.045 [0.025, 0.066]) |
+| Year 2023 | 0.023 → 0.020 | 0.142 → 0.125 |
+| Peak of the El Niño | **March 2023: 0.053 → 0.039**, bias −0.037 → −0.025 | **Q2 2023: 0.221 → 0.182**, bias −0.152 → −0.102 |
+| Calm years | 2024: 0.019 → 0.019 · 2025: 0.017 → 0.016 | 2024: 0.115 → 0.112 · 2025: 0.120 → 0.124 |
+| May 2024 (rain without El Niño) | 0.027 → 0.027 (not fixed) | — |
+| 90 % range with monthly recalibration | 90 % (v1) → **87 %** (v2): v2 is narrower (± 0.025 vs ± 0.032), and γ = 0 was chosen on calm Validation | 87 % → 87 % |
+
+- **The index does what it should in the El Niño months:** it cuts the March 2023 soil water error by about a quarter and
+  the Q2 2023 NDVI error by about a fifth. It does not help in other wet months (May 2024), which need the rain data (§2).
+- In the model the index is a small input: 0.6 % of the soil water model's gain in total (the last months of soil water explain
+  88 %), 8 % of the NDVI model's gain.
+- Figure: `ml/artifacts/v2_nino_models/v2_nino_error_timeline.png` (error per month or quarter, v1 vs v2, with the index).
+
+### 4.3 What this means
+
+- **v1 stays the standard model** (`final_model/`), with the v2 range method of the intervals experiment as the proposed
+  way to show uncertainty.
+- **Soil water v2 (with Niño)** is kept as a candidate. 2026 is the right test: it has a strong coastal El Niño
+  (+3.85 °C in September 2026, stronger than 2023). When the complete 2026 data arrive, both models are run once on 2026
+  and compared with the same rules; if v2 is clearly better there, it can replace v1 (the team decides).
+- **NDVI v2 is rejected** by the rules written before training. It looked better on 2023–2025, but that period cannot be
+  used to decide, and on Validation it was worse.
+- The rules were not changed after seeing results, and no other variant was tried.
+
+## 5. Next data
+
+| # | Data | Status |
+|---|---|---|
+| 1 | Niño 1+2 | received and used |
+| 2 | ERA5-Land monthly `total_precipitation` and `volumetric_soil_water_layer_2`, 1998–2026, with the request of §2 | the GRIB received is the wrong product (hourly, one hour per day). Please re-request; the 2005–2026 hourly files in the queue are not needed |
+| 3 | Land cover or irrigated area per year | pending |
+| 4 | 2026, once complete | pending: the decisive test for soil water v2 |
+
+**Is ERA5 rain essential?** Not for the prototype. The soil water model already explains 96–99 % of the variation; ERA5's
+own rain is aimed at single storm months such as May 2024, which the Niño index does not fix.
+It is the next improvement, not a blocker. A provisional fill for 2005–2025 is not recommended: a gap filled from CHIRPS
+only repeats CHIRPS, and a gap filled from another reanalysis would be a different variable from the one used in 1998–2004.
