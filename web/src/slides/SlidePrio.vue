@@ -21,6 +21,7 @@ function bump(k) {
   <SlideFrame>
     <template #left>
       <HudCard :title="t('Tap to raise or lower')">
+        <div class="swipe flex flex-col gap-2">
         <button v-for="c in CRIT" :key="c.k" type="button" class="flex items-center gap-3 border border-line p-2 text-left transition-colors hover:border-teal"
                 :class="{ 'border-teal bg-teal/10': state.prio[c.k] === 3 }"
                 :aria-label="t('{name}: importance {level}. Tap to change.', { name: t(c.label), level: t(LEVELS[state.prio[c.k]]) })" @click="bump(c.k)">
@@ -31,6 +32,7 @@ function bump(k) {
             <span class="font-mono text-[10px] uppercase text-muted">{{ t(LEVELS[state.prio[c.k]]) }}</span>
           </span>
         </button>
+        </div>
       </HudCard>
     </template>
     <template #right>

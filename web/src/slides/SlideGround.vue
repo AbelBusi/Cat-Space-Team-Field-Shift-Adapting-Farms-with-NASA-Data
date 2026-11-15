@@ -74,6 +74,7 @@ const lens = computed(() => {
       </HudCard>
       <HudCard :title="t('The square of each satellite')">
         <p class="text-xs text-muted">{{ t('Each satellite sees the ground in squares of its own size. Tap one to see its square on the map.') }}</p>
+        <div class="swipe flex flex-col gap-1">
         <button v-for="c in cells" :key="c.id" type="button" class="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-x-2.5 border-l-2 py-1 pl-2 text-left transition-colors hover:bg-teal/10"
                 :style="{ borderColor: c.color }" :title="t('Zoom to this square')" @click="mapApi.zoomTo(c)">
           <span class="row-span-2 flex size-9 items-center justify-center border border-line bg-bg/60"><PixelIcon :name="SOURCE[c.id].icon" :size="2" /></span>
@@ -83,6 +84,7 @@ const lens = computed(() => {
           </span>
           <span class="text-xs text-muted">{{ t(SOURCE[c.id].text) }}</span>
         </button>
+        </div>
       </HudCard>
     </template>
   </SlideFrame>

@@ -80,7 +80,7 @@ onBeforeUnmount(() => { clearInterval(playTimer); clearInterval(listenTimer) })
            year (Pro). Tapping a row paints that signal on the map. -->
       <HudCard :title="t('Satellite signals')">
         <p class="flex items-start gap-2 text-[11px] leading-snug text-muted"><PixelIcon name="satellite" :size="1" class="mt-0.5" />{{ scope }}</p>
-        <div class="flex flex-col gap-1" role="radiogroup" :aria-label="t('Satellite signals')">
+        <div class="swipe flex flex-col gap-1" role="radiogroup" :aria-label="t('Satellite signals')">
           <button v-for="(k, i) in LAYER_KEYS" :key="k" type="button" role="radio" :aria-checked="k === state.layer"
                   class="grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 border px-2 py-1.5 text-left transition-colors"
                   :class="k === state.layer ? 'border-teal bg-teal/10' : 'border-line hover:border-muted'" @click="state.layer = k">

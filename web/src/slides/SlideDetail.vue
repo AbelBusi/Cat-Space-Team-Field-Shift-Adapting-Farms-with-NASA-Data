@@ -25,6 +25,7 @@ function toggle(k, on) {
         <Transition name="flip" mode="out-in"><div :key="chosen.r.id" class="font-display text-xl font-semibold">{{ t(chosen.r.name) }}</div></Transition>
         <CropSequence :key="chosen.r.id" :cal="chosen.r.cal" />
         <p class="text-muted">{{ t(chosen.r.why) }}</p>
+        <div class="swipe flex flex-col gap-3">
         <div class="flex flex-col gap-1">
           <b class="text-teal">{{ t('What you gain') }}</b>
           <p v-for="b in chosen.r.ben" :key="b" class="flex items-start gap-2"><PixelIcon name="up" :color="PAL.teal" :size="1" class="mt-0.5" />{{ t(b) }}</p>
@@ -33,12 +34,13 @@ function toggle(k, on) {
           <b class="text-fire">{{ t('What you risk') }}</b>
           <p v-for="b in chosen.r.risks" :key="b" class="flex items-start gap-2"><PixelIcon name="down" :color="PAL.ember" :size="1" class="mt-0.5" />{{ t(b) }}</p>
         </div>
+        </div>
         <p v-for="f in chosen.flags" :key="f" class="border-l-2 border-ember pl-2 text-xs">{{ f }}</p>
       </HudCard>
       <HudCard>
         <details open>
           <summary class="label cursor-pointer">{{ t('What the satellites say') }}</summary>
-          <ul class="mt-2 flex flex-col gap-2">
+          <ul class="swipe mt-2 flex flex-col gap-2">
             <li v-for="e in chosen.r.evid" :key="e[0]" class="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-2">
               <span class="flex size-9 items-center justify-center border border-line bg-bg/60"><PixelIcon :name="evidenceIcon(e[0])" :size="2" /></span>
               <span><b class="block font-mono text-[11px] uppercase tracking-wider text-teal">{{ t(e[0]) }}</b>{{ t(e[1]) }}</span>

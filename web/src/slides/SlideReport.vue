@@ -52,9 +52,11 @@ const print = () => window.print()
     </template>
     <template #right>
       <HudCard :title="t('Satellite words, made simple')">
+        <div class="swipe flex flex-col gap-1">
         <details v-for="[term, text] in GLOSSARY" :key="term" class="border-b border-line pb-1 last:border-0">
           <summary class="cursor-pointer font-semibold">{{ t(term) }}</summary><p class="mt-1 text-muted">{{ t(text) }}</p>
         </details>
+        </div>
       </HudCard>
     </template>
   </SlideFrame>

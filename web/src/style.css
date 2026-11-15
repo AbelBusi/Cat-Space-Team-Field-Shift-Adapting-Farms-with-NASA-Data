@@ -61,6 +61,13 @@
   .seg button[aria-pressed="true"] { background: var(--teal); color: var(--on-accent); }
 
   /* Pixel-art blocks */
+  /* Phones: card strips and in-card lists swipe sideways without a visible scrollbar (SlideFrame, .swipe lists). */
+  .strip, .strip > *, .swipe { scrollbar-width: none; }
+  .strip::-webkit-scrollbar, .strip > *::-webkit-scrollbar, .swipe::-webkit-scrollbar { display: none; }
+  @media (max-width: 1023.98px) {
+    .swipe { flex-direction: row !important; overflow-x: auto; scroll-snap-type: x mandatory; }
+    .swipe > * { flex: 0 0 84%; min-width: 0; scroll-snap-align: start; }
+  }
   .px-icon, .instrument, .pixel-globe, .grid-image { image-rendering: pixelated; }
   .px-icon { display: inline-block; flex: none; }
   .cat { display: block; overflow: visible; animation: bob 1.2s steps(2) infinite; }
