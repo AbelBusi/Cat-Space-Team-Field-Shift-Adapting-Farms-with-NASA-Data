@@ -12,6 +12,7 @@ import { gridCells, gibsDataLayers } from '../lib/nasa.js'
 import { polygonAreaM2, ringPerimeterM, vertexCenter } from '../lib/geo.js'
 import { inRings, boundsOf, locate } from '../lib/admin.js'
 import PLACES from '../data/lambayeque_places.json'
+import { aheadMap } from '../lib/projections.js'
 
 // The satellite map, cut to the outline of the territory (a district, or the department in free mode): outside it
 // the night sky shows through. Everything else on screen floats above this map.
@@ -20,7 +21,7 @@ import PLACES from '../data/lambayeque_places.json'
 const props = defineProps({ tint: Boolean, squares: Boolean })
 
 const mapEl = ref(null)
-let map, edgeLayer, cellLayer, pointLayer, parcelLayer, coverLayer, dataLayer, shade
+let map, edgeLayer, cellLayer, pointLayer, parcelLayer, coverLayer, dataLayer, aheadLayer, shade
 const rects = {}
 const L_ = computed(() => LAYERS[state.layer])
 const latlngs = rings => rings.map(r => r.map(([lon, lat]) => [lat, lon]))
@@ -254,6 +255,15 @@ function showData() {
   if (d) dataLayer = L.tileLayer(d.tiles, { pane: 'data', maxNativeZoom: d.maxNativeZoom, maxZoom: 18, opacity: mapUi.intensity, attribution: 'Data: NASA GIBS' }).addTo(map)
 }
 
+// "What's ahead": the projection of the open topic, one 2 km cell per pixel, under the names and the point.
+function showAhead() {
+  aheadLayer?.remove()
+  aheadLayer = null
+  const a = aheadMap.value
+  if (a) aheadLayer = L.imageOverlay(a.url, a.bounds, { pane: 'data', opacity: Math.max(0.55, mapUi.intensity), className: 'grid-image',
+    attribution: 'Projection: Field Shift XGBoost models (ERA5-Land, CHIRPS, NASA POWER, 2 km)' }).addTo(map)
+}
+
 const onResize = () => { map.invalidateSize(); clip() }
 onMounted(() => {
   // Half zoom steps let the territory fill the free space; the tile style below hides the hairline seams they cause.
@@ -298,6 +308,7 @@ onMounted(() => {
   drawLabels()
   drawPoint()
   showData()
+  showAhead()
 })
 onBeforeUnmount(() => { cancelAnimationFrame(following); removeEventListener('resize', onResize); mapUi.drawing = false; map?.remove() })
 
@@ -313,7 +324,8 @@ watch(() => mapUi.view3d && !!state.parcel, on => {
   if (!on && state.parcel) map.flyToBounds(L.latLngBounds(state.parcel.ring), { ...padding(), duration: 0.9, maxZoom: 17 })
 })
 watch(() => [state.month, state.scen], () => { if (mapUi.data === 'grid') showData() })
-watch(() => mapUi.intensity, v => dataLayer?.setOpacity(v))
+watch(() => mapUi.intensity, v => { dataLayer?.setOpacity(v); aheadLayer?.setOpacity(Math.max(0.55, v)) })
+watch(aheadMap, showAhead)
 </script>
 
 <template>

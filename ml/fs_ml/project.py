@@ -54,15 +54,16 @@ def build_cube(monthly: pd.DataFrame, quarterly: pd.DataFrame | None = None) -> 
     return cube
 
 
-def analog_weather(cube: Cube, start: pd.Timestamp, horizon: int, years) -> dict:
+def analog_weather(cube: Cube, start: pd.Timestamp, horizon: int, years, until=None) -> dict:
     """Weather of the `horizon` months after `start`, taken from each analog year: member k uses the same calendar
-    months of year k (and k+1 when the window crosses December). Returns name -> (members, cells, horizon)."""
+    months of year k (and k+1 when the window crosses December). A member that would need a month after `until` is
+    dropped (in hindcasts this keeps the scored years out of the analogs). Returns name -> (members, cells, horizon)."""
     first = pd.Timestamp(start) + pd.DateOffset(months=1)
     out, used = {c: [] for c in WEATHER}, []
     for y in years:
         a = pd.Timestamp(year=int(y), month=first.month, day=1)
         idx = [a + pd.DateOffset(months=k) for k in range(horizon)]
-        if idx[0] < cube.dates[0] or idx[-1] > cube.dates[-1]:
+        if idx[0] < cube.dates[0] or idx[-1] > cube.dates[-1] or (until is not None and idx[-1] > pd.Timestamp(until)):
             continue
         ii = [cube.t(d) for d in idx]
         for c in WEATHER:
@@ -104,13 +105,13 @@ def _sm_features(m, cube, start_i, w, horizon, sm0, surf0, rain_hist, pet0):
     return out
 
 
-def project_sm(m: dict, cube: Cube, start, horizon: int, analog_years, weather: dict | None = None) -> dict:
+def project_sm(m: dict, cube: Cube, start, horizon: int, analog_years, weather: dict | None = None, until=None) -> dict:
     """Soil water (28-100 cm) for the `horizon` months after `start` (the last observed month).
     `weather` (from analog_weather, possibly changed by a scenario) overrides the analog years."""
     i = cube.t(start)
     if i < 4:
         raise ValueError("Need 5 months of observed rain before the start.")
-    w = weather if weather is not None else analog_weather(cube, start, horizon, analog_years)
+    w = weather if weather is not None else analog_weather(cube, start, horizon, analog_years, until)
     sm = _sm_features(m, cube, i, w, horizon, cube.v["sm_root_m3m3"][:, i], cube.v["sm_surface_m3m3"][:, i],
                       cube.v["rain_mm"][:, i - 4:i + 1], cube.v["pet_mm"][:, i])
     dates = pd.date_range(pd.Timestamp(start) + pd.DateOffset(months=1), periods=horizon, freq="MS")
@@ -178,6 +179,33 @@ def scenario_rain_factor(w: dict, factor: float, months: list[int] | None = None
     idx = range(out["rain_mm"].shape[2]) if months is None else [k - 1 for k in months]
     for k in idx:
         out["rain_mm"][:, :, k] *= factor
+    return out
+
+
+def scenario_adjust(w: dict, rain_factor: float = 1.0, t2m_delta: float = 0.0, rh_delta: float = 0.0,
+                    months: list[int] | None = None) -> dict:
+    """The simulator's "buttons": rain × factor, temperature + delta (°C), relative humidity + delta (points, kept in
+    0-100), in the given lead months (all if None). Only the named input changes: potential evaporation and surface
+    soil water stay as in the analog year, so a temperature change shows only the model's direct temperature response
+    (no physics is derived). Check `out_of_training_range` before showing a result."""
+    out = {k: (v.copy() if isinstance(v, np.ndarray) else v) for k, v in w.items()}
+    idx = range(out["rain_mm"].shape[2]) if months is None else [k - 1 for k in months]
+    for k in idx:
+        out["rain_mm"][:, :, k] *= rain_factor
+        out["t2m_c"][:, :, k] += t2m_delta
+        out["power_rh2m_pct"][:, :, k] = np.clip(out["power_rh2m_pct"][:, :, k] + rh_delta, 0, 100)
+    return out
+
+
+def out_of_training_range(w: dict, bounds: dict) -> dict:
+    """Share of member-cell-months whose changed inputs fall outside the 1998-2017 training range (min-max): the model
+    has never seen such weather, so its answer there is an extrapolation."""
+    names = {"rain_mm": "rain_mm", "t2m_c": "t2m_c", "power_rh2m_pct": "power_rh2m_pct", "pet_mm": "pet_mm"}
+    out = {}
+    for k, f in names.items():
+        if f in bounds:
+            v = w[k]
+            out[k] = float(((v < bounds[f]["min"]) | (v > bounds[f]["max"])).mean())
     return out
 
 

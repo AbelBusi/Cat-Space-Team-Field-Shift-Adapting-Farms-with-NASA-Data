@@ -1,0 +1,87 @@
+{
+ "name": "Field Shift projections and scenarios",
+ "status": "model level; no web or backend",
+ "models": {
+  "sm_root_monthly": "a4bbaf1397c43e2c46716aae323fe5522159449e4a86f28cb341304732a6701e",
+  "ndvi_quarterly": "effe57ea2506d5097fbecc4314c24a228e663285ec2b686db9ee87a0bb05b5e1"
+ },
+ "method": "analog ensemble (Ensemble Streamflow Prediction, Day 1985): weather of each past year for the coming months, run month by month from the observed state; band = 5-95% of members + per-lead correction (conformalized, Romano et al. 2019) calibrated on Validation 2018-2022 hindcasts",
+ "useful_lead": {
+  "soil_water_months": 6,
+  "ndvi_quarters": 4
+ },
+ "correction_by_lead": {
+  "sm": {
+   "1": 0.007304077811779525,
+   "2": 0.008214276835307788,
+   "3": 0.008977042467042964,
+   "4": 0.009390911011285641,
+   "5": 0.009388913048638259,
+   "6": 0.009207681814829505,
+   "7": 0.008445678816901336,
+   "8": 0.007710454033480751,
+   "9": 0.006889031657026035,
+   "10": 0.006231746897853982,
+   "11": 0.006088329934411579,
+   "12": 0.0059954974920519155
+  },
+  "ndvi": {
+   "1": 0.13217525056430268,
+   "2": 0.1402523040771485,
+   "3": 0.14077975749969485,
+   "4": 0.14028331935405736
+  }
+ },
+ "coverage_2023_2025": {
+  "sm": {
+   "lead": "all",
+   "raw_band_coverage": 0.601196032570124,
+   "coverage_90": 0.803954319317272,
+   "ci_low": 0.7867544564285329,
+   "ci_high": 0.8211475391225995,
+   "mean_half_width": 0.03396009804233405,
+   "passes_87_93": false
+  },
+  "ndvi": {
+   "lead": "all",
+   "raw_band_coverage": 0.20260221283061874,
+   "coverage_90": 0.8430599743577568,
+   "ci_low": 0.8292598101374478,
+   "ci_high": 0.8589546233006324,
+   "mean_half_width": 0.17525676447374888,
+   "passes_87_93": false
+  }
+ },
+ "scenario_checks": {
+  "drought_raises_share_mean": 0.25293457114131646,
+  "drought_raises_share_max": 0.4152271273192578,
+  "double_rain_lowers_share_mean": 0.3807304111663859,
+  "double_rain_lowers_share_max": 0.800383877159309,
+  "passes_a": false,
+  "passes_b": false
+ },
+ "scenarios": {
+  "base": "all analog years 1998-2025 (28 members)",
+  "el_nino": "only coastal El Nino years [1998, 2016, 2017, 2023, 2024] (Nino 1+2 > +1.0 C in Jan-Apr)",
+  "drought_feb_mar": "base with no rain in Feb and Mar 2026 and the driest surface soil of those months",
+  "rain_half": "base with rain x 0.5 every month",
+  "rain_double": "base with rain x 2 every month"
+ },
+ "start": "2025-12",
+ "analog_years_output": [
+  1998,
+  2025
+ ],
+ "beyond_useful_lead": "show as 'a typical year' (climatology), not as a projection",
+ "not_for": [
+  "crop yield, crop quality or exports (no yield data)",
+  "a weather forecast (the coming rain is not predicted)",
+  "irrigated fields",
+  "a measurement of one field (one 2 km cell)"
+ ],
+ "versions": {
+  "python": "3.14.6",
+  "xgboost": "3.4.1",
+  "pandas": "3.1.1"
+ }
+}

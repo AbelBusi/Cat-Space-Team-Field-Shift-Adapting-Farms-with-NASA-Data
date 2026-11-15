@@ -15,6 +15,12 @@ function setMode(m) {
 // Back to the place picker: the whole department, or one province.
 function pick(province = null) { state.province = province; state.stage = 'where' }
 const print = () => window.print()
+// Today (satellite readings) or Ahead (model projections): same place, other topics.
+function setTrack(track) {
+  if (state.track === track) return
+  Object.assign(state, { track, slide: 0 })
+  menu.value = false
+}
 </script>
 
 <template>
@@ -47,6 +53,10 @@ const print = () => window.print()
         </div>
         <button type="button" class="btn md:hidden" :aria-expanded="menu" :aria-label="t('Settings')" @click="menu = !menu">≡</button>
         <div class="items-center gap-2 md:flex" :class="menu ? 'absolute right-2 top-12 z-50 flex flex-col items-stretch border border-line bg-panel p-2' : 'hidden'">
+          <div v-if="state.stage === 'explore'" class="seg" role="group" :aria-label="t('Today or ahead')">
+            <button type="button" :aria-pressed="state.track === 'today'" :title="t('What the satellites see today')" @click="setTrack('today')">{{ t('Today') }}</button>
+            <button type="button" :aria-pressed="state.track === 'ahead'" :title="t('Projections and what-if scenarios')" @click="setTrack('ahead')">{{ t('Ahead') }}</button>
+          </div>
           <div v-if="state.stage === 'explore'" class="seg" role="group" :aria-label="t('View mode')">
             <button type="button" :aria-pressed="state.mode === 'farmer'" @click="setMode('farmer')">{{ t('Farmer') }}</button>
             <button type="button" :aria-pressed="state.mode === 'pro'" @click="setMode('pro')">{{ t('Pro') }}</button>

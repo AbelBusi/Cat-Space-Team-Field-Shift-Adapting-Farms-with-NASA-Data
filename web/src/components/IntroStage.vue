@@ -11,6 +11,7 @@ import { state } from '../store.js'
 import { guide, line, tell, openAsk } from '../guide.js'
 import { SCRIPTS } from '../content.js'
 import { meow, unlock } from '../lib/sound.js'
+import PixelIcon from './PixelIcon.vue'
 
 // Sprout arrives: its saucer glides in over the hills, a beam of light opens, Sprout floats down to the campfire,
 // lands with a little bounce and waves; the saucer leaves and only then Sprout starts to talk.
@@ -30,6 +31,11 @@ function begin(on, answered = true) {
   else tell([["Oh... okay! That's totally fine. I'll wait quietly right here. Tap me whenever you need me, I'd be so happy to help.", 'shy']], { level: 'force' })
   state.province = null
   state.stage = 'where'
+}
+// The two doors of the landing: what the satellites see today, or what our models project ahead.
+function start(track) {
+  Object.assign(state, { track, slide: 0 })
+  begin(guide.on, false)
 }
 function greet() {
   guide.screen = 'intro'
@@ -65,7 +71,12 @@ function pet() {
     <div class="label">NASA Space Apps 2026 · Field Shift</div>
     <h1 class="mt-3 text-[30px] text-sky-ink md:text-[40px]">{{ t('Your field is already talking.') }}<br>{{ t("Let's learn to listen.") }}</h1>
     <p class="mt-3 max-w-[620px] text-sky-muted [@media(max-height:720px)]:hidden">{{ t('NASA satellites measure heat, rain, soil wetness and plant greenness for every field on Earth. Sprout translates them so you can choose what to plant next.') }}</p>
-    <button type="button" class="btn btn-fire mt-5 !min-h-11 !px-6" @click="begin(guide.on, false)">{{ t('Explore your field') }}</button>
+    <div class="mt-5 flex flex-wrap items-center justify-center gap-2">
+      <button type="button" class="btn btn-fire !min-h-11 !px-6" @click="start('today')">{{ t('Explore your field') }}</button>
+      <button type="button" class="btn !min-h-11 !px-5" :title="t('Projections and what-if scenarios from our models trained on NASA data')" @click="start('ahead')">
+        <PixelIcon name="calendar" :size="1" />{{ t("See what's ahead") }}
+      </button>
+    </div>
 
     <!-- The landing spot, next to the campfire. Everything in the arrival is placed from here. -->
     <div class="arrival absolute bottom-[calc(13%-6px)] left-[calc(50%-150px)] w-[150px] max-sm:left-[calc(50%-120px)] max-sm:w-[120px]" :data-phase="phase" aria-hidden="false">

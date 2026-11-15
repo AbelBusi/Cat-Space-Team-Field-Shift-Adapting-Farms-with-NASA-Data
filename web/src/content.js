@@ -163,6 +163,15 @@ export const SLIDES = [
   { id: 'detail', title: 'Compare with today', icon: 'compare' },
   { id: 'report', title: 'Your report', icon: 'report' },
 ]
+// The "What's ahead" track: projections and what-if scenarios of the tested XGBoost models (ml/, docs/ML_PROJECTIONS.md).
+export const AHEAD_SLIDES = [
+  { id: 'outlook', title: 'The coming months', icon: 'calendar' },
+  { id: 'whatif', title: 'What if…', icon: 'rain' },
+  { id: 'green', title: 'Greenness ahead', icon: 'plant_ok' },
+  { id: 'spots', title: 'Where water holds', icon: 'drop' },
+  { id: 'trust', title: 'How sure is Sprout', icon: 'compare' },
+]
+export const slidesOf = track => track === 'ahead' ? AHEAD_SLIDES : SLIDES
 
 // What Sprout says the first time each screen opens (only with the guide on). Sprout is gentle, a little shy and
 // always encouraging. Keep it to one or two short lines: the screen already shows the data.
@@ -201,5 +210,22 @@ export const SCRIPTS = {
   ],
   report: [
     ['You did it! Here is everything together. You can print it or save it as a PDF and share it with your agronomist.', 'happy'],
+  ],
+  outlook: [
+    ['Now let\'s peek ahead! I can\'t know next year\'s rain, so I tried the weather of 28 past years on your soil, one by one.', 'thinking'],
+    ['The line is the middle of all those tries, and the band is where most of them landed. Further away, I get less sure.', 'shy'],
+  ],
+  whatif: [
+    ['This is the simulator. Pick "what if" and the map shows how the soil water would change against a normal year.', 'happy'],
+    ['It is my model\'s answer to a made-up situation, not a promise. Use it to think ahead, not as a forecast.', 'worried'],
+  ],
+  green: [
+    ['Same idea for plant greenness, by quarter. Irrigation is not in my data, so irrigated valleys can be greener than I say.', 'thinking'],
+  ],
+  spots: [
+    ['Here are the places where the deep soil should keep the most water in the dry months. More water helps, but crop, irrigation and market decide the harvest.', 'neutral'],
+  ],
+  trust: [
+    ['I tested myself: I projected past years and compared them with what really happened. Here is how well I did, honestly.', 'shy'],
   ],
 }

@@ -11,15 +11,24 @@ import SlidePrio from '../slides/SlidePrio.vue'
 import SlideRots from '../slides/SlideRots.vue'
 import SlideDetail from '../slides/SlideDetail.vue'
 import SlideReport from '../slides/SlideReport.vue'
+import SlideOutlook from '../slides/SlideOutlook.vue'
+import SlideWhatIf from '../slides/SlideWhatIf.vue'
+import SlideGreenAhead from '../slides/SlideGreenAhead.vue'
+import SlideSpots from '../slides/SlideSpots.vue'
+import SlideTrust from '../slides/SlideTrust.vue'
 import { state, mapUi } from '../store.js'
-import { SLIDES } from '../content.js'
+import { slidesOf } from '../content.js'
 import { enter } from '../guide.js'
 
 // The map with one topic over it at a time. Arrows (on screen or on the keyboard) move between topics.
-const VIEWS = { signals: SlideSignals, ground: SlideGround, years: SlideYears, prio: SlidePrio, rots: SlideRots, detail: SlideDetail, report: SlideReport }
-const slide = computed(() => SLIDES[state.slide])
-const last = SLIDES.length - 1
-const go = d => { state.slide = Math.max(0, Math.min(last, state.slide + d)) }
+// Two tracks share the map: "today" (what the satellites see) and "ahead" (projections and what-if of the ML models).
+const VIEWS = { signals: SlideSignals, ground: SlideGround, years: SlideYears, prio: SlidePrio, rots: SlideRots, detail: SlideDetail, report: SlideReport,
+  outlook: SlideOutlook, whatif: SlideWhatIf, green: SlideGreenAhead, spots: SlideSpots, trust: SlideTrust }
+const SLIDES = computed(() => slidesOf(state.track))
+const slide = computed(() => SLIDES.value[Math.min(state.slide, SLIDES.value.length - 1)])
+const last = computed(() => SLIDES.value.length - 1)
+const ahead = computed(() => state.track === 'ahead')
+const go = d => { state.slide = Math.max(0, Math.min(last.value, state.slide + d)) }
 // The outlined field can float in 3D in the free space between the cards; the cards stay.
 const view3d = computed(() => mapUi.view3d && !!state.parcel)
 function onKey(e) {

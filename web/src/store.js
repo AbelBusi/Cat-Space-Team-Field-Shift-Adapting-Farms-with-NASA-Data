@@ -11,7 +11,9 @@ import { t } from './i18n.js'
 export const state = reactive({
   stage: 'intro',   // intro (Sprout says hello) → where (pick province and district) → explore (map and slides)
   area: null,       // the territory on the map: { kind: 'district' | 'department', name, province, rings }
-  slide: 0,         // index in SLIDES
+  slide: 0,         // index in the topics of the track (content.js slidesOf)
+  track: 'today',   // today (what the satellites see now) | ahead (projections and what-if, ml/ models)
+  ahead: { scen: 'base', month: 0, quarter: 0 },   // the what-if scenario and the period shown in "What's ahead"
   wide: false,      // true: the readings describe the whole territory (district or department), not one tapped point
   flyTo: null,      // { lat, lon, bounds } the map should zoom to once it opens (a search result)
   province: null,   // province open in the place picker

@@ -1,7 +1,9 @@
 # Field Shift ML · Projections and scenario simulator (model level)
 
-Status (Nov 15, 2026): **rules written, hindcasts not run yet.** Model level only: no web, no backend. The standard
-models in `ml/artifacts/final_model/` are used read-only and are not changed. Code: `ml/fs_ml/project.py`.
+Status (Nov 15, 2026): **hindcasts run; outputs for 2026 exported.** The standard models in `ml/artifacts/final_model/`
+are used read-only and are not changed. Code: `ml/fs_ml/project.py`; notebook: `ml/notebooks/06_projections.ipynb`;
+outputs: `ml/artifacts/projections/`; web file: `web/public/data/projections.json` (`ml/scripts/export_web_projections.py`).
+The rules in §3 were committed before the hindcasts (commit `abb3b51`).
 
 ## 1. Why a new layer is needed
 
@@ -56,9 +58,59 @@ Q1–Q4 2026, per 2 km cell and per province, analog years 1998–2025. Scenario
 | Scenario | Change |
 |---|---|
 | `base` | all analog years 1998–2025 |
-| `el_nino` | only the years whose Niño 1+2 index passed +1.0 °C in a month of Jan–Apr (the rainy season): 1998, 2016, 2017, 2023 (4 members, wide uncertainty) |
+| `el_nino` | only the years whose Niño 1+2 index passed +1.0 °C in a month of Jan–Apr (the rainy season): 1998, 2016, 2017, 2023, 2024 (5 members, wide uncertainty). *Correction before any result was seen: the first version of this line listed 4 years by hand and missed 2024 (Jan +1.14 °C, the tail of the 2023 event); the rule is what counts.* |
 | `drought_feb_mar` | base, with no rain in Feb and Mar 2026 and the driest surface soil of those months |
 | `rain_half` · `rain_double` | base, with rain × 0.5 or × 2 in every month |
 
 Each row says whether its lead is within the useful lead. **2026 is not used to score anything here**; once its complete
 data arrive, the Dec 2025 projection can be checked against it.
+
+## 4. Results
+
+Two fixes were made after the first run failed and before any result was read: the El Niño year list (see the table
+above; the rule gives 5 years) and the NDVI climatology baseline, which was NaN for cells with no NDVI in a quarter and
+now falls back to the regional mean of that quarter, as in Phases 2–3. A consistency check passed: with the real weather,
+lead 1 equals the tested model's own prediction exactly (max difference 0.0).
+
+### 4.1 Skill by lead (Validation hindcasts 2018–2022 decide; 2023–2025 report only)
+
+| Lead | Soil water skill [95 % CI] 2018–2022 | 2023–2025 | | NDVI lead | NDVI skill 2018–2022 | 2023–2025 |
+|---|---|---|---|---|---|---|
+| 1 month | 0.39 [0.34, 0.43] vs persistence | 0.35 | | 1 quarter | 0.17 [0.09, 0.25] | 0.19 |
+| 2 | 0.18 [0.14, 0.23] vs climatology | 0.09 | | 2 | 0.11 [0.03, 0.19] | 0.12 |
+| 3 | 0.08 [0.05, 0.13] | 0.01 | | 3 | 0.11 [0.03, 0.18] | 0.13 |
+| 6 | 0.04 [0.005, 0.09] | −0.09 | | 4 | 0.10 [0.07, 0.13] vs persistence | 0.12 |
+| 12 | 0.01 [−0.03, 0.06] | −0.13 | | | | |
+
+- **Useful lead (rule of §3): soil water 6 months, NDVI 4 quarters.** Most of the gain is in the first 2–3 months; after
+  that the projection is close to "a typical year".
+- On 2023–2025 (coastal El Niño and drift), soil water stays better than climatology only for 2 months, and is worse
+  from month 4. This is the same weakness as in Phase 3: the rule decides on Validation, but the app must say plainly
+  that extreme years are less predictable.
+
+### 4.2 The 90 % range
+
+Correction per lead calibrated on the Validation hindcasts. Coverage on 2023–2025: **soil water 80 % [79, 82], NDVI
+84 % [83, 86]**, both below the 87–93 % target. The ranges are too narrow in an El Niño period, as in Phase 3.
+
+### 4.3 Scenario sanity checks: failed
+
+| Check | Result |
+|---|---|
+| (a) two months without rain must not raise soil water in > 1 % of cells | **fails**: 25 % of cells on average (max 42 %) |
+| (b) double rain must not lower soil water in > 1 % of cells | **fails**: 38 % on average (max 80 %) |
+
+- "Two months without rain" (no rain and the driest surface soil) does dry the soil clearly on average: −0.04 m³/m³ for
+  January starts, −0.02 to −0.01 for March to May starts. The cells that "rise" are small tree-step changes.
+- **Rain alone barely moves the model.** Doubling the rain changes soil water by +0.003 m³/m³ at most on average (less
+  than the model error, 0.0125), and in the dry months in the wrong direction about as often as in the right one. The
+  model leans on last month's soil water (68 % of its gain) and on the surface soil (24 %); the four rain inputs add up to 2.4 %.
+- Consequence, applied in the app: only **normal year**, **El Niño years** and **two months without rain** are offered.
+  "Half / double the rain" stay in the artifacts but are not shown. Any "rain ×" button of a simulator would show noise
+  as if it were an answer; the API (`ml-api/`) returns this warning with every rain-only change.
+
+### 4.4 What this means for the MVP
+
+The projection layer is usable for a prototype: a 1–3 month outlook of root-zone soil water with an honest range, an
+El Niño what-if, and a drought what-if. It is not a crop or yield forecast, and its ranges are too narrow in El Niño
+years. The decisive check is the complete 2026 data: the Dec 2025 projection can be compared with what happened.
