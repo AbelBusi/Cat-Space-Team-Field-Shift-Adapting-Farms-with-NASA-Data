@@ -1,0 +1,11 @@
+# Same versions as the environment the models were trained and tested in (ml/requirements.txt)
+fastapi==0.163.0
+uvicorn[standard]==0.54.0
+pydantic==2.14.3
+xgboost==3.4.1
+numpy==2.5.4
+pandas==3.1.1
+scipy==1.18.1      # imported by ml/fs_ml/features.py (shared feature code)
+# tests only
+pytest==9.2.0
+httpx==0.28.1

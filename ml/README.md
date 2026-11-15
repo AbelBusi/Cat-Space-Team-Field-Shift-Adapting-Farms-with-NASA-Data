@@ -7,6 +7,7 @@
 | 3 Testing | 2023–2025 (2026 incomplete, excluded) | done: accuracy passes, intervals overconfident | [`docs/ML_PHASE3_TESTING.md`](../docs/ML_PHASE3_TESTING.md) |
 | v2 experiment | 2023–2025 (second look) | error ranges reach 90 % with CQR + monthly recalibration; not adopted yet | [`docs/ML_V2_INTERVALS_EXPERIMENT.md`](../docs/ML_V2_INTERVALS_EXPERIMENT.md) |
 | v2 models + Niño 1+2 | train 1998–2017, validate 2018–2022 | soil water: no difference on Validation, waits for 2026; NDVI: rejected | [`docs/ML_V2_NINO_MODELS.md`](../docs/ML_V2_NINO_MODELS.md) |
+| Projections + scenarios | hindcasts 2018–2022, outlook 2026 | soil water useful 6 months; rain-only scenarios fail their checks; served by `ml-api/` | [`docs/ML_PROJECTIONS.md`](../docs/ML_PROJECTIONS.md) |
 
 **Standard models to use:** `artifacts/final_model/` through `fs_ml.predict` (`load`, `predict`).
 

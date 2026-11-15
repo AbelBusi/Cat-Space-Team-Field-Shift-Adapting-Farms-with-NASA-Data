@@ -28,7 +28,7 @@ const pct = v => Math.round(v * 100)
 <template>
   <SlideFrame>
     <template #left>
-      <HudCard v-if="projError"><p class="text-muted">{{ t('The projections file is not available ({e}).', { e: projError }) }}</p></HudCard>
+      <HudCard v-if="projError"><p class="text-muted">{{ t('The model service is not available ({e}). Start ml-api and reload.', { e: projError }) }}</p></HudCard>
       <HudCard v-else-if="!proj"><p class="text-muted">{{ t('Loading the projections…') }}</p></HudCard>
       <template v-else>
         <HudCard :title="t('Deep soil water: better than a typical year?')">

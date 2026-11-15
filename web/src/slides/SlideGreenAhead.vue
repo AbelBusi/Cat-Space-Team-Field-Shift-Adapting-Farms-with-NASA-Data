@@ -26,7 +26,7 @@ const QMONTHS = ['Jan–Mar', 'Apr–Jun', 'Jul–Sep', 'Oct–Dec']
 <template>
   <SlideFrame>
     <template #left>
-      <HudCard v-if="projError"><p class="text-muted">{{ t('The projections file is not available ({e}).', { e: projError }) }}</p></HudCard>
+      <HudCard v-if="projError"><p class="text-muted">{{ t('The model service is not available ({e}). Start ml-api and reload.', { e: projError }) }}</p></HudCard>
       <HudCard v-else-if="!proj"><p class="text-muted">{{ t('Loading the projections…') }}</p></HudCard>
       <HudCard v-else-if="!s"><p class="text-muted">{{ t('There is no projection for this spot. Tap a colored square inside Lambayeque.') }}</p></HudCard>
       <HudCard v-else :title="t('Greenness at your spot, 2026')">

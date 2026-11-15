@@ -17,3 +17,6 @@ data/manual/**/*.zip
 ml/.venv/
 ml/data/
 __pycache__/
+ml-api/.venv/
+ml-api/.env
+web/.env.local

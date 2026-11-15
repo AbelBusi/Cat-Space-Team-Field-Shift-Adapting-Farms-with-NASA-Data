@@ -1,9 +1,10 @@
-// "What's ahead": projections of the tested XGBoost models, pre-computed by ml/notebooks/06_projections.ipynb and
-// exported by ml/scripts/export_web_projections.py. Values are integers × meta.scale. One 2 km cell per value.
+// "What's ahead": projections of the tested XGBoost models, computed by the ML API (ml-api/, GET /projections) with the
+// same code as ml/notebooks/06_projections.ipynb. Values are integers × meta.scale. One 2 km cell per value.
 import { shallowRef, computed, watchEffect, onBeforeUnmount } from 'vue'
 import * as d3 from 'd3'
 import { RAMP } from './palette.js'
 import { state, mapUi } from '../store.js'
+import { getProjections } from './mlApi.js'
 
 export const proj = shallowRef(null)      // the whole file (big arrays: no deep reactivity)
 export const projError = shallowRef(null)
@@ -12,8 +13,9 @@ let loading = null
 let index = null                            // "x,y" → cell position
 
 export function loadProjections() {
-  loading ||= fetch(`${import.meta.env.BASE_URL}data/projections.json`)
-    .then(r => r.ok ? r.json() : Promise.reject(new Error(`projections.json ${r.status}`)))
+  if (loading) return loading
+  projError.value = null
+  loading = getProjections()
     .then(d => {
       index = new Map(d.cells.x.map((x, i) => [`${x},${d.cells.y[i]}`, i]))
       proj.value = d

@@ -2,7 +2,8 @@
 
 Status (Nov 15, 2026): **hindcasts run; outputs for 2026 exported.** The standard models in `ml/artifacts/final_model/`
 are used read-only and are not changed. Code: `ml/fs_ml/project.py`; notebook: `ml/notebooks/06_projections.ipynb`;
-outputs: `ml/artifacts/projections/`; web file: `web/public/data/projections.json` (`ml/scripts/export_web_projections.py`).
+outputs: `ml/artifacts/projections/`. The web app gets the same projections from the ML API (`ml-api/`, `GET /projections`),
+which recomputes them at startup with this code; a test checks they equal the notebook cell by cell.
 The rules in §3 were committed before the hindcasts (commit `abb3b51`).
 
 ## 1. Why a new layer is needed

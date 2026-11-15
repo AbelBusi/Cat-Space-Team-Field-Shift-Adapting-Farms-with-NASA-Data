@@ -37,6 +37,7 @@ farmers anywhere can compare crop rotations. Team from Chiclayo, Peru. Read this
 | `web/src/lib/pixelIcons.js` · `web/src/cat/sprites.js` | Pixel icons · Sprout's sprites |
 | `pipeline/` | Python data scripts (venv in `pipeline/.venv`) |
 | `ml/` | XGBoost models, phase by phase (Training, Validation and Testing done; standard models in `ml/artifacts/final_model/`). Read `docs/ML_PHASE1_TRAINING.md`, `ML_PHASE2_VALIDATION.md` and `ML_PHASE3_TESTING.md` first |
+| `ml-api/` | FastAPI service that runs the tested models for the "What's ahead" screens (projections, what-if, simulator). The web reaches it only through `web/src/lib/mlApi.js` (`VITE_ML_API_URL`). Read `ml-api/README.md` and `docs/ML_PROJECTIONS.md` |
 | `data/` | Downloaded data. Read `data/README.md` and `data/STRUCTURE.md` before touching any NASA file |
 | `setup.sh` | Installs Vue and Python dependencies |
 
