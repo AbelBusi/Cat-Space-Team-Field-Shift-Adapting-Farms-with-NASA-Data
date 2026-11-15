@@ -4,7 +4,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import * as d3 from 'd3'
 import { LAYERS } from '../content.js'
-import { state, db, valueAt, selectPoint, local, cell, mapUi, mapApi } from '../store.js'
+import { state, db, valueAt, selectPoint, local, cell, mapUi, mapApi, readWholeArea } from '../store.js'
 import { PAL, RAMP } from '../lib/palette.js'
 import { say } from '../guide.js'
 import { t } from '../i18n.js'
@@ -102,13 +102,14 @@ function drawCover() {
   if (!many) return
   sq.forEach(([la, lo, share]) => {
     L.rectangle([[la - 0.05, lo - 0.05], [la + 0.05, lo + 0.05]], { color: PAL.teal, weight: 2, fillColor: PAL.teal, fillOpacity: 0.06 + 0.3 * share, interactive: false }).addTo(coverLayer)
-    L.marker([la, lo], { interactive: false, keyboard: false, icon: L.divIcon({ className: 'share-label', html: `${Math.max(1, Math.round(share * 100))} %`, iconSize: [52, 20] }) }).addTo(coverLayer)
+    if (sq.length <= 30) L.marker([la, lo], { interactive: false, keyboard: false, icon: L.divIcon({ className: 'share-label', html: `${Math.max(1, Math.round(share * 100))} %`, iconSize: [52, 20] }) }).addTo(coverLayer)
   })
 }
 
 // Any new place forgets the outlined field. In a district every point is that district; in free mode we look it up.
 function pickPoint(lat, lon) {
   state.parcel = null
+  state.wide = false
   corners = []
   drawParcel()
   selectPoint(lat, lon, state.area.kind === 'district' ? state.area.name : locate(lat, lon)?.district.name ?? null)
@@ -193,7 +194,7 @@ Object.assign(mapApi, {
     const pts = state.parcel.ring.map(p => map.latLngToContainerPoint(p))
     return { left: Math.min(...pts.map(p => p.x)), right: Math.max(...pts.map(p => p.x)), top: Math.min(...pts.map(p => p.y)) }
   },
-  zoomIn: () => map.zoomIn(), zoomOut: () => map.zoomOut(), refit: () => showArea(),
+  zoomIn: () => map.zoomIn(), zoomOut: () => map.zoomOut(), refit: () => { showArea(); readWholeArea() },
   zoomTo: c => map.flyToBounds(L.latLngBounds(c.bounds).pad(0.4), { duration: 0.8, maxZoom: 17 }),
   startOutline() {
     corners = []
@@ -208,6 +209,7 @@ Object.assign(mapApi, {
   finishOutline() {
     if (corners.length < 3) return
     state.parcel = { ring: corners, areaM2: polygonAreaM2(corners), perimeterM: ringPerimeterM(corners) }
+    state.wide = false
     setDrawing(false)
     const [lat, lon] = vertexCenter(corners)
     selectPoint(lat, lon, 'Your field')

@@ -15,11 +15,14 @@ const daysIn = (y, m) => new Date(y, m, 0).getDate()
 // NASA POWER monthly values 2001–2024 → 12-month averages for all years and for El Niño years.
 // Careful: monthly T2M_MAX / T2M_MIN are the single hottest / coldest hour of the month, so the typical
 // afternoon high is estimated as mean temperature + half the average daily range.
+const powerCache = new Map()   // one answer per POWER cell and session: averaging a district asks for several cells
 export async function fetchPower(lat, lon, ninoYears = NINO_YEARS) {
   const url = `https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=T2M,T2M_RANGE,T2M_MIN,PRECTOTCORR,GWETTOP&community=AG&latitude=${lat}&longitude=${lon}&start=1981&end=2024&format=JSON`
-  const r = await fetch(url)
-  if (!r.ok) throw new Error(`NASA POWER answered ${r.status}`)
-  const p = (await r.json()).properties.parameter
+  if (!powerCache.has(url)) powerCache.set(url, fetch(url).then(async r => {
+    if (!r.ok) throw new Error(`NASA POWER answered ${r.status}`)
+    return (await r.json()).properties.parameter
+  }).catch(e => { powerCache.delete(url); throw e }))
+  const p = await powerCache.get(url)
   const get = (param, key) => { const v = p[param][key]; return v === -999 || v == null ? null : v }   // -999 = no data   // -999 = no data
   const avg = (years, f) => MM.map((mm, i) => {
     const vals = years.map(y => f(`${y}${mm}`, y, i + 1)).filter(v => v != null && !Number.isNaN(v))

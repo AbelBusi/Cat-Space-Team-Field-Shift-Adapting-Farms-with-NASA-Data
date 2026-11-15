@@ -112,11 +112,14 @@ Python 3.11+ (tested on 3.14) in `pipeline/.venv`.
 | Map images | GIBS: NDVI, ground heat, **IMERG rain, SMAP soil moisture** (live); **rain grid 0.1°** (downloaded) | GIBS layers | — |
 | Rotation scores, confidence | **Hypothetical expert rules** (labelled) | Same | — |
 
-**Big outlined fields.** A field can be bigger than one data square (e.g. the Olmos project). Inside Lambayeque, rain
-(IMERG) and ground (NASADEM) become the **area-weighted average** of every 0.1° square the field touches: a 40 × 40 net of points
-over the outline counts how much of the field falls in each square (`cover` and `cell` in `store.js`). The squares are drawn
-on the map with the share of the field in each (they replace the single center square), and Sprout says how many there are and the range of yearly rain between them. NASA POWER (55 km) and MODIS
-(250 m) are still read at the field's center; Sprout warns when the field crosses several POWER squares or is over 25 ha.
+**Territories and big fields are averaged, not read at one point.** When a district (or the whole department, in free mode)
+opens, and when a field is outlined, the readings are the **area-weighted average** of every data square they touch: a net
+of points over the outline counts how much of the territory falls in each square (`cover` and `cell` in `store.js`).
+Rain (IMERG 0.1°) and ground (NASADEM) come from the local grid file, so this costs nothing. NASA POWER (≈55 km: heat, soil
+wetness, the 44-year history) needs one request per square: a district touches 1–3, the department about 9; squares with less
+than 3 % of the territory are skipped, requests run in parallel and are cached for the session. MODIS greenness stays at the
+center (its service takes ~40 s per point). Tapping the map reads that spot instead; the "whole view" button brings the
+territory's average back. The signals card always says which of the three it is showing.
 
 ## 5. Commands
 

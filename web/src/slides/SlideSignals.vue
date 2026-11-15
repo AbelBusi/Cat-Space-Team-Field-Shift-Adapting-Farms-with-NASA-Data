@@ -6,7 +6,8 @@ import HudCard from '../components/HudCard.vue'
 import Sparkline from '../components/Sparkline.vue'
 import Instrument from '../components/Instrument.vue'
 import { LAYERS, LAYER_KEYS, MONTHS, ICON, reading, levelWord } from '../content.js'
-import { state, db, series, valueAt, formatValue, readingNote, local, mapUi } from '../store.js'
+import { state, db, series, valueAt, formatValue, readingNote, local, mapUi, cover, cell } from '../store.js'
+import PixelIcon from '../components/PixelIcon.vue'
 import { gibsDataLayers } from '../lib/nasa.js'
 import { formatShortDate } from '../lib/geo.js'
 import { say } from '../guide.js'
@@ -27,6 +28,15 @@ const GRID = { id: 'grid', label: 'Rain grid 0.1° (IMERG)', resolution: 'each s
 const gibsLayers = gibsDataLayers()
 const images = computed(() => local.value ? [...gibsLayers, GRID] : gibsLayers)
 const image = computed(() => images.value.find(x => x.id === mapUi.data))
+
+// Where these numbers come from: the whole territory, the outlined field, or the tapped spot.
+const scope = computed(() => {
+  const c = cover.value, place = state.area?.name
+  const n = { place, p: c?.powerCells.length || 1, r: cell.value?.n || 1 }
+  if (c?.kind === 'area') return t('Average of {place}, weighted by area: {p} NASA POWER squares and {r} rain squares. Greenness: at the center.', n)
+  if (c?.kind === 'field') return t('Average of your field, weighted by area: {p} NASA POWER squares and {r} rain squares. Greenness: at the center.', n)
+  return t('At the spot you tapped. The whole view button brings back the average of {place}.', n)
+})
 
 function setScen(s) {
   state.scen = s
@@ -69,6 +79,7 @@ onBeforeUnmount(() => { clearInterval(playTimer); clearInterval(listenTimer) })
       <!-- All five signals at once, one row each: the tool a farmer knows, its word or number, and how it moves in the
            year (Pro). Tapping a row paints that signal on the map. -->
       <HudCard :title="t('Satellite signals')">
+        <p class="flex items-start gap-2 text-[11px] leading-snug text-muted"><PixelIcon name="satellite" :size="1" class="mt-0.5" />{{ scope }}</p>
         <div class="flex flex-col gap-1" role="radiogroup" :aria-label="t('Satellite signals')">
           <button v-for="(k, i) in LAYER_KEYS" :key="k" type="button" role="radio" :aria-checked="k === state.layer"
                   class="grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 border px-2 py-1.5 text-left transition-colors"

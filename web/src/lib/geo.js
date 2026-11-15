@@ -57,6 +57,18 @@ export function samplePoints(ring, n = 40) {
   return pts
 }
 
+// The same net over several outlines (a district can have islands): points inside any of them.
+export function samplePointsMulti(rings, n = 50) {
+  const all = rings.flat(), lats = all.map(p => p[0]), lons = all.map(p => p[1])
+  const [s, w] = [Math.min(...lats), Math.min(...lons)], dy = (Math.max(...lats) - s) / n, dx = (Math.max(...lons) - w) / n
+  const pts = []
+  for (let a = 0; a < n; a++) for (let b = 0; b < n; b++) {
+    const p = [s + (a + 0.5) * dy, w + (b + 0.5) * dx]
+    if (rings.some(r => insideRing(p, r))) pts.push(p)
+  }
+  return pts
+}
+
 // Average of the corners: good enough as the parcel's reference point.
 export const vertexCenter = ring => [ring.reduce((s, p) => s + p[0], 0) / ring.length, ring.reduce((s, p) => s + p[1], 0) / ring.length]
 

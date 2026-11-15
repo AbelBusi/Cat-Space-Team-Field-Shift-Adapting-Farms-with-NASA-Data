@@ -5,13 +5,14 @@ import { fetchPower, fetchNdvi, fetchRecentClimate, NINO_COASTAL } from './lib/n
 import { say, tell } from './guide.js'
 import { DEPARTMENT, locate } from './lib/admin.js'
 import { gridCells } from './lib/nasa.js'
-import { samplePoints } from './lib/geo.js'
+import { samplePoints, samplePointsMulti } from './lib/geo.js'
 import { t } from './i18n.js'
 
 export const state = reactive({
   stage: 'intro',   // intro (Sprout says hello) → where (pick province and district) → explore (map and slides)
   area: null,       // the territory on the map: { kind: 'district' | 'department', name, province, rings }
   slide: 0,         // index in SLIDES
+  wide: false,      // true: the readings describe the whole territory (district or department), not one tapped point
   province: null,   // province open in the place picker
   layer: 'heat', month: 2, scen: 'normal',
   mode: (() => { try { return localStorage.getItem('fs-mode') || 'farmer' } catch { return 'farmer' } })(),   // farmer | pro
@@ -38,12 +39,40 @@ function loadLocal() {
 
 // An outlined field can be bigger than one grid square. Points spread over it say which squares it touches
 // and how much of the field falls in each (its share). `power` counts the NASA POWER squares (0.5° × 0.625°).
+// Without a field, a territory that was just opened (state.wide) is read the same way: the average of the squares
+// it touches, weighted by how much of the territory falls in each one. NASA POWER squares with less than 3 % of it
+// are left out, to save requests that would barely move the average.
 export const cover = computed(() => {
   const ring = state.parcel?.ring
-  if (!ring) return null
-  const pts = samplePoints(ring)
-  return { pts, power: new Set(pts.map(([la, lo]) => `${Math.round(la / 0.5)},${Math.round((lo + 180) / 0.625)}`)).size }
+  const rings = ring ? [ring] : state.wide && state.area ? state.area.rings.map(r => r.map(([lon, lat]) => [lat, lon])) : null
+  if (!rings) return null
+  const pts = ring ? samplePoints(ring) : samplePointsMulti(rings, 60)
+  if (!pts.length) return null
+  const byCell = new Map()
+  for (const [la, lo] of pts) {
+    const i = Math.round(la / 0.5), j = Math.round((lo + 180) / 0.625), k = `${i},${j}`
+    byCell.set(k, { lat: i * 0.5, lon: j * 0.625 - 180, n: (byCell.get(k)?.n || 0) + 1 })
+  }
+  const cells = [...byCell.values()].map(c => ({ ...c, w: c.n / pts.length })).filter(c => c.w >= 0.03)
+  const total = cells.reduce((s, c) => s + c.w, 0)
+  return { kind: ring ? 'field' : 'area', pts, power: byCell.size, powerCells: cells.map(c => ({ ...c, w: c.w / total })) }
 })
+
+// Weighted average of several NASA POWER answers, field by field (years are matched by year).
+function blendPower(parts) {
+  const mix = vals => {
+    let s = 0, n = 0
+    for (const { v, w } of vals) if (v != null && !Number.isNaN(v)) { s += v * w; n += w }
+    return n ? +(s / n).toFixed(2) : null
+  }
+  const months = (scen, key) => Array.from({ length: 12 }, (_, m) => mix(parts.map(p => ({ v: p.v[scen][key][m], w: p.w }))))
+  const scen = s => Object.fromEntries(Object.keys(parts[0].v[s]).map(k => [k, months(s, k)]))
+  const years = parts[0].v.years.map(({ y }) => {
+    const row = parts.map(p => ({ d: p.v.years.find(x => x.y === y), w: p.w })).filter(x => x.d)
+    return { y, rain: Math.round(mix(row.map(x => ({ v: x.d.rain, w: x.w })))), heat: mix(row.map(x => ({ v: x.d.heat, w: x.w }))) }
+  })
+  return { normal: scen('normal'), nino: scen('nino'), years }
+}
 
 // The Lambayeque grid square under the chosen point (0.1°, ~11 km), or null outside Lambayeque. With an outlined
 // field it is the average of every square the field touches, weighted by the share of the field in each one.
@@ -76,6 +105,7 @@ export const cell = computed(() => {
 // What Sprout adds when the outlined field is bigger than the data squares.
 function coverLines() {
   const c = cell.value, out = []
+  if (cover.value?.kind !== 'field') return out
   if (c?.n > 1) out.push([() => t('Your field is big: it covers {n} rain squares of 11 km. I averaged them by how much of your field falls in each one. Between them, yearly rain goes from {min} to {max} mm.', { n: c.n, min: c.range[0], max: c.range[1] }), 'thinking'])
   if (cover.value?.power > 1) out.push([() => t('It also crosses {n} NASA POWER climate squares (about 55 km). Heat and soil wetness come from the square at its center, so read them as a regional value.', { n: cover.value.power }), 'worried'])
   if (state.parcel?.areaM2 > 250_000) out.push([() => t('Greenness is still read at one 250 m pixel in the middle of your field, not across the whole field.'), 'neutral'])
@@ -118,7 +148,11 @@ export async function selectPoint(lat, lon, name = null) {
     .catch(e => { if (id === request) db.ndviError = e.message })
     .finally(() => { if (id === request) db.ndviLoading = false })
   try {
-    const power = await fetchPower(state.point.lat, state.point.lon, inside ? NINO_COASTAL : undefined)   // coastal El Niño on the Peruvian coast
+    const nino = inside ? NINO_COASTAL : undefined   // coastal El Niño on the Peruvian coast
+    const cells = cover.value?.powerCells || []
+    const power = cells.length > 1
+      ? blendPower(await Promise.all(cells.map(async c => ({ v: await fetchPower(+c.lat.toFixed(3), +c.lon.toFixed(3), nino), w: c.w }))))
+      : await fetchPower(state.point.lat, state.point.lon, nino)
     if (id !== request) return
     db.power = power
     if (inside) await loadLocal()
@@ -222,15 +256,22 @@ watch(() => state.parcel, p => { if (!p) mapUi.view3d = false })
 export const mapApi = {}
 
 // Entering the map: one district (only its territory shows) or free mode (the whole department).
-function open(area, lat, lon, name) {
-  Object.assign(state, { area, parcel: null, slide: 0, stage: 'explore' })
+// A territory opens with the readings of the whole territory (wide); a located spot opens with that spot's readings.
+function open(area, lat, lon, name, wide) {
+  Object.assign(state, { area, parcel: null, slide: 0, stage: 'explore', wide })
   selectPoint(lat, lon, name)
 }
 export function enterDistrict(province, district, at = null) {
   const [lon, lat] = district.center
-  open({ kind: 'district', name: district.name, province: province.name, rings: district.rings }, at?.lat ?? lat, at?.lon ?? lon, district.name)
+  open({ kind: 'district', name: district.name, province: province.name, rings: district.rings, center: [lat, lon] }, at?.lat ?? lat, at?.lon ?? lon, district.name, !at)
 }
 export function enterFree(at = null) {
-  const lat = at?.lat ?? state.point?.lat ?? -6.77, lon = at?.lon ?? state.point?.lon ?? -79.84
-  open({ kind: 'department', name: DEPARTMENT.name, province: null, rings: DEPARTMENT.rings }, lat, lon, locate(lat, lon)?.district.name ?? null)
+  const [lat, lon] = at ? [at.lat, at.lon] : [-6.42, -79.73]   // the middle of the department
+  open({ kind: 'department', name: DEPARTMENT.name, province: null, rings: DEPARTMENT.rings, center: [-6.42, -79.73] }, lat, lon, at ? locate(lat, lon)?.district.name ?? null : DEPARTMENT.name, !at)
+}
+// Back to the whole territory's readings (the "whole view" button, with no field outlined).
+export function readWholeArea() {
+  if (!state.area || state.parcel) return
+  state.wide = true
+  selectPoint(...state.area.center, state.area.kind === 'district' ? state.area.name : DEPARTMENT.name)
 }
