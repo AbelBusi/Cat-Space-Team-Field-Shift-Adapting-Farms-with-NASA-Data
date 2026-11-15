@@ -33,14 +33,15 @@ const fmt = v => v == null ? '–' : v.toFixed(3)
       <template v-else>
         <HudCard :title="t('Deep soil water at your spot, 2026')">
           <template v-if="state.mode === 'farmer'">
-            <div class="grid grid-cols-12 gap-0.5">
-              <button v-for="(p, i) in periods" :key="p" type="button" class="flex flex-col items-center gap-0.5 border py-1"
+            <!-- Two rows of 6 months: January-June (the months the projection is good for) and July-December (faded). -->
+            <div v-for="half in [0, 6]" :key="half" class="grid grid-cols-6 gap-1">
+              <button v-for="i in [0, 1, 2, 3, 4, 5].map(j => j + half)" :key="periods[i]" type="button" class="flex flex-col items-center gap-1 border py-1.5"
                       :class="[i === k ? 'border-fire' : 'border-transparent', i + 1 > useful ? 'opacity-45' : '']" :title="t(WORD[word(i)] || '')" @click="state.ahead.month = i">
-                <PixelIcon :name="ICON[word(i)] || 'soil_moist'" :size="1" />
-                <span class="font-mono text-[10px] text-muted">{{ M1[i] }}</span>
+                <PixelIcon :name="ICON[word(i)] || 'soil_moist'" :size="2" />
+                <span class="font-mono text-xs" :class="i === k ? 'text-fire' : 'text-muted'">{{ M1[i] }}</span>
               </button>
             </div>
-            <p class="text-base">
+            <p class="text-lg">
               <span class="text-fire">{{ t(MONTHS[+periods[k].slice(5, 7) - 1]) }}:</span> {{ t(WORD[word(k)]) }}
               <span v-if="k + 1 > useful" class="text-muted"> · {{ t('this far ahead it is a guess close to a typical year') }}</span>
             </p>

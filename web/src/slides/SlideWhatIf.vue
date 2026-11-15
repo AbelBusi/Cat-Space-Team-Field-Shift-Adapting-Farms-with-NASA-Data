@@ -35,6 +35,7 @@ const arrowColor = v => dir(v) === 'down' ? PAL.ember : dir(v) === 'up' ? PAL.te
 // The ground of each month, compared with what is usual at this spot in that month.
 const SOIL = { wetter: 'soil_wet', usual: 'soil_moist', drier: 'soil_dry' }
 const ground = (series, i) => SOIL[versusUsual('soil_water', series?.median[i], base.value?.usual[i])] || 'soil_moist'
+const idx = half => [0, 1, 2, 3, 4, 5].map(j => j + half)
 const SHORT = { el_nino: 'With El Niño', drought_feb_mar: 'Without rain' }
 // A new "what if" opens on the month where it changes the most.
 watch(() => [state.ahead.scen, biggest.value], () => { if (state.ahead.scen !== 'base') state.ahead.month = biggest.value })
@@ -61,18 +62,18 @@ const members = computed(() => proj.value?.soil_water[state.ahead.scen]?.members
                 <button v-if="biggest !== k" type="button" class="text-xs text-muted underline" @click="state.ahead.month = biggest">{{ t('Biggest change: {m}', { m: month(biggest) }) }}</button>
               </div>
             </div>
-            <!-- Two furrows of 12 months: the ground in a normal year, the ground in the "what if", and the change. -->
-            <div class="grid grid-cols-[5.5rem_repeat(12,minmax(0,1fr))] items-center gap-y-1 text-[11px]">
+            <!-- Two furrows, the ground in a normal year and in the "what if", and the change; January-June, then July-December. -->
+            <div v-for="half in [0, 6]" :key="half" class="grid grid-cols-[5.5rem_repeat(6,minmax(0,1fr))] items-center gap-y-1 text-xs">
               <span class="text-muted">{{ t('Normal year') }}</span>
-              <span v-for="(p, i) in periods" :key="'b' + p" class="flex justify-center" :class="{ 'opacity-40': i + 1 > useful }"><PixelIcon :name="ground(base, i)" :size="1" /></span>
+              <span v-for="i in idx(half)" :key="'b' + i" class="flex justify-center" :class="{ 'opacity-40': i + 1 > useful }"><PixelIcon :name="ground(base, i)" :size="2" /></span>
               <span class="text-ink">{{ t(SHORT[state.ahead.scen]) }}</span>
-              <span v-for="(p, i) in periods" :key="'a' + p" class="flex justify-center" :class="{ 'opacity-40': i + 1 > useful }"><PixelIcon :name="ground(alt, i)" :size="1" /></span>
+              <span v-for="i in idx(half)" :key="'a' + i" class="flex justify-center" :class="{ 'opacity-40': i + 1 > useful }"><PixelIcon :name="ground(alt, i)" :size="2" /></span>
               <span class="text-muted">{{ t('Change') }}</span>
-              <span v-for="(p, i) in periods" :key="'d' + p" class="flex justify-center" :class="{ 'opacity-40': i + 1 > useful }">
-                <PixelIcon v-if="dir(diff[i]) !== 'flat'" :name="dir(diff[i])" :color="arrowColor(diff[i])" :size="1" /><span v-else class="text-muted">·</span>
+              <span v-for="i in idx(half)" :key="'d' + i" class="flex h-8 items-center justify-center" :class="{ 'opacity-40': i + 1 > useful }">
+                <PixelIcon v-if="dir(diff[i]) !== 'flat'" :name="dir(diff[i])" :color="arrowColor(diff[i])" :size="2" /><span v-else class="text-base text-muted">·</span>
               </span>
               <span />
-              <button v-for="(p, i) in periods" :key="'m' + p" type="button" class="border font-mono text-[10px]" :class="i === k ? 'border-fire text-fire' : 'border-transparent text-muted'" @click="state.ahead.month = i">{{ M1[i] }}</button>
+              <button v-for="i in idx(half)" :key="'m' + i" type="button" class="border py-0.5 font-mono text-xs" :class="i === k ? 'border-fire text-fire' : 'border-transparent text-muted'" @click="state.ahead.month = i">{{ M1[i] }}</button>
             </div>
             <p class="text-xs text-muted">{{ t('Ground: dry, usual or wet for this spot and month. Arrow: wetter or drier than a normal year; a dot means about the same. Faded months are too far ahead to trust.') }}</p>
           </template>
