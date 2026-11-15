@@ -118,6 +118,13 @@ The thermometer and the rain gauge of Farmer mode (`Instrument.vue`) are drawn i
   frame, and each side shows its real length on its edge (only when the side is long enough on screen). Everything on the map except the field
   sits under a dark veil (86 %), so only the field and its block stand out; the cards stay readable. A compass rose turns with
   the view; tapping it swings the block back to north up.
+- **4D view (2D · 3D · 4D switch, only in "What's ahead"):** the 3D block plus time, after the idea that the present is one
+  cut of an object that stretches through time. One thin plate per month, with the field's own outline: the months before
+  the chosen one are **strata under the block** (older = deeper, like layers of ground), the months after it float **above
+  it as rings**. Colour = how full the deep soil was for this place (`--soil` dry → `--deep` → `--teal` wet) and wetter
+  months are wider, so El Niño years stick out of the column. A **glass cube** in `--teal` around the block is "now".
+  Moving the field log makes the cube travel along the column. Year marks sit beside it (`--fire` edge for El Niño,
+  `--teal` for what is to come). The plates of the projection and of the trend are dimmer: they are not measurements.
 - **Field log (time bar), only in "What's ahead":** a HUD strip under the block, drawn like a ship log: a `--line` grid,
   the deep soil water (28–100 cm) of the 2 km square at the field's centre every month since 1998 in `--teal`, El Niño years
   as `--line` blocks, and log entries above the line (square cards: a `--teal` header with the year, a pixel icon below)

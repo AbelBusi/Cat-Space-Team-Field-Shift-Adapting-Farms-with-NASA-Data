@@ -4,6 +4,11 @@ import { t } from '../i18n.js'
 import { formatArea } from '../lib/geo.js'
 
 // The few actions of the map, as one row of HUD buttons: zoom, whole view, find me, outline my field.
+// 4D = the 3D field plus time; its data come with the field log, which lives in "What's ahead".
+function go4d() {
+  if (state.track !== 'ahead') Object.assign(state, { track: 'ahead', slide: 0 })
+  mapUi.view3d = mapUi.view4d = true
+}
 </script>
 
 <template>
@@ -26,8 +31,9 @@ import { formatArea } from '../lib/geo.js'
       <template v-else>
         <span class="border border-fire bg-panel/90 px-2 py-1.5 font-mono text-xs">{{ t('Your field:') }} {{ formatArea(state.parcel.areaM2) }}</span>
         <div class="seg" role="group" :aria-label="t('View of your field')">
-          <button type="button" :aria-pressed="!mapUi.view3d" @click="mapUi.view3d = false">2D</button>
-          <button type="button" :aria-pressed="mapUi.view3d" :title="t('See your field in 3D, with its relief')" @click="mapUi.view3d = true">3D</button>
+          <button type="button" :aria-pressed="!mapUi.view3d" @click="mapUi.view3d = mapUi.view4d = false">2D</button>
+          <button type="button" :aria-pressed="mapUi.view3d && !mapUi.view4d" :title="t('See your field in 3D, with its relief')" @click="mapUi.view3d = true; mapUi.view4d = false">3D</button>
+          <button type="button" :aria-pressed="mapUi.view4d" :title="t('Add time: every month since 1998 stacked under your field, and the ones to come above it')" @click="go4d">4D</button>
         </div>
         <button type="button" class="btn" @click="mapApi.editOutline()">{{ t('Edit outline') }}</button>
         <button type="button" class="btn" @click="mapApi.clearOutline()">{{ t('Delete') }}</button>

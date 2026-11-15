@@ -13,8 +13,8 @@ import { t } from '../i18n.js'
 // as the one entry still marked "?". It opens pointing at 2026. Dragging it (or playing it) fills the soil layers of the
 // 3D block with that month's water, and in the projection it moves the month shown on the map (state.ahead.month).
 // Observed (ERA5-Land), projected and missing values are drawn apart and named; nothing is filled in.
-const props = defineProps({ box: { type: Object, required: true } })
-const emit = defineEmits(['layers', 'size'])
+const props = defineProps({ box: { type: Object, required: true }, compact: Boolean })   // compact: the 4D view needs the room
+const emit = defineEmits(['layers', 'size', 'series', 'cursor'])
 const root = ref(null), plot = ref(null)
 const data = ref(null), error = ref(null), at = ref(0), playing = ref(false), width = ref(600), born = ref(0)
 let timer = 0, ctrl = null, ro = null
@@ -87,10 +87,27 @@ const layers = computed(() => {
   })
 })
 watch(layers, ls => emit('layers', ls.map(l => l.fill)), { immediate: true })
+// For the 4D view: every month (and trend year) as how full the deep soil is for this place, its kind, and the marks.
+const fillOf = v => v == null || deep.value.p05 == null ? null : Math.max(0, Math.min(1, (v - deep.value.p05) / Math.max(1e-6, deep.value.p95 - deep.value.p05)))
+watch(data, d => {
+  if (!d) return emit('series', null)
+  const n = nAll.value, fill = [...Array(n).keys()].map(i => fillOf(valueAt(i)))
+  const kind = [...Array(n).keys()].map(i => i < nPast.value ? 'past' : i < nPast.value + nFut.value ? 'future' : 'trend')
+  const marks = []
+  d.months.forEach((m, i) => {
+    const y = +m.slice(0, 4)
+    if (m.endsWith('-01') && (y % 5 === 0 || y === 1998)) marks.push({ i, text: String(y) })
+    if (m.endsWith('-03') && d.el_nino_years.includes(y) && !d.el_nino_years.includes(y - 1)) marks.push({ i, text: 'El Niño ' + y, nino: true })
+  })
+  if (nFut.value) marks.push({ i: nPast.value, text: fut.value.periods[0].slice(0, 4) + ' ?', next: true })
+  if (nTr.value) marks.push({ i: n - 1, text: String(ext.value.years.at(-1)), next: true })
+  emit('series', { fill, kind, marks })
+}, { immediate: true })
+watch(at, i => emit('cursor', i), { immediate: true })
 const NAME = ['Surface', 'Middle', 'Deep']
 
 // ---- the log screen. The past 1998-2025 takes 64 % of the width and the coming year the rest, so 2026 reads clearly.
-const H = computed(() => phone() ? 96 : 124)
+const H = computed(() => phone() ? 96 : props.compact ? 104 : 124)
 const TOP = computed(() => phone() ? 0 : 48)                     // band of the log entries above the line
 const geo = computed(() => {
   if (!data.value) return null
@@ -329,7 +346,7 @@ onBeforeUnmount(() => { stop(); ctrl?.abort(); ro?.disconnect() })
           </span>
         </p>
         <!-- The three layers of the block, top to bottom -->
-        <div class="flex flex-wrap gap-x-4 gap-y-0.5 text-xs max-lg:hidden">
+        <div v-if="!compact" class="flex flex-wrap gap-x-4 gap-y-0.5 text-xs max-lg:hidden">
           <span v-for="l in layers" :key="l.key" class="flex items-center gap-1.5" :class="{ 'opacity-45': l.v == null }">
             <span class="inline-block size-3 border border-line" :style="{ background: l.v == null ? 'transparent' : PAL.deep, opacity: l.v == null ? 1 : 0.25 + 0.75 * (l.fill ?? 0) }" />
             <span class="text-muted">{{ t(NAME[l.n]) }} · {{ l.top_cm }}–{{ l.bottom_cm }} cm:</span>
@@ -339,7 +356,7 @@ onBeforeUnmount(() => { stop(); ctrl?.abort(); ro?.disconnect() })
           </span>
         </div>
       </div>
-      <details class="text-[11px] text-muted max-lg:hidden">
+      <details v-if="!compact" class="text-[11px] text-muted max-lg:hidden">
         <summary class="cursor-pointer">{{ t('Where these numbers come from') }}</summary>
         {{ t('Line: deep soil water (28–100 cm) from ERA5-Land, read on the 2 km square in the middle of your field; it does not see irrigation. Grey blocks: El Niño years. After the dashed line: my projection for the coming year, with the range where 9 in 10 tries landed.') }}
         {{ t('Not a forecast: my model ran this month with the weather of each past year.') }} {{ t('Drag the screen, or use the arrow keys, to move through the months.') }}
