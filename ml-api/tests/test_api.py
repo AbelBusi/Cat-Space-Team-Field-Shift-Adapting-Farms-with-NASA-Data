@@ -47,7 +47,7 @@ def test_simulation_drought_dries_and_baseline_matches_itself():
     assert r.status_code == 200, r.text
     body = r.json()
     assert len(body["periods"]) == 4 and body["baseline"]["members"] == 28
-    assert body["comparison"][2]["absolute_difference"] < 0      # the drought case passed its check: it dries the soil
+    assert body["comparison"][2]["absolute_difference"] < 0      # the drought case dries this cell (its global check failed: see docs)
     assert body["modified_inputs"] and body["interpretation"]["summary"]
 
 

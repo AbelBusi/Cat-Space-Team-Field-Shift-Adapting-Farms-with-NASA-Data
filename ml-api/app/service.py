@@ -282,8 +282,8 @@ DRY_SEASON = [6, 7, 8, 9, 10]               # Jul..Nov when the start is Decembe
 
 
 def build_bundle(s: State) -> dict:
-    """Run the tested models over every Lambayeque cell from the last observed month, for the scenarios that passed
-    their checks (docs/ML_PROJECTIONS.md): a normal year (all weather years), El Niño years, and two dry months.
+    """Run the tested models over every Lambayeque cell from the last observed month, for the scenarios offered in
+    the app (docs/ML_PROJECTIONS.md; the drought check failed but its mean effect is clear, rain-only is not offered): a normal year (all weather years), El Niño years, and two dry months.
     Same code, analog years and range corrections as ml/notebooks/06_projections.ipynb."""
     import time
     import warnings

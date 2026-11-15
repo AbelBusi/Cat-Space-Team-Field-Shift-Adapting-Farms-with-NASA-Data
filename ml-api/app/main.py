@@ -67,7 +67,7 @@ def model_info():
 @v1.get("/projections")
 def projections():
     """Every Lambayeque 2 km cell, 12 months of root-zone soil water and 4 quarters of NDVI from the last observed month,
-    for the scenarios that passed their checks. Integers x meta.scale. Computed once at startup by the tested models."""
+    for a normal year, El Niño years and two dry months. Integers x meta.scale. Computed once at startup by the tested models."""
     return service.projections()
 
 

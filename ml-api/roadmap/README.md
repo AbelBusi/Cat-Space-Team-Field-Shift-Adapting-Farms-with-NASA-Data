@@ -73,7 +73,7 @@ sin perder el principio que guió todo el proyecto: **cada número viene con su 
 | Capa | Estado | Resultado medido |
 |---|---|---|
 | Proyecciones por conjunto de años análogos (clima de cada año 1998–2025, mes a mes, recursivo) | ✅ `GET /projections`, `fs_ml/project.py` | Útil (supera a "un año típico" con IC > 0) hasta **6 meses** (agua del suelo) y **4 trimestres** (NDVI) en 2018–2022. En la segunda mirada a 2023–2025 (con El Niño costero) solo 2 meses. Cobertura del rango 90 % en 2023–2025: 80 % / 84 % |
-| Escenarios: año normal, años de El Niño, dos meses sin lluvia | ✅ calculados al iniciar la API | Sequía: seca el suelo en promedio (−0.04 m³/m³ en inicios de enero). **Solo lluvia (×0.5, ×2): falló las pruebas de cordura** (respuesta menor que el error del modelo, a veces en sentido contrario) |
+| Escenarios: año normal, años de El Niño, dos meses sin lluvia | ✅ calculados al iniciar la API | Sequía: seca el suelo en promedio (−0.04 m³/m³ en inicios de enero), **pero su prueba de cordura falló** (25 % de celdas subieron un poco). **Solo lluvia (×0.5, ×2): también falló** (respuesta menor que el error del modelo, a veces en sentido contrario) |
 | Simulador por celda (meses secos, ±°C, ±HR, lluvia ×, años El Niño) | ✅ `POST /simulations/climate` (solo agua del suelo) | Marca diferencias menores al RMSE como ruido; advierte cambios solo de lluvia |
 | Rangos adaptativos (CQR + recalibración mensual) | 🟡 experimento en `ml/artifacts/v2_intervals_experiment/` | Cobertura 90 % / 89 % en 2023–2025 (segunda mirada); no está en la API |
 | Modelos v2 con índice Niño 1+2 | 🟡 `ml/artifacts/v2_nino_models/`, `fs_ml/enso.py` | Agua del suelo: sin diferencia en validación (se decide con 2026). NDVI: rechazado |
@@ -301,7 +301,9 @@ precisión.
 - **Configuración:** duración 1–6 meses (`dry_months` consecutivos desde un mes elegido), reducción de lluvia en los
   meses vecinos (`rain_factor`), `t2m_delta`, comparación con años históricos (`analog`).
 - **Cómo:** `scenario_drought` (✅): lluvia 0 y suelo superficial al mínimo observado 1998–2017 para ese mes y celda,
-  que es el caso que **pasó** su prueba de cordura (seca el suelo en promedio).
+  Corrección: este caso **no pasó** su prueba de cordura pre-registrada (en el 25 % de las celdas el agua del suelo subió
+  un poco), aunque su efecto promedio sí es secar el suelo (−0.04 m³/m³ en inicios de enero). Por eso se muestra con
+  advertencia y se re-evalúa en la Fase 2 (sección 13).
 - **Resultados:** serie mensual base vs. sequía con mediana y rango 90 %, diferencias absolutas y relativas,
   `within_model_error`, valores fuera de rango.
 - **Pendiente (Fase 2):** sequías de 4–6 meses no se probaron; hindcast sugerido: reproducir los meses secos observados

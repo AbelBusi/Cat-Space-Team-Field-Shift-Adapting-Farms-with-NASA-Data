@@ -69,7 +69,7 @@ class Scenario(Strict):
     months: list[int] | None = Field(None, description="Lead months (1 = first projected month) the three changes "
                                      "apply to; all if null")
     dry_months: list[int] = Field(default_factory=list, description="Lead months with no rain and the driest surface "
-                                  "soil of 1998-2017 (the drought case that passed its check)")
+                                  "soil of 1998-2017. Dries the soil on average, but its pre-registered check failed: read it with care")
     analog: Literal["all", "el_nino"] | list[int] = Field("all", description="Weather years used: all, only coastal "
                                                          "El Niño years, or an explicit list")
 
