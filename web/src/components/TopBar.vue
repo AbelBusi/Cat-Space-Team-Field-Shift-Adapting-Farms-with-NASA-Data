@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import FieldShiftLogo from './FieldShiftLogo.vue'
 import { state, enterFree } from '../store.js'
 import { guide, setGuide, say } from '../guide.js'
 import { t, lang, setLang, LANGS } from '../i18n.js'
@@ -27,7 +28,7 @@ function setTrack(track) {
   <header class="fixed inset-x-0 top-0 z-40 border-b border-line bg-bg/90 print:hidden">
     <div class="flex h-12 items-center gap-2 px-3">
       <button type="button" class="flex shrink-0 items-center gap-2 whitespace-nowrap font-display text-[17px] font-semibold text-ink" :title="t('Back to the start')" :aria-label="t('Back to the start')" @click="state.stage = 'intro'">
-        <span class="inline-block size-3 bg-teal" aria-hidden="true" /><span :class="{ 'max-sm:hidden': state.stage !== 'intro' }">Field Shift</span>
+        <FieldShiftLogo :size="1.5" /><span :class="{ 'max-sm:hidden': state.stage !== 'intro' }">Field Shift</span>
       </button>
 
       <nav v-if="state.stage !== 'intro'" class="flex min-w-0 items-center gap-1 font-mono text-xs uppercase tracking-wider text-muted" :aria-label="t('Where you are')">

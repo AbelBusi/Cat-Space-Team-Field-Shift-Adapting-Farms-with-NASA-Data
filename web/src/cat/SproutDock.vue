@@ -1,4 +1,5 @@
 <script setup>
+import PixelIcon from '../components/PixelIcon.vue'
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import CatSprite from './CatSprite.vue'
 import { guide, line, hasNext, next, close, summon, submitQuestion } from '../guide.js'
@@ -64,6 +65,8 @@ function send() {
   submitQuestion(q, {
     stage: state.stage, mode: state.mode, district: state.area?.name, place: state.point && placeLabel(state.point), month: state.month + 1, scenario: state.scen,
     readings: Object.fromEntries(LAYER_KEYS.map(k => [k, valueAt(k)])), rotation: state.stage === 'explore' ? chosen.value.r.name : null,
+    lat: state.point?.lat, lon: state.point?.lon, track: state.track, topic: guide.screen,
+    ...(state.track === 'ahead' && { ahead_scenario: state.ahead.scen, ahead_month_index: state.ahead.month }),
   })
 }
 
@@ -87,8 +90,8 @@ onBeforeUnmount(() => { clearTimeout(timer); clearTimeout(restTimer); removeEven
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-1 text-xs uppercase tracking-wider text-teal">
           <span><span class="font-pixel text-[13px]">Sprout</span> · {{ t('translator') }}</span>
           <span class="flex gap-1 text-muted [&_button]:uppercase">
-            <button type="button" class="px-1.5 py-1 hover:text-ink" :aria-pressed="!guide.muted" :aria-label="t(guide.muted ? 'Turn voice sound on' : 'Turn voice sound off')" @click="unlock(); guide.muted = !guide.muted">{{ t(guide.muted ? '[ sound off ]' : '[ sound on ]') }}</button>
-            <button type="button" class="px-1.5 py-1 hover:text-ink" :aria-label="t('Minimize Sprout')" @click="close">[ _ ]</button>
+            <button type="button" class="px-1.5 py-1 hover:text-ink" :aria-pressed="!guide.muted" :aria-label="t(guide.muted ? 'Turn voice sound on' : 'Turn voice sound off')" :title="t(guide.muted ? 'Turn voice sound on' : 'Turn voice sound off')" @click="unlock(); guide.muted = !guide.muted"><PixelIcon :name="guide.muted ? 'speaker_off' : 'speaker'" color="currentColor" :size="1.25" /></button>
+            <button type="button" class="px-1.5 py-1 hover:text-ink" :aria-label="t('Close Sprout')" :title="t('Close Sprout')" @click="close"><PixelIcon name="close" color="currentColor" :size="1.25" /></button>
           </span>
         </div>
         <div class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2.5" @click="advance">

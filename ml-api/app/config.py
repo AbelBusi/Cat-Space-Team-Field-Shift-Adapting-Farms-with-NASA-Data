@@ -25,6 +25,12 @@ class Settings:
     cors_origins: tuple = field(default_factory=lambda: tuple(o.strip() for o in os.environ.get(
         "ML_API_CORS_ORIGINS", "http://localhost:5173,http://localhost:5174").split(",") if o.strip()))
     log_level: str = field(default_factory=lambda: os.environ.get("ML_API_LOG_LEVEL", "info"))
+    # Sprout's open questions (POST /ask): any OpenAI-compatible chat endpoint. Default: Ollama on this machine.
+    persona_path: Path = field(default_factory=lambda: _path("FS_PERSONA_PATH", "../docs/SPROUT_PERSONA.md"))
+    llm_base_url: str = field(default_factory=lambda: os.environ.get("LLM_BASE_URL", "http://localhost:11434/v1"))
+    llm_model: str = field(default_factory=lambda: os.environ.get("LLM_MODEL", "qwen2.5:3b"))
+    llm_api_key: str = field(default_factory=lambda: os.environ.get("LLM_API_KEY", ""))
+    llm_timeout: float = field(default_factory=lambda: float(os.environ.get("LLM_TIMEOUT", "60")))
 
 
 settings = Settings()

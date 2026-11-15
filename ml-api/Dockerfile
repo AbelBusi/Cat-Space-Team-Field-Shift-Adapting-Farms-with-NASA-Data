@@ -8,6 +8,7 @@ RUN pip install --no-cache-dir -r ml-api/requirements.txt
 COPY ml/fs_ml ml/fs_ml
 COPY ml/artifacts/final_model ml/artifacts/final_model
 COPY ml/artifacts/projections/projection_card.json ml/artifacts/projections/hindcast_skill_by_lead.csv ml/artifacts/projections/
+COPY docs/SPROUT_PERSONA.md docs/SPROUT_PERSONA.md
 COPY ml-api/app ml-api/app
 COPY ml-api/data ml-api/data
 WORKDIR /srv/ml-api

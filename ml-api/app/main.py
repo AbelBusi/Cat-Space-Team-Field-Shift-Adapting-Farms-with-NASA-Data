@@ -11,9 +11,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 
-from . import service
+from . import ask as sprout, service
 from .config import settings
-from .schemas import Location, PredictionRequest, PredictionResponse, SimulationRequest, SimulationResponse
+from .schemas import AskRequest, AskResponse, Location, PredictionRequest, PredictionResponse, SimulationRequest, SimulationResponse
 
 logging.basicConfig(level=settings.log_level.upper(), format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("ml-api")
@@ -99,6 +99,15 @@ def simulate(req: SimulationRequest):
         return JSONResponse(status_code=400, content={"error": "unknown_location", "detail": str(e)})
     except ValueError as e:
         return JSONResponse(status_code=400, content={"error": "bad_request", "detail": str(e)})
+
+
+@v1.post("/ask", response_model=AskResponse)
+def ask(req: AskRequest):
+    """Sprout answers an open question with the persona in docs/SPROUT_PERSONA.md and the numbers on screen."""
+    try:
+        return {"answer": sprout.answer(req.question, req.lang, req.context), "model": settings.llm_model}
+    except sprout.AskUnavailable as e:
+        return JSONResponse(status_code=503, content={"error": "ai_unavailable", "detail": str(e)})
 
 
 app.include_router(v1)

@@ -121,3 +121,16 @@ class SimulationResponse(BaseModel):
     out_of_training_range: dict[str, float]
     reliability: dict
     interpretation: dict
+
+
+# ---------- Sprout's open questions ----------
+
+class AskRequest(Strict):
+    question: str = Field(min_length=1, max_length=600)
+    lang: Literal["en", "es", "qu"] = "en"
+    context: dict = Field(default_factory=dict, description="What the user sees: place, lat/lon, month, readings, topic")
+
+
+class AskResponse(BaseModel):
+    answer: str
+    model: str

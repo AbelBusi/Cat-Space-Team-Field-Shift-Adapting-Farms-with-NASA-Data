@@ -2,6 +2,7 @@
 **
 !ml-api/requirements.txt
 !ml-api/app
+!docs/SPROUT_PERSONA.md
 !ml-api/data/cube.npz
 !ml/fs_ml
 !ml/artifacts/final_model

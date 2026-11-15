@@ -75,3 +75,15 @@ def test_projections_match_the_validated_notebook():
             assert [round(v * 1000) for v in ref["median"]] == got, (cid, scen)
     one = client.get("/api/v1/projections/cell", params={"lat": -6.42, "lon": -79.73}).json()
     assert len(one["median"]) == 12 and one["low_90"][0] <= one["median"][0] <= one["high_90"][0]
+
+
+def test_ask_without_ai_says_so_and_enriches_context():
+    from app import ask as sprout
+    from app.config import settings
+    object.__setattr__(settings, "llm_base_url", "http://127.0.0.1:9")   # nothing listens there
+    r = client.post("/api/v1/ask", json={"question": "¿Cómo estará mi suelo?", "lang": "es", "context": {"lat": -6.42, "lon": -79.73}})
+    assert r.status_code == 503 and r.json()["error"] == "ai_unavailable"
+    ctx = sprout.enrich({"lat": -6.42, "lon": -79.73})
+    assert len(ctx["model_projection_soil_water_28_100cm_m3m3"]["median"]) == 6
+    assert "Sprout" in sprout.persona() and "---" not in sprout.persona()[:5]
+    assert client.post("/api/v1/ask", json={"question": ""}).status_code == 422

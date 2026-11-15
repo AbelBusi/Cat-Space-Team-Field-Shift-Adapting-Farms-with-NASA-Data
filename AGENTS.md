@@ -32,7 +32,7 @@ farmers anywhere can compare crop rotations. Team from Chiclayo, Peru. Read this
 | `web/src/store.js` · `web/src/guide.js` | App state, stages and live data · Sprout's dialogue, answers and guide on/off |
 | `web/src/components/` · `web/src/slides/` | Stages (`IntroStage`, `RegionPicker`, `ExploreStage`, `MapStage`), HUD pieces · one file per topic |
 | `web/src/lib/admin.js` · `web/src/data/` | Lambayeque provinces, districts and place names (OpenStreetMap, built by `pipeline/build_*.py`) |
-| `web/src/lib/ask.js` | Sprout's open questions: an optional AI endpoint (`VITE_ASK_URL`) or a few local answers |
+| `web/src/lib/ask.js` | Sprout's open questions: the ML API's `/ask` (`VITE_ASK_URL`; persona in `docs/SPROUT_PERSONA.md`, AI key only on the server) or a few local answers |
 | `web/src/lib/nasa.js` | Live NASA requests (POWER, MODIS via ORNL, GIBS) and grid cells |
 | `web/src/lib/pixelIcons.js` · `web/src/cat/sprites.js` | Pixel icons · Sprout's sprites |
 | `pipeline/` | Python data scripts (venv in `pipeline/.venv`) |

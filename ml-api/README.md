@@ -104,6 +104,7 @@ Docker was not running there. Run it once before relying on it.)
 | GET | `/projections` | The whole grid (used by the web): 12 months of soil water and 4 quarters of NDVI per cell and scenario, integers × 1000 |
 | GET | `/projections/cell?lat=&lon=&variable=&scenario=` | One cell's series in real units |
 | POST | `/simulations/climate` | **The simulator**: a what-if for one cell compared with a normal year |
+| POST | `/ask` | Sprout's open questions, answered by a chat model with Sprout's persona and the numbers on screen |
 
 ### POST /predictions
 
@@ -164,6 +165,25 @@ validation RMSE (0.0125 m³/m³): they cannot be told apart from noise. Errors: 
   −1…+2 °C, El Niño years, rain × 0.5…1.5. It sends `POST /simulations/climate` for the tapped cell, shows a loading
   state, aborts a request that a new one replaces, skips identical repeats, and shows the model's answer apart from
   the user's inputs.
+
+## Sprout's AI (`POST /ask`)
+
+The web sends `{ question, lang, context }` (`web/src/lib/ask.js`, `VITE_ASK_URL`); `context` is what the user sees: place,
+lat/lon, month, readings, topic, scenario. The API adds the tested model's 6-month soil water projection for that cell and
+sends everything to a chat model with **`docs/SPROUT_PERSONA.md` as the system prompt** (personality, what Sprout may and
+may not say, "use only the numbers in context"). Edit that file to change Sprout; no code change. The key, if any, stays
+in the API's environment, never in the browser. If no model answers, `/ask` returns 503 and Sprout falls back to its few
+local answers and says so.
+
+One code path for any OpenAI-compatible endpoint (`LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`):
+
+| Option | Cost | Notes |
+|---|---|---|
+| **Ollama** on your machine (default: `http://localhost:11434/v1`, `qwen2.5:3b`) | Free | Install Ollama, `ollama pull qwen2.5:3b` (~2 GB). Good for the local demo; answers in Spanish. Needs ~4 GB RAM; on a public server it needs a machine of that size, which hosting usually charges for |
+| Groq (`https://api.groq.com/openai/v1`) | Free tier, rate-limited | Account and key; very fast open models (Llama, Qwen) |
+| Google Gemini (`https://generativelanguage.googleapis.com/v1beta/openai`) | Free tier, rate-limited | Account and key; the free tier may use prompts to improve their products |
+| OpenRouter (`https://openrouter.ai/api/v1`, models ending in `:free`) | Free models, rate-limited | Account and key |
+| Paid APIs (Anthropic Claude, OpenAI…) | Per token | Best quality; Claude is reachable through its own API or OpenAI-compatible gateways |
 
 ## Known limitations
 
