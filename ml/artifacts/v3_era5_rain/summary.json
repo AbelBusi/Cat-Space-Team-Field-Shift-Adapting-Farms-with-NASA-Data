@@ -1,0 +1,177 @@
+{
+ "status": "candidate",
+ "decision": {
+  "R1": [
+   {
+    "criterion": "A",
+    "result": "skill vs persistence 0.621 >= 0.20",
+    "pass": true
+   },
+   {
+    "criterion": "B",
+    "result": "lower CI 0.592 > 0",
+    "pass": true
+   },
+   {
+    "criterion": "C",
+    "result": "RMSE 0.0099 <= 0.04",
+    "pass": true
+   },
+   {
+    "criterion": "D",
+    "result": "|bias| 0.0013 <= 0.01",
+    "pass": true
+   },
+   {
+    "criterion": "E",
+    "result": "worst year 0.559, worst province 0.438 >= 0",
+    "pass": true
+   },
+   {
+    "criterion": "F",
+    "result": "90% coverage 2021-2022 0.884 in [0.87, 0.93]",
+    "pass": true
+   }
+  ],
+  "R1_pass": true,
+  "R2": {
+   "skill_vs_v1": 0.21145888601257545,
+   "ci": [
+    0.1749610722622852,
+    0.24793410345163963
+   ],
+   "pass": true
+  },
+  "usable_for_simulations": true
+ },
+ "second_look_2023_2025": {
+  "rmse_v3": 0.014220358930345282,
+  "rmse_v1": 0.019796127728789605,
+  "skill_vs_v1": [
+   0.28165956872138453,
+   0.2414072799059457,
+   0.3216513944396066
+  ],
+  "march_2023_rmse": {
+   "v3": 0.024479795819028604,
+   "v1": 0.05325307922604079
+  },
+  "march_2023_bias": {
+   "v3": -0.006964947897158783,
+   "v1": -0.036725163519284426
+  },
+  "coverage_90_by_season": 0.8216481836923296,
+  "gain_share": {
+   "last_month_root_soil": 0.6480145922916525,
+   "surface_soil": 0.2221613023987242,
+   "chirps_rain_4": 0.0029732953925603925,
+   "era5_rain_4": 0.07996120906132223
+  }
+ },
+ "projections": {
+  "useful_lead_months": 6,
+  "correction_by_lead": {
+   "1": 0.004788623336288669,
+   "2": 0.006226680281259056,
+   "3": 0.007422541242132902,
+   "4": 0.008063175444029735,
+   "5": 0.007995043422586223,
+   "6": 0.007981821574190584,
+   "7": 0.0074064676399512586,
+   "8": 0.00686578513473593,
+   "9": 0.006109623242450013,
+   "10": 0.00535496502153332,
+   "11": 0.005016657579627493,
+   "12": 0.00464557467769551
+  },
+  "coverage_90_2023_2025": 0.8068141691926343
+ },
+ "scenario_checks": {
+  "S1": {
+   "raise_share_plus2": 0.0,
+   "fall_share_minus2": 0.0,
+   "strict_raise_share_plus2": 0.005504971219256934,
+   "mean_effect_plus2": -0.003142569449299889,
+   "mean_effect_minus2": 0.003316143419104275,
+   "pass": true
+  },
+  "S2": {
+   "table": [
+    {
+     "months": 1,
+     "mean_change_end": -0.007301021224206527,
+     "mean_change_lead6": -0.004481324618092574,
+     "rise_share_end": 0.0
+    },
+    {
+     "months": 2,
+     "mean_change_end": -0.019365622756397426,
+     "mean_change_lead6": -0.010135596531503241,
+     "rise_share_end": 0.0
+    },
+    {
+     "months": 3,
+     "mean_change_end": -0.030063652371703088,
+     "mean_change_lead6": -0.017807656027988762,
+     "rise_share_end": 2.0931449502878075e-05
+    },
+    {
+     "months": 4,
+     "mean_change_end": -0.03853280480837031,
+     "mean_change_lead6": -0.028466181116084087,
+     "rise_share_end": 4.186289900575615e-05
+    },
+    {
+     "months": 5,
+     "mean_change_end": -0.04550110654201708,
+     "mean_change_lead6": -0.04382594765705402,
+     "rise_share_end": 6.279434850863422e-05
+    },
+    {
+     "months": 6,
+     "mean_change_end": -0.052482485914820236,
+     "mean_change_lead6": -0.052482485914820236,
+     "rise_share_end": 8.37257980115123e-05
+    }
+   ],
+   "monotone_lead6": true,
+   "pass": true
+  },
+  "S3": {
+   "half_raise_share": 0.0,
+   "double_lower_share": 0.0,
+   "mean_effect_half": -0.011617483157140151,
+   "mean_effect_double": 0.019008500929697685,
+   "pass": true
+  },
+  "S4": {
+   "share_forgetting": 0.7584669018729258,
+   "mean_change_lead3": -0.030063652371703088,
+   "mean_change_lead12": -0.007454539337344098,
+   "pass": false
+  }
+ },
+ "trees": 1877,
+ "hyperparameters": {
+  "learning_rate": 0.05,
+  "max_depth": 6,
+  "min_child_weight": 20,
+  "subsample": 0.8,
+  "colsample_bytree": 0.8,
+  "reg_alpha": 0.0,
+  "reg_lambda": 1.0,
+  "gamma": 0.0,
+  "objective": "reg:squarederror",
+  "tree_method": "hist",
+  "eval_metric": "rmse",
+  "random_state": 42,
+  "n_jobs": 16,
+  "n_estimators": 1877
+ },
+ "sha256": "57c5fdb125713b83117fbe2976553443dcd2545864db53fbc6103b204771c63e",
+ "reference_v1_sha256": "a4bbaf1397c43e2c46716aae323fe5522159449e4a86f28cb341304732a6701e",
+ "versions": {
+  "python": "3.14.6",
+  "xgboost": "3.4.1"
+ }
+}

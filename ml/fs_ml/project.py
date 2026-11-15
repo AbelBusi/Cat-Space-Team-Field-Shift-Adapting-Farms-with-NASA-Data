@@ -23,6 +23,9 @@ import pandas as pd
 from .features import SOIL
 
 WEATHER = ["rain_mm", "t2m_c", "pet_mm", "sm_surface_m3m3", "power_rh2m_pct", "power_ws2m_ms", "power_allsky_mj_m2_day"]
+# Optional inputs: used only when the table has them (v3 model, docs/ML_V3_ERA5_RAIN.md). v1 never sees them.
+OPTIONAL = ["era5_rain_mm"]
+RAINS = ["rain_mm", "era5_rain_mm"]          # every rain input is changed together by the scenarios
 
 
 @dataclass
@@ -44,7 +47,7 @@ def build_cube(monthly: pd.DataFrame, quarterly: pd.DataFrame | None = None) -> 
     cells = monthly.drop_duplicates("cell_id")[keep].sort_values("cell_id").reset_index(drop=True)
     dates = pd.date_range(monthly.date.min(), monthly.date.max(), freq="MS")
     cube = Cube(cells=cells, dates=dates)
-    for col in [*WEATHER, "sm_root_m3m3"]:
+    for col in [*WEATHER, *[c for c in OPTIONAL if c in monthly], "sm_root_m3m3"]:
         w = monthly.pivot(index="cell_id", columns="date", values=col).reindex(index=cells.cell_id, columns=dates)
         cube.v[col] = w.to_numpy(float)
     if quarterly is not None:
@@ -59,14 +62,15 @@ def analog_weather(cube: Cube, start: pd.Timestamp, horizon: int, years, until=N
     months of year k (and k+1 when the window crosses December). A member that would need a month after `until` is
     dropped (in hindcasts this keeps the scored years out of the analogs). Returns name -> (members, cells, horizon)."""
     first = pd.Timestamp(start) + pd.DateOffset(months=1)
-    out, used = {c: [] for c in WEATHER}, []
+    names = WEATHER + [c for c in OPTIONAL if c in cube.v]
+    out, used = {c: [] for c in names}, []
     for y in years:
         a = pd.Timestamp(year=int(y), month=first.month, day=1)
         idx = [a + pd.DateOffset(months=k) for k in range(horizon)]
         if idx[0] < cube.dates[0] or idx[-1] > cube.dates[-1] or (until is not None and idx[-1] > pd.Timestamp(until)):
             continue
         ii = [cube.t(d) for d in idx]
-        for c in WEATHER:
+        for c in names:
             out[c].append(cube.v[c][:, ii])
         used.append(int(y))
     if not used:
@@ -76,8 +80,9 @@ def analog_weather(cube: Cube, start: pd.Timestamp, horizon: int, years, until=N
     return w
 
 
-def _sm_features(m, cube, start_i, w, horizon, sm0, surf0, rain_hist, pet0):
-    """Recursive simulation for all members and cells at once. rain_hist: (cells, 5) rain of months t0-4..t0."""
+def _sm_features(m, cube, start_i, w, horizon, sm0, surf0, rain_hist, pet0, era5_hist=None):
+    """Recursive simulation for all members and cells at once. rain_hist: (cells, 5) rain of months t0-4..t0
+    (era5_hist: the same for ERA5-Land's own rain, when the model uses it)."""
     n_mem, n_cell = w["rain_mm"].shape[:2]
     feats = m["features"]
     soil = {c: np.broadcast_to(cube.cells[c].to_numpy(float), (n_mem, n_cell)) for c in SOIL}
@@ -85,6 +90,7 @@ def _sm_features(m, cube, start_i, w, horizon, sm0, surf0, rain_hist, pet0):
     surf_prev = np.broadcast_to(surf0, (n_mem, n_cell)).copy()
     pet_prev = np.broadcast_to(pet0, (n_mem, n_cell)).copy()
     hist = np.broadcast_to(rain_hist, (n_mem, n_cell, 5)).copy()
+    ehist = np.broadcast_to(era5_hist, (n_mem, n_cell, 5)).copy() if era5_hist is not None else None
     out = np.empty((n_mem, n_cell, horizon))
     for k in range(horizon):
         month = (cube.dates[start_i].month + k) % 12 + 1
@@ -97,11 +103,17 @@ def _sm_features(m, cube, start_i, w, horizon, sm0, surf0, rain_hist, pet0):
                 "power_allsky_mj_m2_day": w["power_allsky_mj_m2_day"][:, :, k],
                 "month_sin": np.full((n_mem, n_cell), np.sin(2 * np.pi * month / 12)),
                 "month_cos": np.full((n_mem, n_cell), np.cos(2 * np.pi * month / 12)), **soil}
+        if ehist is not None:
+            er = w["era5_rain_mm"][:, :, k]
+            cols |= {"era5_rain_mm": er, "era5_rain_mm_lag1": ehist[:, :, -1], "era5_rain_mm_lag2": ehist[:, :, -2],
+                     "era5_rain_mm_sum6": ehist[:, :, -5:].sum(axis=2) + er}
         X = pd.DataFrame({f: np.asarray(cols[f], float).ravel() for f in feats})
         pred = m["model"].predict(X).reshape(n_mem, n_cell)
         out[:, :, k] = pred
         sm_prev, surf_prev, pet_prev = pred, w["sm_surface_m3m3"][:, :, k], w["pet_mm"][:, :, k]
         hist = np.concatenate([hist[:, :, 1:], rain[:, :, None]], axis=2)
+        if ehist is not None:
+            ehist = np.concatenate([ehist[:, :, 1:], er[:, :, None]], axis=2)
     return out
 
 
@@ -113,7 +125,8 @@ def project_sm(m: dict, cube: Cube, start, horizon: int, analog_years, weather: 
         raise ValueError("Need 5 months of observed rain before the start.")
     w = weather if weather is not None else analog_weather(cube, start, horizon, analog_years, until)
     sm = _sm_features(m, cube, i, w, horizon, cube.v["sm_root_m3m3"][:, i], cube.v["sm_surface_m3m3"][:, i],
-                      cube.v["rain_mm"][:, i - 4:i + 1], cube.v["pet_mm"][:, i])
+                      cube.v["rain_mm"][:, i - 4:i + 1], cube.v["pet_mm"][:, i],
+                      cube.v["era5_rain_mm"][:, i - 4:i + 1] if "era5_rain_mm" in m["features"] else None)
     dates = pd.date_range(pd.Timestamp(start) + pd.DateOffset(months=1), periods=horizon, freq="MS")
     return {"start": pd.Timestamp(start), "dates": dates, "members": sm, "weather": w, "years": w["years"]}
 
@@ -168,7 +181,8 @@ def scenario_drought(w: dict, months: list[int], cube: Cube, start, ref_years=(1
         month = (pd.Timestamp(start).month + k - 1) % 12 + 1
         cols = (cube.dates.month == month) & (yrs >= ref_years[0]) & (yrs <= ref_years[1])
         driest = np.nanmin(cube.v["sm_surface_m3m3"][:, cols], axis=1)
-        out["rain_mm"][:, :, k - 1] = 0.0
+        for r in RAINS:
+            if r in out: out[r][:, :, k - 1] = 0.0
         out["sm_surface_m3m3"][:, :, k - 1] = driest[None, :]
     return out
 
@@ -178,7 +192,8 @@ def scenario_rain_factor(w: dict, factor: float, months: list[int] | None = None
     out = {k: (v.copy() if isinstance(v, np.ndarray) else v) for k, v in w.items()}
     idx = range(out["rain_mm"].shape[2]) if months is None else [k - 1 for k in months]
     for k in idx:
-        out["rain_mm"][:, :, k] *= factor
+        for r in RAINS:
+            if r in out: out[r][:, :, k] *= factor
     return out
 
 
@@ -192,7 +207,8 @@ def scenario_adjust(w: dict, rain_factor: float = 1.0, t2m_delta: float = 0.0, r
     out = {k: (v.copy() if isinstance(v, np.ndarray) else v) for k, v in w.items()}
     idx = range(out["rain_mm"].shape[2]) if months is None else [k - 1 for k in months]
     for k in idx:
-        out["rain_mm"][:, :, k] *= rain_factor
+        for r in RAINS:
+            if r in out: out[r][:, :, k] *= rain_factor
         out["t2m_c"][:, :, k] += t2m_delta
         out["power_rh2m_pct"][:, :, k] = np.clip(out["power_rh2m_pct"][:, :, k] + rh_delta, 0, 100)
         out["pet_mm"][:, :, k] *= pet_factor
@@ -201,7 +217,7 @@ def scenario_adjust(w: dict, rain_factor: float = 1.0, t2m_delta: float = 0.0, r
     return out
 
 
-WEATHER_FEATURES = {"rain_mm": "rain_mm", "t2m_c": "t2m_c", "pet_mm": "pet_mm", "power_rh2m_pct": "power_rh2m_pct",
+WEATHER_FEATURES = {"rain_mm": "rain_mm", "era5_rain_mm": "era5_rain_mm", "t2m_c": "t2m_c", "pet_mm": "pet_mm", "power_rh2m_pct": "power_rh2m_pct",
                     "power_ws2m_ms": "power_ws2m_ms", "power_allsky_mj_m2_day": "power_allsky_mj_m2_day"}
 
 

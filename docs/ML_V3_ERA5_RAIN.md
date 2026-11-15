@@ -1,6 +1,6 @@
 # Field Shift ML · v3 soil water model with ERA5-Land's own rain
 
-Status (Nov 15, 2026): **rules written, model not trained yet.** The tested v1 models and `ml/artifacts/final_model/`
+Status (Nov 15, 2026): **trained and validated: R1 and R2 pass, so v3 may run simulations** (rules committed before training in `8d87fe5`; notebook `ml/notebooks/08_v3_era5_rain.ipynb`). The tested v1 models and `ml/artifacts/final_model/`
 are not changed. Outputs will go to `ml/artifacts/v3_era5_rain/`.
 
 ## 1. New data received
@@ -45,3 +45,35 @@ only**; it must never be shown to users as "the rain".
 If R1 and R2 pass, the API may run **simulations** with v3 (with v3's own range corrections from R4); one-step
 predictions and the web's projections stay v1 until the team decides. If R1 or R2 fails, v3 is not used.
 2026 cannot be scored yet: ERA5-Land reaches 2026-10, but NASA POWER and the GEE tables for 2026 are incomplete.
+
+## 3. Results
+
+| | v1 | **v3** |
+|---|---|---|
+| Trees | 1,122 | 1,877 |
+| Validation 2018–2022 RMSE | 0.0125 | **0.0099** m³/m³ |
+| Skill vs persistence (A, B) | 0.52 [0.48, 0.55] | **0.62 [0.59, …]** |
+| Skill of v3 over v1 (R2) | — | **+0.21 [0.17, 0.25]**: clearly better, not just "not worse" |
+| Criteria A–F (R1) | pass | **pass** (bias 0.0013, worst year 0.56, worst province 0.44, 90 % coverage 2021–2022 0.884) |
+| 2023–2025 RMSE (second look) | 0.0198 | **0.0142** (skill over v1 +0.28 [0.24, 0.32]) |
+| March 2023 (coastal El Niño) RMSE · bias | 0.053 · −0.037 | **0.024 · −0.007** |
+| 90 % coverage 2023–2025, one width per season | 82 % | 82 % |
+| Gain from last month's soil water · surface · rain | 68 % · 24 % · 2.4 % | 65 % · 22 % · **8.3 %** (8.0 % ERA5-Land rain, 0.3 % CHIRPS) |
+
+**Projections (R4).** Useful lead **6 months** (the same as v1; skill 0.43 at lead 1 vs persistence, 0.17 at lead 2 vs
+climatology). Coverage of the 90 % band in 2023–2025: 81 %, still too narrow in an El Niño period.
+
+**Scenario checks with v3 (R3)** — same rules as `ML_API_VALIDATION.md`:
+
+| Check | v1 | **v3** |
+|---|---|---|
+| S1 temperature ±2 °C | fail (9.7 % wrong way) | **pass**: 0 % wrong way; +2 °C lowers soil water by 0.003 on average, −2 °C raises it by 0.003 |
+| S2 droughts of 1–6 months | fail (5–6 months) | **pass**: −0.007, −0.019, −0.030, −0.039, −0.046, −0.052 m³/m³ at the end of the drought; ≤ 0.01 % of cells rise |
+| S3 rain × 0.5 / × 2 | fail (effect ±0.0006) | **pass**: −0.012 / +0.019 m³/m³, no cell the wrong way |
+| S4 recovery after 3 dry months | fail (83 %) | **fail** (76 %): the drought's effect fades by month 12 on average (−0.030 → −0.007), but not in ≥ 90 % of cells |
+
+**Reading.** Giving the model the rain that actually drives ERA5-Land, with monotone constraints, fixed the two
+weaknesses found in Phase 2: storm months (March 2023 error halved) and the response to changed weather (temperature,
+droughts and rain now move soil water the right way, by a visible amount). Recovery stays experimental. The intervals are
+still too narrow in El Niño years. Per §2, the API may run **simulations** with v3; the web's projections and one-step
+predictions stay v1 until the team decides. ERA5-Land rain remains an input only.
