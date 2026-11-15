@@ -1,0 +1,166 @@
+{
+  "name": "sm_root_monthly",
+  "version": "1.0 (tested)",
+  "estimator": "xgboost.XGBRegressor",
+  "sha256": "a4bbaf1397c43e2c46716aae323fe5522159449e4a86f28cb341304732a6701e",
+  "target": {
+    "column": "sm_root_m3m3",
+    "unit": "m3/m3"
+  },
+  "features_in_order": [
+    "rain_mm",
+    "rain_mm_lag1",
+    "rain_mm_lag2",
+    "rain_mm_sum6",
+    "t2m_c",
+    "pet_mm",
+    "pet_mm_lag1",
+    "sm_root_m3m3_lag1",
+    "sm_surface_m3m3_lag1",
+    "power_rh2m_pct",
+    "power_ws2m_ms",
+    "power_allsky_mj_m2_day",
+    "month_sin",
+    "month_cos",
+    "soil_nutrient_low_class",
+    "soil_oxygen_low_class",
+    "soil_lime_gypsum_class",
+    "soil_salinity_sodicity_class",
+    "soil_rooting_class"
+  ],
+  "hyperparameters": {
+    "n_estimators": 1122,
+    "learning_rate": 0.05,
+    "max_depth": 6,
+    "min_child_weight": 20,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "reg_alpha": 0.0,
+    "reg_lambda": 1.0,
+    "gamma": 0.0,
+    "objective": "reg:squarederror",
+    "tree_method": "hist",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "n_jobs": 16
+  },
+  "trees": 1122,
+  "random_seed": 42,
+  "data": {
+    "training": "1998-2017",
+    "validation": "2018-2022",
+    "testing": "2023-2025",
+    "excluded": "2026 (incomplete)",
+    "rows": {
+      "training": 750240,
+      "testing": 112536
+    },
+    "sources": [
+      "CHIRPS rain",
+      "ERA5-Land temperature, potential evaporation, soil water",
+      "satellite NDVI composite (GEE)",
+      "NASA POWER RH2M, WS2M, ALLSKY_SFC_SW_DWN",
+      "FAO GAEZ soil classes"
+    ]
+  },
+  "metrics": {
+    "training_internal_2016_2017": {
+      "MAE": 0.011636630896226201,
+      "RMSE": 0.022419444644476934,
+      "R2": 0.9550193555037538,
+      "bias": -0.0027100714032659732
+    },
+    "validation_2018_2022": {
+      "MAE": {
+        "value": 0.007251473680646136,
+        "ci95": [
+          0.006124996063892471,
+          0.008387793708652669
+        ]
+      },
+      "RMSE": {
+        "value": 0.01252628639398858,
+        "ci95": [
+          0.010971470617962529,
+          0.013943889840445855
+        ]
+      },
+      "R2": {
+        "value": 0.9860243358272504,
+        "ci95": [
+          0.9813422791195058,
+          0.9894977319984068
+        ]
+      },
+      "bias": {
+        "value": -0.0004253123066057262,
+        "ci95": [
+          -0.0008670312606457074,
+          4.2169355011171816e-05
+        ]
+      },
+      "skill vs persistence": {
+        "value": 0.5189640148460002,
+        "ci95": [
+          0.4776905077973615,
+          0.5538057703324497
+        ]
+      }
+    },
+    "testing_2023_2025": {
+      "MAE": {
+        "value": 0.01134060096475833,
+        "ci95": [
+          0.010341520260246364,
+          0.012290855851742102
+        ]
+      },
+      "RMSE": {
+        "value": 0.019796127728789605,
+        "ci95": [
+          0.018499567398792122,
+          0.021051480986769414
+        ]
+      },
+      "R2": {
+        "value": 0.9615340378063948,
+        "ci95": [
+          0.9541493958620174,
+          0.9676135258241162
+        ]
+      },
+      "bias": {
+        "value": -0.0030045215861297424,
+        "ci95": [
+          -0.0036100816037451917,
+          -0.0024237498926721664
+        ]
+      },
+      "skill vs persistence": {
+        "value": 0.46002517294787526,
+        "ci95": [
+          0.43565662131214095,
+          0.48572010662484627
+        ]
+      }
+    }
+  },
+  "baseline_to_beat": "persistence",
+  "test_verdict": "TESTING SHOWS WEAKNESSES: F",
+  "out_of_range_share_test": 0.20644060567285136,
+  "intended_use": "Explore how the model responds to changed weather for a 2 km cell of the Lambayeque grid, with an interval and an out-of-range warning.",
+  "not_for": [
+    "A measurement of a specific field",
+    "Irrigated fields (ERA5-Land has no irrigation)",
+    "Forecasts of real future dates",
+    "Causal claims",
+    "Crop yield, crop type or risk classes"
+  ],
+  "library_versions": {
+    "python": "3.14.6",
+    "numpy": "2.5.4",
+    "pandas": "3.1.1",
+    "scipy": "1.18.1",
+    "xgboost": "3.4.1"
+  }
+}

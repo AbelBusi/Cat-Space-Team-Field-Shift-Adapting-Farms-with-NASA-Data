@@ -1,0 +1,8 @@
+criterion,rule,result,pass
+A,skill vs climatology >= 0.1,"0.214 [0.141, 0.288]",True
+B,lower 95% CI of that skill > 0,0.141,True
+C,RMSE (report only),"0.1262 [0.1208, 0.1308]",
+D,|bias| <= 0.03,"-0.0264 [-0.0322, -0.0204]",True
+E,skill >= 0 in every year and province,"worst year 0.168, worst province 0.081",True
+F,"90% coverage in [0.87, 0.93]",global 0.846 · by season 0.840,False
+G,share outside training p01-p99 (report),0.184,

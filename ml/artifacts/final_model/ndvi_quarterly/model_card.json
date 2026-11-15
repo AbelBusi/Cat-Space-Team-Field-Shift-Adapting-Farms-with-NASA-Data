@@ -1,0 +1,163 @@
+{
+  "name": "ndvi_quarterly",
+  "version": "1.0 (tested)",
+  "estimator": "xgboost.XGBRegressor",
+  "sha256": "effe57ea2506d5097fbecc4314c24a228e663285ec2b686db9ee87a0bb05b5e1",
+  "target": {
+    "column": "ndvi",
+    "unit": "index"
+  },
+  "features_in_order": [
+    "q_rain_mm",
+    "q_rain_mm_lag1",
+    "q_t2m_c",
+    "q_pet_mm",
+    "q_sm_root_m3m3",
+    "q_power_rh2m_pct",
+    "q_power_ws2m_ms",
+    "q_power_allsky_mj_m2_day",
+    "quarter",
+    "ndvi_lag1",
+    "ndvi_lag4",
+    "soil_nutrient_low_class",
+    "soil_oxygen_low_class",
+    "soil_lime_gypsum_class",
+    "soil_salinity_sodicity_class",
+    "soil_rooting_class"
+  ],
+  "hyperparameters": {
+    "n_estimators": 89,
+    "learning_rate": 0.05,
+    "max_depth": 6,
+    "min_child_weight": 20,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "reg_alpha": 0.0,
+    "reg_lambda": 1.0,
+    "gamma": 0.0,
+    "objective": "reg:squarederror",
+    "tree_method": "hist",
+    "eval_metric": "rmse",
+    "random_state": 42,
+    "n_jobs": 16
+  },
+  "trees": 89,
+  "random_seed": 42,
+  "data": {
+    "training": "1998-2017",
+    "validation": "2018-2022",
+    "testing": "2023-2025",
+    "excluded": "2026 (incomplete)",
+    "rows": {
+      "training": 91224,
+      "testing": 30056
+    },
+    "sources": [
+      "CHIRPS rain",
+      "ERA5-Land temperature, potential evaporation, soil water",
+      "satellite NDVI composite (GEE)",
+      "NASA POWER RH2M, WS2M, ALLSKY_SFC_SW_DWN",
+      "FAO GAEZ soil classes"
+    ]
+  },
+  "metrics": {
+    "training_internal_2016_2017": {
+      "MAE": 0.10046280578630193,
+      "RMSE": 0.1452294832115216,
+      "R2": 0.48925983588286837,
+      "bias": -0.04946517701230652
+    },
+    "validation_2018_2022": {
+      "MAE": {
+        "value": 0.07469988306017693,
+        "ci95": [
+          0.06976037586633321,
+          0.07937504678225624
+        ]
+      },
+      "RMSE": {
+        "value": 0.10309281947354941,
+        "ci95": [
+          0.09675761028735476,
+          0.10888206006691725
+        ]
+      },
+      "R2": {
+        "value": 0.6623556441451768,
+        "ci95": [
+          0.6021073241642344,
+          0.7158280567123684
+        ]
+      },
+      "bias": {
+        "value": 0.0014920236364010292,
+        "ci95": [
+          -0.0058738230636312195,
+          0.008336380523634595
+        ]
+      },
+      "skill vs climatology": {
+        "value": 0.17928889592453723,
+        "ci95": [
+          0.10001123639595409,
+          0.25206231342116375
+        ]
+      }
+    },
+    "testing_2023_2025": {
+      "MAE": {
+        "value": 0.09375052403610543,
+        "ci95": [
+          0.08977733700460265,
+          0.09727568448894394
+        ]
+      },
+      "RMSE": {
+        "value": 0.12621160622299094,
+        "ci95": [
+          0.12080955050813849,
+          0.13079956858025024
+        ]
+      },
+      "R2": {
+        "value": 0.5258349536514418,
+        "ci95": [
+          0.4774446018129011,
+          0.5722634923316878
+        ]
+      },
+      "bias": {
+        "value": -0.026397915352678977,
+        "ci95": [
+          -0.03218468758727129,
+          -0.020375481906475767
+        ]
+      },
+      "skill vs climatology": {
+        "value": 0.21367138794936502,
+        "ci95": [
+          0.14052024476580885,
+          0.2878956530403564
+        ]
+      }
+    }
+  },
+  "baseline_to_beat": "climatology",
+  "test_verdict": "TESTING SHOWS WEAKNESSES: F",
+  "out_of_range_share_test": 0.18438914027149322,
+  "intended_use": "Explore how the model responds to changed weather for a 2 km cell of the Lambayeque grid, with an interval and an out-of-range warning.",
+  "not_for": [
+    "A measurement of a specific field",
+    "Irrigated fields (ERA5-Land has no irrigation)",
+    "Forecasts of real future dates",
+    "Causal claims",
+    "Crop yield, crop type or risk classes"
+  ],
+  "library_versions": {
+    "python": "3.14.6",
+    "numpy": "2.5.4",
+    "pandas": "3.1.1",
+    "scipy": "1.18.1",
+    "xgboost": "3.4.1"
+  }
+}

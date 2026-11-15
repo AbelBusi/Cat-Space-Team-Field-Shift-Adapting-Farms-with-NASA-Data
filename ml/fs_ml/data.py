@@ -32,6 +32,11 @@ RAW_FILES = {
     "power_rh2m_2018_2022": "Clima y metereología/Relative Humidity at 2 Meters_Monthly_2018_2022.csv",
     "power_ws2m_2018_2022": "Clima y metereología/Wind Speed at 2 Meters_Monthly_2018_2022.csv",
     "power_allsky_2018_2022": "Clima y metereología/All Sky Surface Shortwave Downward Irradiance_Monthly_2018_2022.csv",
+    # Testing years (2023-2025; 2026 has no complete data yet).
+    "power_t2m_2023_2025": "Clima y metereología/Temperature at 2 Meters_Monthly_2023_2025.csv",
+    "power_rh2m_2023_2025": "Clima y metereología/Relative Humidity at 2 Meters_Monthly_2023_2025.csv",
+    "power_ws2m_2023_2025": "Clima y metereología/Wind Speed at 2 Meters_Monthly_2023_2025.csv",
+    "power_allsky_2023_2025": "Clima y metereología/All Sky Surface Shortwave Downward Irradiance_Monthly_2023_2025.csv",
     "gaez_nutrient_low": "Suelos/Nutrient Availability low.json",
     "gaez_oxygen_high": "Suelos/Oxygen Availability High.json",
     "gaez_oxygen_low": "Suelos/Oxygen Availability Low.json",

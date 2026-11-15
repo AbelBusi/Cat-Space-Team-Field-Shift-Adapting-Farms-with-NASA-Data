@@ -36,7 +36,7 @@ farmers anywhere can compare crop rotations. Team from Chiclayo, Peru. Read this
 | `web/src/lib/nasa.js` | Live NASA requests (POWER, MODIS via ORNL, GIBS) and grid cells |
 | `web/src/lib/pixelIcons.js` · `web/src/cat/sprites.js` | Pixel icons · Sprout's sprites |
 | `pipeline/` | Python data scripts (venv in `pipeline/.venv`) |
-| `ml/` | XGBoost models, phase by phase (Training and Validation done; Testing reserved). Read `docs/ML_PHASE1_TRAINING.md` and `docs/ML_PHASE2_VALIDATION.md` first |
+| `ml/` | XGBoost models, phase by phase (Training, Validation and Testing done; standard models in `ml/artifacts/final_model/`). Read `docs/ML_PHASE1_TRAINING.md`, `ML_PHASE2_VALIDATION.md` and `ML_PHASE3_TESTING.md` first |
 | `data/` | Downloaded data. Read `data/README.md` and `data/STRUCTURE.md` before touching any NASA file |
 | `setup.sh` | Installs Vue and Python dependencies |
 

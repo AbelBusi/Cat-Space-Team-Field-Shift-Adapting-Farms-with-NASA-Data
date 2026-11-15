@@ -124,7 +124,7 @@ boundary (584 north of −6.0°, towards Piura; 506 east of −79.3°, towards C
 They were kept (their data are valid) and reported as "outside" in the per-province tables. Question for the exporter:
 which region or mask defines the GEE grid?
 
-## 9. Next: Testing (2023–2026)
+## 9. Next: Testing (done: see [`ML_PHASE3_TESTING.md`](ML_PHASE3_TESTING.md))
 
 Needed first: **NASA POWER 2023–2026** for the same 4 parameters and grid (CHIRPS is also missing in 2026-10 in the GEE
 table). Then run once with the frozen models and the intervals saved here, report the same metrics and coverage, and

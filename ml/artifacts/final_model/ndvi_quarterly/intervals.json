@@ -1,0 +1,28 @@
+{
+  "method": "split conformal, absolute errors of Validation 2018-2022, one width per season",
+  "nominal": 0.9,
+  "half_width_90_by_season": {
+    "Q1": 0.1839611828327179,
+    "Q2": 0.20312862634658824,
+    "Q3": 0.15019413828849792,
+    "Q4": 0.12289537986119592
+  },
+  "half_width_global": {
+    "80%": 0.12055701017379761,
+    "90%": 0.16933929920196533,
+    "95%": 0.21887847781181335
+  },
+  "tested_coverage": {
+    "by_season_90": 0.839632685653447,
+    "ci95": [
+      0.8263992535855582,
+      0.8547451927243093
+    ],
+    "global_90": 0.8457878626563747,
+    "years": [
+      2023,
+      2025
+    ]
+  },
+  "warning": "Not a probability. Coverage measured on 2023-2025; it can be lower in extreme years."
+}

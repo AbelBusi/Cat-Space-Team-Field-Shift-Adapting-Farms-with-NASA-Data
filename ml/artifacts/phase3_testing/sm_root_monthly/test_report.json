@@ -1,0 +1,233 @@
+{
+  "model_sha256": "a4bbaf1397c43e2c46716aae323fe5522159449e4a86f28cb341304732a6701e",
+  "years": [
+    2023,
+    2025
+  ],
+  "n_rows": 112536,
+  "baseline": "persistence",
+  "verdict": "TESTING SHOWS WEAKNESSES: F",
+  "criteria": [
+    {
+      "criterion": "A",
+      "rule": "skill vs persistence >= 0.2",
+      "result": "0.460 [0.436, 0.486]",
+      "pass": true
+    },
+    {
+      "criterion": "B",
+      "rule": "lower 95% CI of that skill > 0",
+      "result": "0.436",
+      "pass": true
+    },
+    {
+      "criterion": "C",
+      "rule": "RMSE <= 0.04",
+      "result": "0.0198 [0.0185, 0.0211]",
+      "pass": true
+    },
+    {
+      "criterion": "D",
+      "rule": "|bias| <= 0.01",
+      "result": "-0.0030 [-0.0036, -0.0024]",
+      "pass": true
+    },
+    {
+      "criterion": "E",
+      "rule": "skill >= 0 in every year and province",
+      "result": "worst year 0.202, worst province 0.389",
+      "pass": true
+    },
+    {
+      "criterion": "F",
+      "rule": "90% coverage in [0.87, 0.93]",
+      "result": "global 0.821 \u00b7 by season 0.816",
+      "pass": false
+    },
+    {
+      "criterion": "G",
+      "rule": "share outside training p01-p99 (report)",
+      "result": "0.206",
+      "pass": null
+    }
+  ],
+  "metrics_ci": [
+    {
+      "model": "XGBoost",
+      "metric": "MAE",
+      "value": 0.01134060096475833,
+      "ci_low": 0.010341520260246364,
+      "ci_high": 0.012290855851742102
+    },
+    {
+      "model": "XGBoost",
+      "metric": "RMSE",
+      "value": 0.019796127728789605,
+      "ci_low": 0.018499567398792122,
+      "ci_high": 0.021051480986769414
+    },
+    {
+      "model": "XGBoost",
+      "metric": "R2",
+      "value": 0.9615340378063948,
+      "ci_low": 0.9541493958620174,
+      "ci_high": 0.9676135258241162
+    },
+    {
+      "model": "XGBoost",
+      "metric": "bias",
+      "value": -0.0030045215861297424,
+      "ci_low": -0.0036100816037451917,
+      "ci_high": -0.0024237498926721664
+    },
+    {
+      "model": "XGBoost",
+      "metric": "skill vs climatology",
+      "value": 0.474169154587716,
+      "ci_low": 0.4342819564736489,
+      "ci_high": 0.5125923528049622
+    },
+    {
+      "model": "XGBoost",
+      "metric": "skill vs persistence",
+      "value": 0.46002517294787526,
+      "ci_low": 0.43565662131214095,
+      "ci_high": 0.48572010662484627
+    },
+    {
+      "model": "climatology",
+      "metric": "MAE",
+      "value": 0.026111566155209126,
+      "ci_low": 0.024030395746597898,
+      "ci_high": 0.028136244168800572
+    },
+    {
+      "model": "climatology",
+      "metric": "RMSE",
+      "value": 0.03764733069865503,
+      "ci_low": 0.03487684592803056,
+      "ci_high": 0.040210350926125085
+    },
+    {
+      "model": "climatology",
+      "metric": "R2",
+      "value": 0.860881629002086,
+      "ci_low": 0.8291955278470758,
+      "ci_high": 0.8857185432044123
+    },
+    {
+      "model": "climatology",
+      "metric": "bias",
+      "value": -0.012659612124057794,
+      "ci_low": -0.015679502640779004,
+      "ci_high": -0.009360805630764447
+    },
+    {
+      "model": "persistence",
+      "metric": "MAE",
+      "value": 0.02273583069517725,
+      "ci_low": 0.01997724259590034,
+      "ci_high": 0.025297076396260592
+    },
+    {
+      "model": "persistence",
+      "metric": "RMSE",
+      "value": 0.03666120481368042,
+      "ci_low": 0.033948690160957494,
+      "ci_high": 0.03902824281181948
+    },
+    {
+      "model": "persistence",
+      "metric": "R2",
+      "value": 0.8680742498393632,
+      "ci_low": 0.8462679635892153,
+      "ci_high": 0.8863243887718002
+    },
+    {
+      "model": "persistence",
+      "metric": "bias",
+      "value": -0.0009382695255302241,
+      "ci_low": -0.0011600601574142978,
+      "ci_high": -0.0007485577711377054
+    }
+  ],
+  "out_of_range": {
+    "share_outside_p01_p99": 0.20644060567285136,
+    "share_outside_min_max": 0.006948887467121632,
+    "RMSE_inside": 0.020543258665592815,
+    "RMSE_outside_p01_p99": 0.016614236760659283,
+    "RMSE_outside_min_max": 0.009466462968975048,
+    "top_features": {
+      "rain_mm_sum6": 0.03765906021184332,
+      "power_ws2m_ms": 0.037232530034833296,
+      "t2m_c": 0.03701926494632828,
+      "pet_mm": 0.03250515390630554,
+      "pet_mm_lag1": 0.03098564015070733
+    }
+  },
+  "intervals_coverage": [
+    {
+      "interval": "global 80%",
+      "half_width": 0.010651260614395142,
+      "coverage": 0.7025218596715718,
+      "ci_low": 0.6683350043009304,
+      "ci_high": 0.737729533112755
+    },
+    {
+      "interval": "global 90%",
+      "half_width": 0.01868227636942299,
+      "coverage": 0.820617402431222,
+      "ci_low": 0.7981114021751593,
+      "ci_high": 0.8439591357053149
+    },
+    {
+      "interval": "global 95%",
+      "half_width": 0.028522358546333934,
+      "coverage": 0.8891110400227483,
+      "ci_low": 0.8751142638713374,
+      "ci_high": 0.903984997546262
+    },
+    {
+      "interval": "by season 90%",
+      "half_width": NaN,
+      "coverage": 0.8158633681666311,
+      "ci_low": 0.7926271427713902,
+      "ci_high": 0.8401067640826895
+    },
+    {
+      "interval": "  dry May-Dec 90%",
+      "half_width": 0.012821320205218034,
+      "coverage": 0.8404377265941565,
+      "ci_low": 0.8060699346390958,
+      "ci_high": 0.8718684821001345
+    },
+    {
+      "interval": "  wet Jan-Apr 90%",
+      "half_width": 0.029511930545171094,
+      "coverage": 0.7667146513115803,
+      "ci_low": 0.7322623313728784,
+      "ci_high": 0.8009645260938101
+    },
+    {
+      "interval": "  2023 (by season 90%)",
+      "half_width": NaN,
+      "coverage": 0.7723928342930262,
+      "ci_low": 0.75295703161649,
+      "ci_high": 0.7930985555613875
+    },
+    {
+      "interval": "  2024 (by season 90%)",
+      "half_width": NaN,
+      "coverage": 0.8359458306675197,
+      "ci_low": 0.7890760605675836,
+      "ci_high": 0.8799495841398768
+    },
+    {
+      "interval": "  2025 (by season 90%)",
+      "half_width": NaN,
+      "coverage": 0.8392514395393474,
+      "ci_low": 0.8202596387140799,
+      "ci_high": 0.8599304912719555
+    }
+  ]
+}

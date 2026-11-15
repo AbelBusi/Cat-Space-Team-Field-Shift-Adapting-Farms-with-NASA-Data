@@ -1,7 +1,7 @@
 # Field Shift ML · Phase 1: Training (1998–2017)
 
 Status (Nov 15, 2026): **Training done. Validation (2018–2022) done afterwards with these frozen models: both pass, see
-[`ML_PHASE2_VALIDATION.md`](ML_PHASE2_VALIDATION.md). Testing (2023–2026) not run.** During Training no row from those
+[`ML_PHASE2_VALIDATION.md`](ML_PHASE2_VALIDATION.md). Testing done on 2023–2025, see [`ML_PHASE3_TESTING.md`](ML_PHASE3_TESTING.md).** During Training no row from those
 years was used to fit, tune or choose anything. Every number below is an **internal training diagnostic**, not the accuracy the
 models will have on new years.
 
@@ -254,8 +254,8 @@ Same inputs, seed and library versions give the same models. The raw files are i
    formula is `NDSI_Salinidad`?
 2. Which mask leaves 564 cells without NDVI?
 3. GAEZ: which theme and input levels, and the legend of the codes? Were the identical High/Low files downloaded twice?
-4. NASA POWER for the same 4 parameters and grid: 2018–2022 delivered and used in Validation; **2023–2026 still needed
-   for Testing**.
+4. NASA POWER for the same 4 parameters and grid: 2018–2022 delivered and used in Validation; 2023–2025 delivered and used in
+   Testing (2026 excluded, incomplete).
 5. Licenses: FAO GAEZ data are, as far as we know, CC BY-NC-SA 3.0 IGO (non-commercial) — confirm with the Local Lead like the
    Sentinel-2 basemap (AGENTS.md rule 8).
 
