@@ -131,7 +131,8 @@
   /* Place names on the satellite photo: the photo looks the same in both themes, so the night colors are fixed.
      A thin dark outline (text-shadow on four sides) keeps them readable on any ground, as on road maps. */
   .place-label { color: var(--sky-ink); font-family: var(--font-sans); font-size: 12px; line-height: 16px; text-align: center; white-space: nowrap; pointer-events: none;
-    text-shadow: 1px 0 0 var(--sky-bg), -1px 0 0 var(--sky-bg), 0 1px 0 var(--sky-bg), 0 -1px 0 var(--sky-bg), 0 0 4px var(--sky-bg); animation: rise .35s var(--ease-out) both; }
+    text-shadow: 1px 0 0 var(--sky-bg), -1px 0 0 var(--sky-bg), 0 1px 0 var(--sky-bg), 0 -1px 0 var(--sky-bg), 0 0 4px var(--sky-bg); transition: opacity .25s, visibility .25s; }
+  .place-label.off { opacity: 0; visibility: hidden; }
   .place-label.rank-0, .place-label.rank-1 { font-family: var(--font-display); font-weight: 600; font-size: 14px; line-height: 20px; letter-spacing: .02em; }
   .place-label.rank-4 { font-size: 11px; color: color-mix(in srgb, var(--sky-ink) 85%, var(--sky-muted)); }
   .grid-cell { animation: cell-in .7s var(--ease-out) both; }

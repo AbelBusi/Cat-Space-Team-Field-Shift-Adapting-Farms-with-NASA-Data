@@ -121,25 +121,33 @@ function onClick(e) {
 }
 
 // ---- Town and village names, like a road map, over the photo ------------------------------------------------------
-// From OpenStreetMap (pipeline/build_places.py). Bigger places come first; a name that would cover one already placed
-// is skipped, and smaller places appear as you zoom in.
+// From OpenStreetMap (pipeline/build_places.py). The names of a territory are created once and ride along with the map
+// (Leaflet moves them during zoom), so they never blink. After each zoom or pan we only decide which ones are visible:
+// bigger places first, names already on screen keep their spot, and a name that would cover another one stays hidden.
 const MIN_ZOOM = [0, 7, 11, 8.5, 10.5]   // city, town, suburb, village, hamlet
 const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
-let labelLayer, areaPlaces = []
-const findPlaces = () => { areaPlaces = PLACES.filter(([, lat, lon]) => inRings(lat, lon, state.area.rings)) }
-function drawLabels() {
+let labelLayer, labels = []
+function findPlaces() {
   labelLayer.clearLayers()
-  if (!mapUi.labels) return
-  const z = map.getZoom(), size = map.getSize(), taken = []
-  for (const [name, lat, lon, rank] of areaPlaces) {
-    if (z < MIN_ZOOM[rank]) continue
-    const p = map.latLngToContainerPoint([lat, lon])
+  labels = PLACES.filter(([, lat, lon]) => inRings(lat, lon, state.area.rings)).map(([name, lat, lon, rank]) => {
     const w = name.length * (rank < 2 ? 8.5 : 7) + 10, h = rank < 2 ? 20 : 16
-    const box = [p.x - w / 2, p.y - h / 2, p.x + w / 2, p.y + h / 2]
-    if (box[2] < 0 || box[0] > size.x || box[3] < 0 || box[1] > size.y) continue
-    if (taken.some(b => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])) continue
-    taken.push(box)
-    L.marker([lat, lon], { pane: 'labels', interactive: false, keyboard: false, icon: L.divIcon({ className: `place-label rank-${rank}`, html: esc(name), iconSize: [w, h] }) }).addTo(labelLayer)
+    const marker = L.marker([lat, lon], { pane: 'labels', interactive: false, keyboard: false,
+      icon: L.divIcon({ className: `place-label rank-${rank} off`, html: esc(name), iconSize: [w, h] }) }).addTo(labelLayer)
+    return { marker, rank, w, h, on: false }
+  })
+}
+function drawLabels() {
+  const z = map.getZoom(), size = map.getSize(), taken = []
+  const order = [...labels].sort((a, b) => a.rank - b.rank || b.on - a.on)
+  for (const l of order) {
+    let show = mapUi.labels && z >= MIN_ZOOM[l.rank]
+    if (show) {
+      const p = map.latLngToContainerPoint(l.marker.getLatLng())
+      const box = [p.x - l.w / 2, p.y - l.h / 2, p.x + l.w / 2, p.y + l.h / 2]
+      show = box[2] > 0 && box[0] < size.x && box[3] > 0 && box[1] < size.y && !taken.some(b => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])
+      if (show) taken.push(box)
+    }
+    if (show !== l.on) { l.on = show; l.marker.getElement()?.classList.toggle('off', !show) }
   }
 }
 
