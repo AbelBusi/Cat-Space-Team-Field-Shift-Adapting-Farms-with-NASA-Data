@@ -1,5 +1,7 @@
 # Field Shift ML (XGBoost)
 
+**Start here:** [`docs/ML_CAPABILITIES.md`](../docs/ML_CAPABILITIES.md) — what the models can and cannot do.
+
 | Phase | Years | Status | Report |
 |---|---|---|---|
 | 1 Training | 1998–2017 | done | [`docs/ML_PHASE1_TRAINING.md`](../docs/ML_PHASE1_TRAINING.md) (data irregularities, acceptance criteria) |
