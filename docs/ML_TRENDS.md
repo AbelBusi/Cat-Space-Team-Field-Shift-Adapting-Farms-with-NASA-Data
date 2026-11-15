@@ -40,3 +40,19 @@ resamples, seed 42).
 | Otherwise | "In tests on 2018–2025, extending the trend was not better than assuming no change: read it as a direction, not a number." |
 
 Nothing is tuned after the check. 2026 is not used (incomplete).
+
+## 3. Results (check run once, `ml/scripts/trend_check.py`, 1,950–1,973 Lambayeque cells)
+
+| Variable | Skill of the extended 1998–2017 trend vs no change, 2018–2025 [95 % CI] | Check T | Cells with a clear trend 1998–2025 |
+|---|---|---|---|
+| Deep soil water | −0.19 [−0.31, −0.07] | **fails** | 11 % drier, 7 % wetter |
+| 2 m temperature | −0.07 [−0.15, +0.03] | **fails** | **70 % warmer**, 0 % cooler |
+| Rain (CHIRPS) | −0.26 [−0.29, −0.19] | **fails** | 24 % wetter, 0.3 % drier |
+| Greenness (NDVI) | −0.08 [−0.21, +0.01] | **fails** | 32 % greener, 0.6 % less green |
+
+**Reading.** On these 28 years, a straight trend did not predict the next 8 years better than "no change" for any
+variable; for soil water and rain it was clearly worse (the El Niño years of 1998 and 2017 tilt short trends). So, as
+the rules say, the extension to 2030 is shown as a **direction with its year-to-year range**, with the sentence
+"In tests on 2018–2025, extending the trend was not better than assuming no change: read it as a direction, not a number."
+What is solid is the past: most of Lambayeque warmed over 1998–2025, and a third of it got greener (plausibly new irrigated
+land, which no input describes). The 2026–2030 range is mostly the range of past years, El Niño years included.

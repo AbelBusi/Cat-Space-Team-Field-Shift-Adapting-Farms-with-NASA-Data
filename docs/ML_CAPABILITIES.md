@@ -25,6 +25,7 @@ the deep soil holds and how green the land is, for a 2 km cell, with a measured 
 | **Warn** when inputs are outside what the model has seen (trees cannot extrapolate) | training ranges p01–p99 and min–max per feature | every prediction |
 | **Project** the next months (analog ensemble: the weather of each past year, month by month) | useful for **6 months** (soil water) and 4 quarters (NDVI) on 2018–2022; 2 months in El Niño years | `GET /api/v1/projections`, "What's ahead" |
 | **What-if** scenarios: El Niño years, two months without rain, half or double the rain, your own changes (dry months, ±°C, rain, El Niño years) | same engine, weather changed on purpose; temperature, droughts and rain passed their checks with v3 | "What if…", simulator, `POST /api/v1/simulations/climate` |
+| **Show trends** 1998–2025 of soil water, temperature, rain and greenness per 2 km square, drawn on to 2030 as a direction (a test showed trends do not predict the next years better than "no change") | Theil–Sen slopes, `docs/ML_TRENDS.md` | "Towards 2030", the field log |
 | **Rank places**: districts and towns where the deep soil should keep the most water in the dry months | median of the cells' projections | "Where water holds" |
 | **Explain** with Sprout: the AI reads the on-screen numbers and the cell's projections and interprets them, without inventing | `POST /api/v1/ask` | Sprout's chat |
 | **Check itself** on past years (hindcasts) and say how far ahead it is useful | block bootstrap CIs per lead | "How sure is Sprout", paper |

@@ -32,6 +32,7 @@ class State:
     sim: dict | None = None                             # the soil water model that runs simulations (v3 if accepted, else v1)
     primary: dict = field(default_factory=lambda: {"soil_water": "sm_root_monthly", "ndvi": "ndvi_quarterly"})
     proj: dict | None = None                            # corrections, useful lead, skill and coverage of the projections in use
+    trends: dict | None = None                          # 1998-2025 trends of every cell (docs/ML_TRENDS.md)
     cache: dict = field(default_factory=dict)
 
 
@@ -55,7 +56,7 @@ def load() -> None:
             sys.path.insert(0, str(settings.ml_package_dir))
         from fs_ml.predict import load as load_model
         from fs_ml import project as P
-        from . import features, projections
+        from . import features, projections, trends
 
         models, sha = {}, {}
         for name in ("sm_root_monthly", "ndvi_quarterly"):
@@ -81,6 +82,7 @@ def load() -> None:
         s.sm_cols, s.nd_cols = features.sm_matrix(cube), features.nd_matrix(cube)
         s.sm_pred = features.predict_matrix(models[s.primary["soil_water"]], s.sm_cols)
         s.nd_pred = features.predict_matrix(models["ndvi_quarterly"], s.nd_cols)
+        s.trends = trends.build(cube)
         s.bundle, s.risk = projections.build_bundle(s)
         STATE, LOAD_ERROR = s, None
         log.info("loaded in %.1f s: models %s | cube %d cells %s..%s | phase 2 checks: %s", time.time() - t0,

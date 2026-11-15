@@ -16,6 +16,7 @@ import SlideWhatIf from '../slides/SlideWhatIf.vue'
 import SlideGreenAhead from '../slides/SlideGreenAhead.vue'
 import SlideSpots from '../slides/SlideSpots.vue'
 import SlideTrust from '../slides/SlideTrust.vue'
+import SlideTrends from '../slides/SlideTrends.vue'
 import { state, mapUi } from '../store.js'
 import { slidesOf } from '../content.js'
 import { enter } from '../guide.js'
@@ -23,7 +24,7 @@ import { enter } from '../guide.js'
 // The map with one topic over it at a time. Arrows (on screen or on the keyboard) move between topics.
 // Two tracks share the map: "today" (what the satellites see) and "ahead" (projections and what-if of the ML models).
 const VIEWS = { signals: SlideSignals, ground: SlideGround, years: SlideYears, prio: SlidePrio, rots: SlideRots, detail: SlideDetail, report: SlideReport,
-  outlook: SlideOutlook, whatif: SlideWhatIf, green: SlideGreenAhead, spots: SlideSpots, trust: SlideTrust }
+  outlook: SlideOutlook, trends: SlideTrends, whatif: SlideWhatIf, green: SlideGreenAhead, spots: SlideSpots, trust: SlideTrust }
 const SLIDES = computed(() => slidesOf(state.track))
 const slide = computed(() => SLIDES.value[Math.min(state.slide, SLIDES.value.length - 1)])
 const last = computed(() => SLIDES.value.length - 1)

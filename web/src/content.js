@@ -166,6 +166,7 @@ export const SLIDES = [
 // The "What's ahead" track: projections and what-if scenarios of the tested XGBoost models (ml/, docs/ML_PROJECTIONS.md).
 export const AHEAD_SLIDES = [
   { id: 'outlook', title: 'The coming months', icon: 'calendar' },
+  { id: 'trends', title: 'Towards 2030', icon: 'up' },
   { id: 'whatif', title: 'What if…', icon: 'rain' },
   { id: 'green', title: 'Greenness ahead', icon: 'plant_ok' },
   { id: 'spots', title: 'Where water holds', icon: 'drop' },
@@ -221,6 +222,9 @@ export const SCRIPTS = {
   ],
   green: [
     ['Same idea for plant greenness, by quarter. Irrigation is not in my data, so irrigated valleys can be greener than I say.', 'thinking'],
+  ],
+  trends: [
+    ['This is how your place changed since 1998, and that change drawn on to 2030. Honest part: I tested trends, and they did not guess the next years better than "nothing changes". So read the dashed part as a direction.', 'thinking'],
   ],
   spots: [
     ['Here are the places where the deep soil should keep the most water in the dry months. More water helps, but crop, irrigation and market decide the harvest.', 'neutral'],

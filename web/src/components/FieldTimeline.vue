@@ -27,10 +27,18 @@ const center = computed(() => {
 const nPast = computed(() => data.value?.months.length ?? 0)
 const fut = computed(() => data.value?.future?.soil_water ?? null)
 const nFut = computed(() => fut.value?.periods.length ?? 0)
-const nAll = computed(() => nPast.value + nFut.value)
-const isFuture = computed(() => at.value >= nPast.value)
+// After the coming year: the 1998-2025 trend of the deep soil drawn on to 2030, one point per year (docs/ML_TRENDS.md).
+// It is not model output (the projections are useful for months), and check T says it is a direction, not a number.
+const trend = computed(() => data.value?.trends?.soil_water ?? null)
+const ext = computed(() => trend.value?.extension ?? null)
+const nTr = computed(() => ext.value && fut.value ? ext.value.years.length - 1 : 0)     // 2027-2030 (2026 is the months above)
+const nAll = computed(() => nPast.value + nFut.value + nTr.value)
+const isTrend = computed(() => at.value >= nPast.value + nFut.value)
+const isFuture = computed(() => at.value >= nPast.value && !isTrend.value)   // the coming year, month by month
+const isAhead = computed(() => at.value >= nPast.value)
 const k = computed(() => at.value - nPast.value)                 // month of the projection (0 = the first)
-const label = computed(() => isFuture.value ? fut.value.periods[k.value] : data.value.months[at.value])
+const j = computed(() => at.value - nPast.value - nFut.value)    // year of the trend (0 = the first after the coming year)
+const label = computed(() => isTrend.value ? `${ext.value.years[j.value + 1]}-07` : isFuture.value ? fut.value.periods[k.value] : data.value.months[at.value])
 const year = computed(() => +label.value.slice(0, 4))
 const month = computed(() => +label.value.slice(5, 7))
 const ninoYears = computed(() => data.value?.el_nino_years ?? [])
@@ -49,8 +57,10 @@ async function load() {
 
 // ---- the deep layer this month, in words (thresholds: 0.01 = the app's "about usual", 0.04 ≈ 3 times the model error)
 const deep = computed(() => data.value?.layers.find(l => l.key === 'sm_root_m3m3'))
-const valueAt = i => i < nPast.value ? deep.value.observed[i] : fut.value.median[i - nPast.value]
-const usualAt = i => i < nPast.value ? deep.value.usual_by_month[+data.value.months[i].slice(5, 7) - 1] : fut.value.usual[i - nPast.value]
+const valueAt = i => i < nPast.value ? deep.value.observed[i] : i < nPast.value + nFut.value ? fut.value.median[i - nPast.value] : ext.value.centre[i - nPast.value - nFut.value + 1]
+const usualAt = i => i < nPast.value ? deep.value.usual_by_month[+data.value.months[i].slice(5, 7) - 1] : i < nPast.value + nFut.value ? fut.value.usual[i - nPast.value] : null
+const TREND_WORD = { none: 'No clear trend since 1998: years like the past ones, from dry ones to El Niño ones', up: 'Getting a little wetter each decade since 1998', down: 'Getting a little drier each decade since 1998' }
+const TREND_ICON = { none: 'flat', up: 'up', down: 'down' }
 function wordOf(v, u) {
   if (v == null || u == null) return null
   const d = v - u
@@ -69,8 +79,9 @@ const layers = computed(() => {
   if (!data.value) return []
   return data.value.layers.map((l, n) => {
     let v = null, u = l.usual_by_month[month.value - 1]
-    if (!isFuture.value) v = l.observed[at.value]
-    else if (l.key === 'sm_root_m3m3') { v = fut.value.median[k.value]; u = fut.value.usual[k.value] }
+    if (!isAhead.value) v = l.observed[at.value]
+    else if (l.key === 'sm_root_m3m3' && isFuture.value) { v = fut.value.median[k.value]; u = fut.value.usual[k.value] }
+    else if (l.key === 'sm_root_m3m3') { v = ext.value.centre[j.value + 1]; u = null }
     const fill = v == null || l.p05 == null ? null : Math.max(0, Math.min(1, (v - l.p05) / Math.max(1e-6, l.p95 - l.p05)))
     return { ...l, n, v, fill, w: wordOf(v, u) }
   })
@@ -83,9 +94,13 @@ const H = computed(() => phone() ? 96 : 124)
 const TOP = computed(() => phone() ? 0 : 48)                     // band of the log entries above the line
 const geo = computed(() => {
   if (!data.value) return null
-  const Wd = width.value, split = Wd * (fut.value ? 0.64 : 1), pad = 6
-  const x = i => i < nPast.value ? pad + i / (nPast.value - 1) * (split - 24 - pad) : split + 18 + (i - nPast.value + 0.5) / nFut.value * (Wd - split - 24)
-  const vals = [...deep.value.observed, ...(fut.value ? [...fut.value.low_90, ...fut.value.high_90] : [])].filter(v => v != null)
+  const Wd = width.value, pad = 6
+  const split = Wd * (!fut.value ? 1 : nTr.value ? 0.52 : 0.64), split2 = nTr.value ? Wd * 0.8 : Wd
+  const x = i => i < nPast.value ? pad + i / (nPast.value - 1) * (split - 24 - pad)
+    : i < nPast.value + nFut.value ? split + 18 + (i - nPast.value + 0.5) / nFut.value * (split2 - split - 26)
+    : split2 + 12 + (i - nPast.value - nFut.value + 0.5) / nTr.value * (Wd - split2 - 18)
+  const tv = ext.value ? [...ext.value.low.slice(1), ...ext.value.high.slice(1)] : []
+  const vals = [...deep.value.observed, ...(fut.value ? [...fut.value.low_90, ...fut.value.high_90] : []), ...tv].filter(v => v != null)
   const lo = Math.min(...vals), hi = Math.max(...vals), y0 = TOP.value + 10, y1 = H.value - 16
   const y = v => y1 - (v - lo) / Math.max(1e-6, hi - lo) * (y1 - y0)
   const line = idx => idx.map(i => [i, valueAt(i)]).filter(([, v]) => v != null).map(([i, v], n) => `${n ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('')
@@ -95,9 +110,20 @@ const geo = computed(() => {
   const future = fut.value ? line([nPast.value - 1, ...fi]) : ''
   const band = fut.value ? [...fi.map(i => `${x(i).toFixed(1)},${y(fut.value.high_90[i - nPast.value]).toFixed(1)}`),
     ...fi.slice().reverse().map(i => `${x(i).toFixed(1)},${y(fut.value.low_90[i - nPast.value]).toFixed(1)}`)].join(' ') : ''
+  // the trend: through the past (1998 → 2025, mid-year) and on, dashed with its range, 2027-2030
+  let tline = null, tmid = '', tband = ''
+  if (trend.value?.line) {
+    const ix = ym => data.value.months.indexOf(ym)
+    tline = [x(ix(`${trend.value.line.from[0]}-07`)), y(trend.value.line.from[1]), x(ix(`${trend.value.line.to[0]}-07`)), y(trend.value.line.to[1])]
+  }
+  if (nTr.value) {
+    const ti = [...Array(nTr.value).keys()].map(q => nPast.value + nFut.value + q)
+    tmid = ti.map((i, q) => `${q ? 'L' : 'M'}${x(i).toFixed(1)},${y(ext.value.centre[q + 1]).toFixed(1)}`).join('')
+    tband = [...ti.map((i, q) => `${x(i).toFixed(1)},${y(ext.value.high[q + 1]).toFixed(1)}`), ...ti.map((i, q) => `${x(i).toFixed(1)},${y(ext.value.low[q + 1]).toFixed(1)}`).reverse()].join(' ')
+  }
   const every = phone() ? 10 : 5, first = phone() ? 2000 : 1998
   const years = data.value.months.map((m, i) => ({ m, i })).filter(d => d.m.endsWith('-01') && +d.m.slice(0, 4) >= first && (+d.m.slice(0, 4) - first) % every === 0)
-  return { Wd, split, x, y, y1, past, area, future, band, years, useful: fut.value ? x(nPast.value + fut.value.useful_lead - 1) + 6 : 0 }
+  return { Wd, split, split2, x, y, y1, past, area, future, band, years, tline, tmid, tband, useful: fut.value ? x(nPast.value + fut.value.useful_lead - 1) + 6 : 0 }
 })
 
 // Log entries: each run of El Niño years (at its wettest month), the driest year if it stands apart, and the coming
@@ -123,10 +149,18 @@ const entries = computed(() => {
     .reduce((p, q) => q[1] < p[1] ? q : p, ['', Infinity, 0])
   if (dry[0] && out.every(e => Math.abs(geo.value.x(e.i) - geo.value.x(dry[2])) > NODE_W + 12)) out.push({ id: 'dry', i: dry[2], kind: 'dry', head: dry[0], icon: 'soil_dry', sub: 'Driest' })
   if (fut.value) out.push({ id: 'next', i: nPast.value + Math.floor(nFut.value / 2), kind: 'next', head: fut.value.periods[0].slice(0, 4), icon: null, sub: 'Coming' })
-  return out.sort((a, b) => a.i - b.i).map((e, n) => ({ ...e, n, cx: e.kind === 'next' ? geo.value.split + (geo.value.Wd - geo.value.split) / 2 : geo.value.x(e.i) }))
+  if (nTr.value) out.push({ id: 'trend', i: nPast.value + nFut.value + nTr.value - 1, kind: 'trend', head: String(ext.value.years[ext.value.years.length - 1]), icon: TREND_ICON[trend.value.direction], sub: 'Trend' })
+  const g = geo.value, cxOf = e => e.kind === 'next' ? g.split + (g.split2 - g.split) / 2 : e.kind === 'trend' ? Math.min(g.Wd - NODE_W / 2 - 2, g.split2 + (g.Wd - g.split2) / 2) : g.x(e.i)
+  const placed = out.sort((a, b) => a.i - b.i).map((e, n) => ({ ...e, n, cx: cxOf(e) }))
+  // entries never overlap: push right where they would touch, then back from the right edge
+  for (let q = 1; q < placed.length; q++) placed[q].cx = Math.max(placed[q].cx, placed[q - 1].cx + NODE_W + 6)
+  placed.at(-1) && (placed.at(-1).cx = Math.min(placed.at(-1).cx, g.Wd - NODE_W / 2 - 2))
+  for (let q = placed.length - 2; q >= 0; q--) placed[q].cx = Math.min(placed[q].cx, placed[q + 1].cx - NODE_W - 6)
+  return placed
 })
 const activeEntry = computed(() => {
   if (!data.value) return null
+  if (isTrend.value) return 'trend'
   if (isFuture.value) return 'next'
   const e = entries.value.find(e => e.kind === 'nino' && ninoYears.value.includes(year.value) && Math.abs(e.i - at.value) < 24)
   return e?.id ?? (entries.value.find(e => e.kind === 'dry' && data.value.months[e.i].startsWith(String(year.value)))?.id ?? null)
@@ -135,6 +169,9 @@ const arrows = computed(() => entries.value.slice(1).map((e, n) => {
   const a = entries.value[n], x1 = a.cx + NODE_W / 2 + 2, x2 = e.cx - NODE_W / 2 - 4, yy = TOP.value / 2 + 6
   return x2 > x1 + 10 ? { id: a.id + e.id, d: `M${x1.toFixed(1)},${yy}L${x2.toFixed(1)},${yy}`, head: `M${(x2 - 6).toFixed(1)},${yy - 5}L${x2.toFixed(1)},${yy}L${(x2 - 6).toFixed(1)},${yy + 5}`, n } : null
 }).filter(Boolean))
+// Labels under the screen only where they fit: months of the coming year and years of the trend.
+const monthEvery = computed(() => !geo.value || !nFut.value ? 1 : (geo.value.x(nPast.value + 1) - geo.value.x(nPast.value)) < 12 ? 11 : 1)
+const yearEvery = computed(() => !geo.value || nTr.value < 2 ? 1 : Math.ceil(34 / Math.max(1, geo.value.x(nPast.value + nFut.value + 1) - geo.value.x(nPast.value + nFut.value))))
 const cursorX = computed(() => geo.value ? geo.value.x(at.value) : 0)
 const cursorY = computed(() => { const v = geo.value && valueAt(at.value); return v == null ? null : geo.value.y(v) })
 
@@ -166,7 +203,7 @@ function play() {
 function stop() { playing.value = false; clearInterval(timer) }
 const toComing = () => { stop(); at.value = nPast.value + Math.min(state.ahead.month, Math.max(0, nFut.value - 1)) }
 // The coming months and the map's month are the same thing: keep them together.
-watch(at, i => { if (data.value && i >= nPast.value && state.ahead.month !== i - nPast.value) state.ahead.month = i - nPast.value })
+watch(at, i => { if (data.value && i >= nPast.value && i < nPast.value + nFut.value && state.ahead.month !== i - nPast.value) state.ahead.month = i - nPast.value })
 watch(() => state.ahead.month, m => { if (data.value && isFuture.value && k.value !== m && m < nFut.value) at.value = nPast.value + m })
 
 const fmt = v => v == null ? '–' : v.toFixed(3)
@@ -222,10 +259,17 @@ onBeforeUnmount(() => { stop(); ctrl?.abort(); ro?.disconnect() })
           <!-- the coming year: band, then the dashed middle; the dotted line marks how far the projection is useful -->
           <polygon v-if="geo.band" :points="geo.band" fill="var(--teal)" fill-opacity=".18" class="log-fade" style="--d: 1.7s" />
           <path v-if="geo.future" :d="geo.future" fill="none" stroke="var(--teal)" stroke-width="1.5" stroke-dasharray="5 4" class="log-fade" style="--d: 1.9s" />
+          <template v-if="nTr">
+            <rect :x="geo.split2" y="0" :width="geo.Wd - geo.split2" :height="H" fill="var(--teal)" fill-opacity=".03" class="log-fade" style="--d: 2.1s" />
+            <line :x1="geo.split2" :x2="geo.split2" y1="0" :y2="H" stroke="var(--muted)" stroke-dasharray="1 3" class="log-fade" style="--d: 2.1s" />
+            <polygon :points="geo.tband" fill="var(--teal)" fill-opacity=".1" class="log-fade" style="--d: 2.4s" />
+            <path :d="geo.tmid" fill="none" stroke="var(--ink)" stroke-opacity=".8" stroke-width="1.5" stroke-dasharray="5 4" class="log-fade" style="--d: 2.5s" />
+          </template>
+          <line v-if="geo.tline" :x1="geo.tline[0]" :y1="geo.tline[1]" :x2="geo.tline[2]" :y2="geo.tline[3]" stroke="var(--ink)" stroke-opacity=".7" stroke-width="1.5" pathLength="1" class="log-draw" style="--d: 1.9s; --t: .7s" />
           <line v-if="fut && fut.useful_lead < nFut" :x1="geo.useful" :x2="geo.useful" :y1="TOP + 4" :y2="geo.y1" stroke="var(--muted)" stroke-dasharray="1 3" class="log-fade" style="--d: 2s" />
           <!-- log entries: ticks down to the line and arrows between them -->
           <template v-if="TOP">
-            <line v-for="e in entries" :key="'t' + e.id" :x1="e.cx" :x2="e.kind === 'next' ? e.cx : geo.x(e.i)" :y1="TOP - 2" :y2="valueAt(e.i) != null ? geo.y(valueAt(e.i)) : TOP + 10"
+            <line v-for="e in entries" :key="'t' + e.id" :x1="e.cx" :x2="e.kind === 'next' || e.kind === 'trend' ? e.cx : geo.x(e.i)" :y1="TOP - 2" :y2="valueAt(e.i) != null ? geo.y(valueAt(e.i)) : TOP + 10"
                   stroke="var(--teal)" stroke-opacity=".5" stroke-dasharray="2 2" class="log-fade" :style="{ '--d': 0.6 + e.n * 0.25 + 's' }" />
             <g v-for="a in arrows" :key="a.id">
               <path :d="a.d" stroke="var(--ink)" stroke-opacity=".75" stroke-width="1.5" pathLength="1" class="log-draw" :style="{ '--d': 0.85 + a.n * 0.25 + 's', '--t': '.45s' }" />
@@ -255,20 +299,29 @@ onBeforeUnmount(() => { stop(); ctrl?.abort(); ro?.disconnect() })
         <!-- year marks (past) and month initials (coming year) -->
         <div class="pointer-events-none absolute inset-x-0 bottom-0 h-3 font-mono text-[10px] leading-3 text-muted" aria-hidden="true">
           <span v-for="d in geo?.years" :key="d.m" class="absolute -translate-x-1/2" :style="{ left: geo.x(d.i) + 'px' }">{{ d.m.slice(0, 4) }}</span>
+          <template v-if="nTr"><span v-for="q in nTr" :key="'ty' + q" class="absolute -translate-x-1/2" :class="[nPast + nFut + q - 1 === at ? 'text-fire' : '', (phone() && q < nTr) || (nTr - q) % yearEvery ? 'hidden' : '']" :style="{ left: geo.x(nPast + nFut + q - 1) + 'px' }">{{ phone() ? '→' : '' }}{{ ext.years[q] }}</span></template>
           <template v-if="fut && phone()"><span class="absolute -translate-x-1/2 text-teal" :style="{ left: geo.split + (geo.Wd - geo.split) / 2 + 'px' }">{{ fut.periods[0].slice(0, 4) }}</span></template>
-          <template v-else><span v-for="(p, j) in fut?.periods" :key="p" class="absolute -translate-x-1/2" :class="nPast + j === at ? 'text-fire' : ''" :style="{ left: geo.x(nPast + j) + 'px' }">{{ M1[+p.slice(5, 7) - 1] }}</span></template>
+          <template v-else><span v-for="(p, j) in fut?.periods" :key="p" class="absolute -translate-x-1/2" :class="[nPast + j === at ? 'text-fire' : '', j % monthEvery && nPast + j !== at ? 'hidden' : '']" :style="{ left: geo.x(nPast + j) + 'px' }">{{ M1[+p.slice(5, 7) - 1] }}</span></template>
         </div>
       </div>
 
       <!-- What this month means, in words -->
       <div :key="'w' + born" class="log-rise flex flex-col gap-1">
         <div class="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-          <span class="font-display text-lg font-semibold leading-tight" :class="isFuture ? 'text-ink' : 'text-fire'">{{ t(MONTHS[month - 1]) }} {{ year }}</span>
-          <span v-if="isFuture" class="font-mono text-[11px] uppercase tracking-wider text-teal">{{ t('if {y} is a normal year', { y: year }) }}</span>
+          <span class="font-display text-lg font-semibold leading-tight" :class="isAhead ? 'text-ink' : 'text-fire'">{{ isTrend ? '' : t(MONTHS[month - 1]) }} {{ year }}</span>
+          <span v-if="isTrend" class="font-mono text-[11px] uppercase tracking-wider text-ink">{{ t('if the 1998–2025 trend continues') }}</span>
+          <span v-else-if="isFuture" class="font-mono text-[11px] uppercase tracking-wider text-teal">{{ t('if {y} is a normal year', { y: year }) }}</span>
           <span v-else-if="ninoYears.includes(year)" class="flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-ink"><PixelIcon name="rain" :size="1" />{{ t('coastal El Niño year') }}</span>
           <span v-else class="font-mono text-[11px] uppercase tracking-wider text-muted">{{ t('measured') }}</span>
         </div>
-        <p class="flex items-center gap-2 text-[15px] leading-snug">
+        <p v-if="isTrend" class="flex items-center gap-2 text-[15px] leading-snug">
+          <PixelIcon :name="TREND_ICON[trend.direction]" :size="2" />
+          <span>
+            <span class="text-muted">{{ t('Deep soil, yearly average:') }}</span> {{ t(TREND_WORD[trend.direction]) }}<span v-if="state.mode === 'pro'" class="font-mono text-sm text-muted"> · {{ fmt(ext.centre[j + 1]) }} ({{ fmt(ext.low[j + 1]) }}–{{ fmt(ext.high[j + 1]) }}) m³/m³</span>
+            <span class="block text-sm text-muted">{{ trend.check?.trend_helps ? t('In tests on 2018–2025, extending the trend was closer to reality than assuming no change.') : t('In tests on 2018–2025, extending the trend was not better than assuming no change: read it as a direction, not a number.') }}</span>
+          </span>
+        </p>
+        <p v-else class="flex items-center gap-2 text-[15px] leading-snug">
           <PixelIcon :name="ICON[word] || 'soil_moist'" :size="2" />
           <span>
             <span class="text-muted">{{ t('Deep soil of your field:') }}</span> {{ word ? t(SENT[word]) : t('no value this month') }}<span v-if="state.mode === 'pro' && valueAt(at) != null" class="font-mono text-sm text-muted"> · {{ fmt(valueAt(at)) }} m³/m³</span>

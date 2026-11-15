@@ -117,7 +117,10 @@ Line icons (stroke SVG) are allowed only for UI controls (play, sound, close), d
   as `--line` blocks, and log entries above the line (square cards: a `--teal` header with the year, a pixel icon below)
   for each run of El Niño years and the driest year, joined in time order by `--ink` arrows. The coming year takes the
   right third: its band, its dashed middle and the entry **"?"** with a dashed border, like an entry still unknown. It
-  opens pointing at the coming year. The chosen month is the one `--fire` mark (cursor and the current entry). Drag on
+  opens pointing at the coming year. After it, 2027–2030 (one point per year) carry the 1998–2025 trend of the deep soil
+  drawn on, dashed `--ink` with its band, and an entry "2030 · trend" with an up / down / flat icon; the trend line also
+  crosses the past. That part always says "if the 1998–2025 trend continues" and that it is a direction, not a number
+  (`docs/ML_TRENDS.md`). The chosen month is the one `--fire` mark (cursor and the current entry). Drag on
   the screen or use the arrow keys; the play button runs 1998 → the end. The month of the projection is the same as the
   map's month. Under the screen: the month and one plain sentence (much / a little wetter, usual, a little / much drier
   than usual for this month), and the three layers. The block's sides are the three ERA5-Land layers (0–7, 7–28,

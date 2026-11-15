@@ -1,0 +1,54 @@
+{
+ "rules": "docs/ML_TRENDS.md \u00a72",
+ "cells": 1973,
+ "variables": {
+  "soil_water": {
+   "rows_2018_2025": 15600,
+   "skill_trend_vs_no_change": -0.18772839849401035,
+   "ci": [
+    -0.3145572812991899,
+    -0.07100809298753889
+   ],
+   "trend_helps": false,
+   "cells_with_trend": 1950,
+   "share_clear_up_1998_2025": 0.06717948717948719,
+   "share_clear_down_1998_2025": 0.11025641025641025
+  },
+  "temperature": {
+   "rows_2018_2025": 15600,
+   "skill_trend_vs_no_change": -0.07071588319240218,
+   "ci": [
+    -0.15435283243061354,
+    0.030726172554509223
+   ],
+   "trend_helps": false,
+   "cells_with_trend": 1950,
+   "share_clear_up_1998_2025": 0.6958974358974359,
+   "share_clear_down_1998_2025": 0.0
+  },
+  "rain": {
+   "rows_2018_2025": 15784,
+   "skill_trend_vs_no_change": -0.25566420480032703,
+   "ci": [
+    -0.293416454544907,
+    -0.19428142620395467
+   ],
+   "trend_helps": false,
+   "cells_with_trend": 1973,
+   "share_clear_up_1998_2025": 0.2417638114546376,
+   "share_clear_down_1998_2025": 0.0030410542321338066
+  },
+  "ndvi": {
+   "rows_2018_2025": 9050,
+   "skill_trend_vs_no_change": -0.08280495826639345,
+   "ci": [
+    -0.2103988827074874,
+    0.012187614792675848
+   ],
+   "trend_helps": false,
+   "cells_with_trend": 1738,
+   "share_clear_up_1998_2025": 0.3204833141542002,
+   "share_clear_down_1998_2025": 0.006329113924050633
+  }
+ }
+}

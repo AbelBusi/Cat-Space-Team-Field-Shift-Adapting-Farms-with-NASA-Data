@@ -14,6 +14,7 @@ COPY ml/artifacts/phase2_validation ml/artifacts/phase2_validation
 COPY ml/artifacts/phase3_testing ml/artifacts/phase3_testing
 COPY ml/artifacts/v3_era5_rain/summary.json ml/artifacts/v3_era5_rain/validation_metrics_ci.json ml/artifacts/v3_era5_rain/ndvi_chain.json ml/artifacts/v3_era5_rain/hindcast_skill_validation.csv ml/artifacts/v3_era5_rain/
 COPY ml/artifacts/v3_era5_rain/sm_root_monthly ml/artifacts/v3_era5_rain/sm_root_monthly
+COPY ml/artifacts/trends/trend_check.json ml/artifacts/trends/trend_check.json
 COPY ml-api/app ml-api/app
 COPY ml-api/data ml-api/data
 WORKDIR /srv/ml-api

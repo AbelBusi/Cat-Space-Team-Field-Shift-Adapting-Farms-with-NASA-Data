@@ -6,7 +6,7 @@ import math
 import numpy as np
 import pandas as pd
 
-from . import state
+from . import state, trends
 from .common import EL_NINO_YEARS, K, log
 from .common import NotFound, BadRequest
 
@@ -101,6 +101,8 @@ def build_bundle(s) -> tuple[dict, dict]:
         "cells": {"x": xy[0].tolist(), "y": xy[1].tolist(), "province": [provinces.index(p) for p in cells.province],
                   "district": [districts.index(d) if d else -1 for d in cells.district]},
         "provinces": provinces, "districts": districts, **out, "district_summary": summary,
+        "trends": trends.for_bundle(s.trends, np.flatnonzero(valid), K) | {"check": s.trends["_check"], "years": "1998-2025",
+                                                                            "rules": "docs/ML_TRENDS.md"},
     }
     log.info("projections computed for %d cells and %d scenarios in %.1f s", len(cells), len(scen), time.time() - t0)
     return bundle, risk

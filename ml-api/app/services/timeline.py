@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from . import state
+from . import state, trends
 from .common import EL_NINO_YEARS, NotFound
 from .prediction import cell_info, find_cell_near, model_for, split_of
 
@@ -63,6 +63,8 @@ def timeline(loc) -> dict:
         "ndvi": {"quarters": [str(q) for q in cube.quarters], "observed": _r(cube.ndvi[i], 3),
                  "note": "no NDVI image for some quarters (all of 2012; few cells in 2001-2013): gaps stay empty"},
         "el_nino_years": EL_NINO_YEARS,
+        "el_nino_share_1998_2025": round(sum(1998 <= y <= 2025 for y in EL_NINO_YEARS) / 28, 3),
+        "trends": trends.for_cell(s.trends, i),
         "future": future,
         "notes": ["Observed soil water is ERA5-Land (about 9 km), read on the 2 km cell: it describes rain-fed soil and knows nothing about irrigation.",
                   "Layer 2 (7-28 cm) is shown for context; no model uses it.",

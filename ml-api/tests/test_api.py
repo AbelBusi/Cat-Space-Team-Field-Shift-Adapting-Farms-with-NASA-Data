@@ -239,3 +239,21 @@ def test_timeline_uses_the_nearest_square_just_past_the_edge():
     assert edge["location"]["nearest"] is True and 0 < edge["location"]["distance_km"] <= 3
     far = client.get("/api/v1/timeline", params={"lat": -5.0, "lon": -81.5})
     assert far.status_code == 400 and "outside_grid" in far.json()["detail"]
+
+
+def test_trends_to_2030_are_labelled_by_check_t():
+    """docs/ML_TRENDS.md: the 1998-2025 trend of each variable, its extension to 2030 with a range, and check T's verdict."""
+    import numpy as np
+    from fs_ml import trends as T
+    tl = client.get("/api/v1/timeline", params=LOC).json()
+    for name in ("soil_water", "temperature", "rain", "ndvi"):
+        tr = tl["trends"][name]
+        assert tr["years"][0] == 1998 and tr["years"][-1] == 2025 and tr["check"]["trend_helps"] is False
+        if "extension" in tr:
+            e = tr["extension"]
+            assert e["years"] == [2026, 2027, 2028, 2029, 2030] and all(lo <= c <= hi for lo, c, hi in zip(e["low"], e["centre"], e["high"]))
+    sw = tl["trends"]["soil_water"]
+    ref = T.theil_sen(np.array(sw["years"]), np.array([np.nan if v is None else v for v in sw["yearly"]], float))
+    assert abs(ref["slope"] * 10 - sw["per_decade"]) < 1e-4
+    b = client.get("/api/v1/projections").json()["trends"]
+    assert len(b["temperature"]["per_decade"]) == len(b["soil_water"]["clear"]) == len(client.get("/api/v1/projections").json()["cells"]["x"])
