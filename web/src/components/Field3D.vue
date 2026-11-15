@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { state, mapApi } from '../store.js'
 import { say } from '../guide.js'
 import { t } from '../i18n.js'
@@ -38,12 +38,15 @@ const lift = (h, rise = 1) => (h - data.min) * data.exaggeration * (UNITS / data
 const xz = (u, v) => [(u - 0.5) * UNITS, (v - 0.5) * UNITS]
 
 // The time bar under the block (FieldTimeline) takes the bottom of the free space; it reports its real height.
-const tlHeight = ref(innerWidth < 1024 ? 150 : 128)
+const tlHeight = ref(innerWidth < 1024 ? 190 : 300)
+// Only in "What's ahead": there it leads from the past to the projection and moves the map's month with it. In "Today" the
+// month and the kind of year are chosen in the topic's own card, so a second time control would only confuse.
+const showLog = computed(() => state.track === 'ahead')
 // The free space between the cards (wide screens) or above the bottom sheet (phones). The block floats in its upper
 // part; the field sits on the map in its lower part; the time bar sits under both.
 function freeBox() {
   const b = freeSpace()
-  return { ...b, bottom: b.bottom - tlHeight.value - 8, floor: b.bottom }
+  return { ...b, bottom: b.bottom - (showLog.value ? tlHeight.value + 8 : 0), floor: b.bottom }
 }
 function freeSpace() {
   const hud = document.querySelector('[data-hud-top]')?.getBoundingClientRect().bottom ?? 140
@@ -51,7 +54,8 @@ function freeSpace() {
   if (innerWidth < 1024) {
     const edge = (sel, side, fb) => document.querySelector(sel)?.getBoundingClientRect()[side] ?? fb
     const top = Math.max(hud, edge('.col-left', 'bottom', hud)) + 16, bottom = Math.min(innerHeight - 10, edge('.col-right', 'top', innerHeight * 0.7)) - 16
-    return { left: 8, right: innerWidth - 8, top, bottom: Math.max(bottom, top + 200 + tlHeight.value + 8) }   // the block keeps ≥ 200 px
+    // the block keeps ≥ 200 px; the log stays above Sprout's tab
+    return { left: 8, right: innerWidth - 8, top, bottom: Math.min(innerHeight - 76, Math.max(bottom, top + 200 + (showLog.value ? tlHeight.value + 8 : 0))) }
   }
   const col = Math.min(380, Math.max(280, innerWidth * 0.27))
   return { left: 56 + col + 20, right: innerWidth - 56 - col - 20, top: hud + 8, bottom: innerHeight - 110 }
@@ -351,6 +355,7 @@ function northUp() {
   turn = { t0: performance.now(), from, to: 0, polar: Math.acos(o.y / dist), dist }
 }
 const onResize = () => placeBox()
+watch(showLog, on => { if (!on) onLayers([]); placeBox() })
 onMounted(() => { placeBox(); addEventListener('resize', onResize); build() })
 onBeforeUnmount(() => {
   cancelAnimationFrame(raf)
@@ -363,7 +368,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <FieldTimeline :box="tlBox" @layers="onLayers" @size="onTlSize" />
+  <FieldTimeline v-if="showLog" :box="tlBox" @layers="onLayers" @size="onTlSize" />
   <svg class="pointer-events-none fixed inset-0 z-[11] size-full" aria-hidden="true">
     <template v-if="beam">
       <polygon :points="beam.pts" fill="var(--teal)" fill-opacity=".07" />

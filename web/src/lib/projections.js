@@ -33,7 +33,22 @@ export function cellAt(lat, lon) {
   if (!proj.value || lat == null) return -1
   return index.get(`${Math.floor(lon / step())},${Math.floor(lat / step())}`) ?? -1
 }
-export const spotCell = computed(() => state.point ? cellAt(state.point.lat, state.point.lon) : -1)
+// The cell under a point or, if it has none (a point just past the edge of the grid, or a coastal cell), the nearest cell
+// with a projection up to 1.5 squares (~3 km) away. The time bar does the same on the API side and says so.
+export function nearestCell(lat, lon, max = 1.5) {
+  const own = cellAt(lat, lon)
+  if (own >= 0 || !proj.value || lat == null) return own
+  const fx = lon / step(), fy = lat / step(), x0 = Math.floor(fx), y0 = Math.floor(fy)
+  let best = -1, bd = Infinity
+  for (let dx = -2; dx <= 2; dx++) for (let dy = -2; dy <= 2; dy++) {
+    const i = index.get(`${x0 + dx},${y0 + dy}`)
+    if (i == null) continue
+    const d = Math.hypot(x0 + dx + 0.5 - fx, y0 + dy + 0.5 - fy)
+    if (d < bd) { bd = d; best = i }
+  }
+  return bd <= max ? best : -1
+}
+export const spotCell = computed(() => state.point ? nearestCell(state.point.lat, state.point.lon) : -1)
 
 // Values of one cell (or null where there are none), in real units.
 export function cellSeries(v, scen, field, i) {

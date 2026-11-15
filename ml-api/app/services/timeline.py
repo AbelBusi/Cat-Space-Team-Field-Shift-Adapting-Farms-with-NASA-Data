@@ -7,7 +7,7 @@ import numpy as np
 
 from . import state
 from .common import EL_NINO_YEARS, NotFound
-from .prediction import cell_info, find_cell, model_for, split_of
+from .prediction import cell_info, find_cell_near, model_for, split_of
 
 # ERA5-Land layers shown on the sides of the 3D field: (key in the cube, top cm, bottom cm). Layer 2 is display only.
 LAYERS = [("sm_surface_m3m3", 0, 7), ("sm_layer2_m3m3", 7, 28), ("sm_root_m3m3", 28, 100)]
@@ -28,7 +28,10 @@ def _layer(values: np.ndarray, months: np.ndarray) -> dict:
 
 def timeline(loc) -> dict:
     from . import projections
-    s = state.get(); cube = s.cube; i = find_cell(loc)
+    from ..schemas import Location
+    s = state.get(); cube = s.cube
+    i, away = find_cell_near(loc)
+    loc = Location(cell_id=cube.cells.cell_id.iloc[i])          # the cell actually read (it may be the nearest one)
     months = cube.dates.month.to_numpy()
     root = cube.v["sm_root_m3m3"][i]
     if not np.isfinite(root).any():
@@ -50,7 +53,7 @@ def timeline(loc) -> dict:
     except NotFound:
         pass
     return {
-        "location": cell_info(i),
+        "location": cell_info(i) | {"distance_km": round(away, 1), "nearest": away > 0},
         "months": [f"{d:%Y-%m}" for d in cube.dates],
         "split": [split_of(int(d.year)) for d in cube.dates],
         "layers": layers,

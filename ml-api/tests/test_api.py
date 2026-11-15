@@ -231,3 +231,11 @@ def test_timeline_keeps_observed_model_and_projection_apart():
     assert tl["layers"][2]["observed"][k] == round(h["observed"], 4) and tl["model"]["predicted"][k] == round(h["predicted"], 4)
     assert tl["future"]["soil_water"]["periods"][0] == "2026-01" and len(tl["future"]["ndvi"]["periods"]) == 4
     assert client.get("/api/v1/timeline", params={"lat": 0, "lon": 0}).status_code == 400
+
+
+def test_timeline_uses_the_nearest_square_just_past_the_edge():
+    step = 0.017966305682390427
+    edge = client.get("/api/v1/timeline", params={"lat": -383.5 * step, "lon": -4432.5 * step}).json()   # cell -4433,-384: just past the grid's edge
+    assert edge["location"]["nearest"] is True and 0 < edge["location"]["distance_km"] <= 3
+    far = client.get("/api/v1/timeline", params={"lat": -5.0, "lon": -81.5})
+    assert far.status_code == 400 and "outside_grid" in far.json()["detail"]

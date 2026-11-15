@@ -35,6 +35,25 @@ def find_cell(loc) -> int:
     return int(hit[0])
 
 
+def find_cell_near(loc, max_km: float = 3.0) -> tuple[int, float]:
+    """The cell under a point if it has soil water; otherwise the nearest cell that has it, up to max_km away (a field
+    whose centre falls just past the edge of the grid or on a coastal cell). Returns (index, distance in km)."""
+    s = state.get(); c = s.cube.cells
+    if loc.cell_id is not None:
+        return find_cell(loc), 0.0
+    has = np.isfinite(s.cube.v["sm_root_m3m3"]).any(axis=1)
+    x, y = loc.lon / GRID_STEP, loc.lat / GRID_STEP
+    cx, cy = (c.lon.to_numpy() / GRID_STEP), (c.lat.to_numpy() / GRID_STEP)
+    d = np.where(has, np.hypot(cx - x, cy - y), np.inf) * GRID_STEP * 111.0     # degrees → km (enough at 7° S)
+    i = int(np.argmin(d))
+    own = f"{math.floor(loc.lon / GRID_STEP)},{math.floor(loc.lat / GRID_STEP)}"
+    if c.cell_id.iloc[i] == own:
+        return i, 0.0
+    if not np.isfinite(d[i]) or d[i] > max_km:
+        raise NotFound("outside_grid: this point is outside the area the models cover (Lambayeque and its edges, 2 km squares)")
+    return i, float(d[i])
+
+
 def find_cell_id(cid: str) -> int:
     return int(np.flatnonzero(state.get().cube.cells.cell_id.to_numpy() == cid)[0])
 

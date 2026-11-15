@@ -112,13 +112,18 @@ Line icons (stroke SVG) are allowed only for UI controls (play, sound, close), d
   frame, and each side shows its real length on its edge (only when the side is long enough on screen). Everything on the map except the field
   sits under a dark veil (86 %), so only the field and its block stand out; the cards stay readable. A compass rose turns with
   the view; tapping it swings the block back to north up.
-- **Time bar of the field (since Nov 15, 2026):** a HUD strip under the block, in the free space. One line of the deep soil
-  water (28–100 cm) of the 2 km square at the field's centre, every month since 1998, in `--teal`; El Niño years as `--line`
-  blocks; the projection after the last data dashed with its band; the chosen month in `--fire` (the screen's one highlight),
-  with a play button and a slider. The block's sides are the three ERA5-Land layers (0–7, 7–28, 28–100 cm, the thin top ones
-  drawn a little thicker): each fills with `--deep` water as that layer gets wetter for this place that month, and is hatched
-  where there is no value (the projection only knows the deep layer). Farmer mode names each layer drier / usual / wetter
-  than usual for that month; Pro mode shows the values. On phones the strip is compact (no words, no footnote).
+- **Field log (time bar), only in "What's ahead":** a HUD strip under the block, drawn like a ship log: a `--line` grid,
+  the deep soil water (28–100 cm) of the 2 km square at the field's centre every month since 1998 in `--teal`, El Niño years
+  as `--line` blocks, and log entries above the line (square cards: a `--teal` header with the year, a pixel icon below)
+  for each run of El Niño years and the driest year, joined in time order by `--ink` arrows. The coming year takes the
+  right third: its band, its dashed middle and the entry **"?"** with a dashed border, like an entry still unknown. It
+  opens pointing at the coming year. The chosen month is the one `--fire` mark (cursor and the current entry). Drag on
+  the screen or use the arrow keys; the play button runs 1998 → the end. The month of the projection is the same as the
+  map's month. Under the screen: the month and one plain sentence (much / a little wetter, usual, a little / much drier
+  than usual for this month), and the three layers. The block's sides are the three ERA5-Land layers (0–7, 7–28,
+  28–100 cm, the thin top ones drawn a little thicker): each fills with `--deep` water as that layer gets wetter for this
+  place that month, hatched where there is no value (the projection only knows the deep layer). In "Today" the topic's own
+  month card already chooses the month, so there is no log there. On phones it is compact (years every 10, no layer words).
 
 ## 7. One screen, like a game (layout since Nov 15, 2026)
 
@@ -150,7 +155,7 @@ printed report.
 ## 9. Motion
 
 Stages cross-fade and scale (0.5 s). Topic cards slide in from their own side, one after another (90 ms rhythm). The region
-picker's camera glides between department, province and district. Charts draw in, numbers count. Nothing loops except the sky,
+picker's camera glides between department, province and district. Charts draw in, numbers count. The field log opens like a ship log: a scan sweeps the screen while the line draws from 1998, the entries pop in one by one along their arrows, the coming year fades in last, and an entry rings once when it becomes the current one. Nothing loops except the sky,
 the satellite, three comets that fall now and then, the campfire and Sprout's idle bob. Everything turns off with `prefers-reduced-motion`.
 
 ## 10. Two modes: Farmer and Pro
