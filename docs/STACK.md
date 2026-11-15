@@ -63,7 +63,7 @@ colors) and what Tailwind cannot do: pixel art, Leaflet overrides, keyframes and
 | `src/lib/sound.js` · `src/lib/tween.js` | Synthesized meows and melody · number/array tweening |
 | `src/cat/` | Sprout's sprites (`sprites.js`), `CatSprite.vue`, the translator dock `SproutDock.vue` |
 | `src/components/` | Stages (`IntroStage`, `RegionPicker`, `ExploreStage`), the clipped map `MapStage` and `MapTools`, `TopBar`, `Backdrop`, `HudCard`, `SlideFrame`, `ReportSheet`, plus building blocks (`PixelIcon`, `Instrument`, `PixelGlobe`, `FieldRow`, `TradeOffs`, `Sparkline`, `OrbitSky`) |
-| `src/components/Field3D.vue` · `src/lib/terrain3d.js` | The 3D view of an outlined field: SRTM heights (Terrain Tiles) and the satellite photo of a square around it, built with three.js |
+| `src/components/Field3D.vue` · `src/lib/terrain3d.js` | The 3D view of an outlined field, cut out as a block: SRTM heights (Terrain Tiles, read as raw bytes and median-filtered so no false spikes) and the satellite photo, built with three.js |
 | `src/slides/` | One topic each: signals, ground, years, priorities, rotations, comparison, report |
 | `public/data/lambayeque.json` | The Lambayeque 0.1° grid (IMERG, NASADEM, GRACE) |
 
