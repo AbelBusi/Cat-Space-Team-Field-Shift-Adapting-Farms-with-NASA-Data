@@ -429,6 +429,13 @@ const ES = {
   'You know how much water you get, so fewer surprises.': 'Sabes cuánta agua te toca, así hay menos sorpresas.', "We don't know how much water you get per season.": 'No sabemos cuánta agua te toca por campaña.',
   'You have never grown this here: try it on a small plot first.': 'Nunca sembraste esto aquí: pruébalo primero en un terreno pequeño.', 'An El Niño year is harder to predict.': 'Un año de El Niño es más difícil de prever.',
   // What's ahead (projections, ml/)
+  "Now let's peek ahead! I can't know next year's rain, so I tried the weather of 28 past years on your soil, one by one.": "¡Ahora asomémonos a lo que viene! No puedo saber la lluvia del próximo año, así que probé el clima de 28 años pasados sobre tu suelo, uno por uno.",
+  "The line is the middle of all those tries, and the band is where most of them landed. Further away, I get less sure.": "La línea es el medio de todas esas pruebas, y la banda es donde cayeron la mayoría. Mientras más lejos, menos seguro estoy.",
+  "This is the simulator. Pick \"what if\" and the map shows how the soil water would change against a normal year.": "Este es el simulador. Elige un \"qué pasaría si\" y el mapa muestra cómo cambiaría el agua del suelo frente a un año normal.",
+  "It is my model's answer to a made-up situation, not a promise. Use it to think ahead, not as a forecast.": "Es la respuesta de mi modelo a una situación inventada, no una promesa. Úsala para pensar en lo que viene, no como pronóstico.",
+  "Same idea for plant greenness, by quarter. Irrigation is not in my data, so irrigated valleys can be greener than I say.": "La misma idea para el verdor de las plantas, por trimestre. El riego no está en mis datos, así que los valles regados pueden estar más verdes de lo que digo.",
+  "Here are the places where the deep soil should keep the most water in the dry months. More water helps, but crop, irrigation and market decide the harvest.": "Aquí están los lugares donde el suelo profundo debería guardar más agua en los meses secos. Más agua ayuda, pero el cultivo, el riego y el mercado deciden la cosecha.",
+  "I tested myself: I projected past years and compared them with what really happened. Here is how well I did, honestly.": "Me puse a prueba: proyecté años pasados y los comparé con lo que de verdad pasó. Aquí está qué tan bien me fue, con honestidad.",
   "Simulator · your own what-if": "Simulador · tu propio \"qué pasaría si\"",
   "Your changes to the next 6 months of weather. The model then runs on this 2 km cell.": "Tus cambios al clima de los próximos 6 meses. Luego el modelo corre en esta celda de 2 km.",
   "Months without rain": "Meses sin lluvia",
