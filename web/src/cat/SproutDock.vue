@@ -92,7 +92,7 @@ onBeforeUnmount(() => { clearTimeout(timer); clearTimeout(restTimer); removeEven
           </span>
         </div>
         <div class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2.5" @click="advance">
-          <div v-if="state.stage !== 'intro'" class="flex size-[60px] items-center justify-center border border-line bg-bg"><CatSprite :mood="line[1]" :talking="guide.talking" :size="52" /></div>
+          <div v-if="state.stage !== 'intro'" class="-mb-2.5 -mt-4 self-end max-sm:w-16"><CatSprite :mood="line[1]" :talking="guide.talking" :size="88" bust class="max-sm:!h-auto max-sm:!w-16" /></div>
           <span v-else />
           <p class="min-h-[3.1em] text-[14.5px] leading-normal" aria-hidden="true">{{ typed }}<span v-if="!done" class="animate-[caret_.8s_steps(2)_infinite] text-teal">▌</span></p>
           <p class="sr-only" aria-live="polite">{{ shown }}</p>

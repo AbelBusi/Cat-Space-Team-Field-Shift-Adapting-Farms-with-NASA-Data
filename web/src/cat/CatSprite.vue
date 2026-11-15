@@ -4,12 +4,14 @@ import { PALETTE, SIZE, BODY, ANTENNAE, FACES } from './sprites.js'
 
 // Sprout, drawn from pixel runs (see sprites.js). It blinks, its tail sways, its mouth moves while it talks, and the
 // whole cat squashes a little when its mood changes.
-// full: the whole sitting cat (the first screen); otherwise only the head, for the dialogue. pose: 'sit' or 'wave' (a paw up).
+// full: the whole sitting cat (the first screen). bust: head and fluffy chest (the dialogue). Otherwise only the head
+// (small tabs). pose: 'sit' or 'wave' (a paw up).
 const props = defineProps({
   mood: { type: String, default: 'neutral' },
   talking: Boolean,
   size: { type: Number, default: 96 },
   full: Boolean,
+  bust: Boolean,
   pose: { type: String, default: 'sit' },
 })
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -19,7 +21,7 @@ const mouthOpen = ref(false), blinking = ref(false), wag = ref(false)
 const body = computed(() => BODY[`${props.pose === 'wave' ? 'wave' : 'sit'}_${wag.value ? 'wag' : 'up'}`])
 const face = computed(() => blinking.value ? f.value.blink : props.talking && mouthOpen.value ? f.value.talk : f.value.face)
 const ant = computed(() => ANTENNAE[f.value.ant])
-const box = computed(() => props.full ? `0 0 ${SIZE[0]} ${SIZE[1]}` : '4 -1 36 30')   // the head: ears, antennae and cheeks
+const box = computed(() => props.full ? `0 0 ${SIZE[0]} ${SIZE[1]}` : props.bust ? '4 -1 36 38' : '4 -1 36 30')
 
 let talkTimer, blinkTimer, wagTimer
 watch(() => props.talking, on => {
@@ -41,7 +43,7 @@ onBeforeUnmount(() => { clearInterval(talkTimer); clearTimeout(blinkTimer); clea
 </script>
 
 <template>
-  <svg class="cat" :class="{ talking, '!overflow-hidden': !full }" :width="size" :height="full ? size * SIZE[1] / SIZE[0] : size" :viewBox="box"
+  <svg class="cat" :class="{ talking, '!overflow-hidden': !full }" :width="size" :height="full ? size * SIZE[1] / SIZE[0] : bust ? size * 38 / 36 : size" :viewBox="box"
        shape-rendering="crispEdges" role="img" :aria-label="t('Sprout the alien cat, looking ' + mood)">
     <g class="cat-body" :key="mood">
       <rect v-for="[x, y, w, c] in body" :key="`b${x},${y}`" :x="x" :y="y" :width="w" height="1" :fill="PALETTE[c]" />
