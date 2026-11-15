@@ -1,4 +1,3 @@
-"""Request and response bodies. Extra fields are rejected (422) so a typo never silently becomes "missing"."""
 from __future__ import annotations
 
 import math
@@ -6,63 +5,12 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-ModelName = Literal["sm_root_monthly", "ndvi_quarterly"]
-
-
-class Strict(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-
-# ---------- single prediction ----------
-
-class PredictionRequest(Strict):
-    model: ModelName = Field(description="sm_root_monthly (root-zone soil water) or ndvi_quarterly (greenness)")
-    features: dict[str, float | None] = Field(description="Every feature of the model, by its training name. null = "
-                                              "missing (only where training also had missing values)")
-
-    @field_validator("features")
-    @classmethod
-    def finite(cls, v):
-        bad = [k for k, x in v.items() if x is not None and not math.isfinite(x)]
-        if bad:
-            raise ValueError(f"not finite: {bad}")
-        return v
-
-
-class Interval(BaseModel):
-    low: float
-    high: float
-    nominal: float
-    method: str
-    tested_coverage: float | None = Field(description="Real share of 2023-2025 values that fell inside this interval")
-
-
-class PredictionResponse(BaseModel):
-    model: str
-    target: dict
-    prediction: float
-    interval_90: Interval
-    out_of_training_range: list[str] = Field(description="Features outside the 1998-2017 p01-p99 range")
-    far_out_of_training_range: list[str] = Field(description="Features outside the 1998-2017 min-max range")
-    missing_features: list[str]
-    warnings: list[str]
+from .common import ModelWarning, Open, Reliability, Strict, Location
 
 
 # ---------- climate simulation ----------
 
-class Location(Strict):
-    cell_id: str | None = Field(None, description="Grid cell 'x,y' (2 km)", examples=["-4410,-357"])
-    lat: float | None = Field(None, ge=-90, le=90)
-    lon: float | None = Field(None, ge=-180, le=180)
-
-    @model_validator(mode="after")
-    def one_way(self):
-        if self.cell_id is None and (self.lat is None or self.lon is None):
-            raise ValueError("give cell_id, or lat and lon")
-        return self
-
-
-class Scenario(Strict):
+class Scenario(Strict):  # ScenarioConfiguration
     rain_factor: float = Field(1.0, ge=0, le=3, description="Rain × factor in the chosen months")
     t2m_delta: float = Field(0.0, ge=-5, le=5, description="Temperature + delta (°C); evaporation is not recomputed")
     rh_delta: float = Field(0.0, ge=-30, le=30, description="Relative humidity + delta (points, kept in 0-100)")
@@ -70,6 +18,9 @@ class Scenario(Strict):
                                      "apply to; all if null")
     dry_months: list[int] = Field(default_factory=list, description="Lead months with no rain and the driest surface "
                                   "soil of 1998-2017. Dries the soil on average, but its pre-registered check failed: read it with care")
+    pet_factor: float = Field(1.0, ge=0, le=3, description="Potential evaporation × factor (experimental)")
+    ws_delta: float = Field(0.0, ge=-5, le=5, description="Wind + delta, m/s (experimental)")
+    allsky_delta: float = Field(0.0, ge=-10, le=10, description="Sunlight + delta, MJ/m²/day (experimental)")
     analog: Literal["all", "el_nino"] | list[int] = Field("all", description="Weather years used: all, only coastal "
                                                          "El Niño years, or an explicit list")
 
@@ -79,6 +30,7 @@ class SimulationRequest(Strict):
     start: str = Field("2025-12", pattern=r"^\d{4}-\d{2}$", description="Last observed month (YYYY-MM)")
     horizon: int = Field(6, ge=1, le=12, description="Months to project")
     scenario: Scenario = Field(default_factory=Scenario)
+    include_ndvi: bool = Field(True, description="Add the quarterly NDVI (only when start is the end of a quarter)")
 
     @model_validator(mode="after")
     def months_in_horizon(self):
@@ -108,7 +60,7 @@ class PeriodComparison(BaseModel):
     within_useful_lead: bool
 
 
-class SimulationResponse(BaseModel):
+class SimulationResponse(Open):
     location: dict
     start: str
     model: dict
@@ -121,22 +73,63 @@ class SimulationResponse(BaseModel):
     out_of_training_range: dict[str, float]
     reliability: dict
     interpretation: dict
+    simulation_id: str | None = None
+    reliability_level: Reliability | None = None
+    warnings: list[ModelWarning] = []
+    ndvi: dict | None = None
 
 
-# ---------- Sprout's open questions ----------
-
-class ChatTurn(Strict):
-    role: Literal["user", "assistant"]
-    content: str = Field(max_length=2000)
 
 
-class AskRequest(Strict):
-    question: str = Field(min_length=1, max_length=600)
-    lang: Literal["en", "es", "qu"] = "en"
-    context: dict = Field(default_factory=dict, description="What the user sees: place, lat/lon, month, readings, topic")
-    history: list[ChatTurn] = Field(default_factory=list, max_length=12, description="Earlier turns of this conversation")
+ScenarioConfiguration = Scenario
+Start = Field("2025-12", pattern=r"^\d{4}-\d{2}$", description="Last observed month (YYYY-MM)")
 
 
-class AskResponse(BaseModel):
-    answer: str
-    model: str
+class DroughtRequest(Strict):
+    location: Location
+    start: str = Start
+    months: int = Field(2, ge=1, le=6, description="Months without rain in a row")
+    from_lead: int = Field(1, ge=1, le=12, description="First dry month (1 = the month after start)")
+    rain_factor_other: float = Field(1.0, ge=0, le=3, description="Rain × factor in the other months")
+    t2m_delta: float = Field(0.0, ge=-5, le=5)
+    analog: Literal["all", "el_nino"] | list[int] = "all"
+    horizon: int = Field(6, ge=1, le=12)
+
+    @model_validator(mode="after")
+    def fits(self):
+        if self.from_lead + self.months - 1 > self.horizon:
+            raise ValueError("the drought must end within the horizon")
+        return self
+
+
+class ElNinoRequest(Strict):
+    location: Location
+    start: str = Start
+    horizon: int = Field(6, ge=1, le=12)
+    t2m_delta: float = Field(0.0, ge=-5, le=5)
+    dry_months: list[int] = []
+
+
+class TemperatureRequest(Strict):
+    location: Location
+    start: str = Start
+    horizon: int = Field(6, ge=1, le=12)
+    delta: Literal[-2, -1, 1, 2, 3] = 1
+    months: list[int] | None = None
+
+
+class RainfallRequest(Strict):
+    location: Location
+    start: str = Start
+    horizon: int = Field(6, ge=1, le=12)
+    rain_factor: float = Field(1.0, ge=0, le=3)
+    dry_months: list[int] = []
+    months: list[int] | None = None
+
+
+class RecoveryRequest(Strict):
+    location: Location
+    start: str = Start
+    drought_months: int = Field(3, ge=1, le=6)
+    after: Literal["normal", "el_nino"] = "normal"
+    horizon: int = Field(12, ge=7, le=12)

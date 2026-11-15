@@ -1,6 +1,6 @@
 # Field Shift ML · Phase 2 checks for the API expansion
 
-Status (Nov 15, 2026): **rules written, checks not run yet.** They decide which new API features may be served without
+Status (Nov 15, 2026): **checks run (notebook `ml/notebooks/07_api_validation.ipynb`, rules committed before in `6ccc253`). 3 pass, 5 fail, 1 not testable, 1 deferred.** They decide which new API features may be served without
 the `experimental` label (`ml-api/roadmap/README.md`, Phase 2). The tested models are not changed or retrained.
 Results will go to `ml/artifacts/api_validation/checks.json`, which the API reads at startup.
 
@@ -35,3 +35,27 @@ Results will go to `ml/artifacts/api_validation/checks.json`, which the API read
 - Pass → the feature is served with level `ok` or `warning` (depending on the inputs, as always).
 - Fail, deferred or not testable → served only with level `experimental` and the reason.
 - Nothing is tuned after seeing the results; a failed check is reported, not fixed by hand.
+
+## Results
+
+| # | Feature | Result | Numbers |
+|---|---|---|---|
+| S1 | Temperature what-if | **Fail** | +2 °C makes soil water *rise* by more than the model error in 9.7 % of cells (mean +0.0024 m³/m³, the wrong way); −2 °C falls in 0.6 %. With the strict 1e-4 count, 55 % rise |
+| S2 | Droughts of 1–6 months | **Fail** | Mean change at the end of the drought is negative for every length (−0.002, −0.012, −0.017, −0.020, −0.022, −0.023 m³/m³) and longer droughts are drier at lead 6; but cells rising by more than the model error reach 1.4 % (5 months) and 2.5 % (6 months), above 1 %. Lengths 1–4 meet all three parts |
+| S3 | Rain-only what-if | **Fail** | Wrong-way moves are rare (0.15 % / 0.46 %), but the mean effect is only −0.0006 (× 0.5) and +0.0006 (× 2) m³/m³, a twentieth of the model error |
+| S4 | Recovery after 3 dry months | **Fail** | The difference shrinks by lead 12 in 83 % of cells (needed 90 %); mean −0.017 at lead 3, −0.0015 at lead 12 |
+| S5 | Drought risk | **Fail** | Overconfident: predicted 0.95 → observed 0.65; predicted 0.68 → 0.35 (max gap 0.34). Still better than a constant 0.20 (Brier skill 0.18) |
+| S6 | Alerts | **Pass** | 4.7 % of cells flagged for soil water, 3.7 % for NDVI (5 % expected) |
+| S7 | NDVI greener than expected | Not testable | 591 cells (23 %) were above the model by more than its error in ≥ 3 of the 8 quarters of 2024–2025; no irrigated-area data to check them |
+| S8 | Cells outside Lambayeque | **Pass** | Soil water skill 0.54 [0.50, 0.58] vs climatology, RMSE 0.014, worst year 0.48; NDVI skill 0.12 [0.05, 0.18], worst year 0.04. Testing 2023–2025 (report): 0.42 and 0.17 |
+| S9 | Adaptive ranges | Deferred | needs complete 2026 data |
+| S10 | Per-cell confidence | **Pass** | Spearman 0.65 between validation and testing RMSE over 226 ERA5-Land pixel groups |
+
+**What the API does with them:** alerts, per-cell confidence and the cells outside Lambayeque are served as validated
+(level `warning`, never `ok`, because they are still model outputs with known limits). Temperature, droughts, rainfall,
+recovery, drought risk, NDVI anomalies and hotspots are served with level `experimental` and the reason. El Niño
+analogs and a normal year are not scenario *changes* and keep their own warnings (few analogs, beyond the useful lead).
+
+**Reading:** the model's response to changed weather is dominated by last month's soil water; changes of one input at a
+time move it little and sometimes the wrong way. Simulations that change inputs need a model that reacts to them
+(ERA5-Land's own rain, monotone constraints): Phase 3.

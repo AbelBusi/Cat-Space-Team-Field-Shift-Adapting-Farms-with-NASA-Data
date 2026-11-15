@@ -28,6 +28,8 @@ class Settings:
     ml_package_dir: Path = field(default_factory=lambda: _path("FS_ML_PACKAGE_DIR", "../ml"))
     # Hindcast results of the projection layer (useful lead, range corrections): ml/artifacts/projections
     projection_card: Path = field(default_factory=lambda: _path("FS_PROJECTION_CARD", "../ml/artifacts/projections/projection_card.json"))
+    # Results of the Phase 2 checks (docs/ML_API_VALIDATION.md): which new features may leave the "experimental" label
+    api_checks: Path = field(default_factory=lambda: _path("FS_API_CHECKS", "../ml/artifacts/api_validation/checks.json"))
     # Monthly inputs 1998-2025 per Lambayeque cell, written by ml/scripts/export_api_cube.py
     cube_path: Path = field(default_factory=lambda: _path("FS_CUBE_PATH", "data/cube.npz"))
     cors_origins: tuple = field(default_factory=lambda: tuple(o.strip() for o in os.environ.get(

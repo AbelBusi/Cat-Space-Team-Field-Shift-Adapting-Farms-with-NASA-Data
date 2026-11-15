@@ -55,7 +55,8 @@ def test_simulation_errors():
     assert client.post("/api/v1/simulations/climate", json={"location": {"lat": 0, "lon": 0}}).status_code == 400
     assert client.post("/api/v1/simulations/climate", json={"location": {"lat": -6.42, "lon": -79.73}, "horizon": 20}).status_code == 422
     rain = client.post("/api/v1/simulations/climate", json={"location": {"lat": -6.42, "lon": -79.73}, "scenario": {"rain_factor": 2}}).json()
-    assert rain["reliability"]["rain_only_change"] is True and "sanity checks" in rain["interpretation"]["limitations"][0]
+    assert rain["reliability"]["rain_only_change"] is True and any("sanity checks" in x for x in rain["interpretation"]["limitations"])
+    assert rain["reliability_level"] == "experimental"            # rain-only never left the experimental label
 
 
 def test_projections_match_the_validated_notebook():
@@ -87,3 +88,104 @@ def test_ask_without_ai_says_so_and_enriches_context():
     assert len(ctx["model_projection_soil_water"]["el_nino"]["median"]) == 6
     assert "Sprout" in sprout.persona() and "---" not in sprout.persona()[:5]
     assert client.post("/api/v1/ask", json={"question": ""}).status_code == 422
+
+
+
+# ---------- expansion (roadmap): predictions, simulations, analysis, alerts, explanations, monitoring ----------
+
+LOC = {"lat": -6.42, "lon": -79.73}
+
+
+def test_cell_prediction_equals_the_projection_engine_with_real_weather():
+    """A row built by the API from the cube gives the same prediction as fs_ml.project with the real weather."""
+    import pandas as pd
+    from fs_ml import project as P
+    from app.services import prediction, state
+    from app.schemas import Location
+    s = state.get(); i = prediction.find_cell(Location(**LOC))
+    r = client.post("/api/v1/predictions/soil-water", json={"location": LOC, "period": "2019-02"}).json()
+    one = P.Cube(cells=s.cube.cells.iloc[[i]].reset_index(drop=True), dates=s.cube.dates, v={k: v[[i]] for k, v in s.cube.v.items()},
+                 quarters=s.cube.quarters, ndvi=s.cube.ndvi[[i]])
+    w = P.analog_weather(one, pd.Timestamp("2019-01-01"), 1, [2019])
+    direct = P.project_sm(s.models["sm_root_monthly"], one, pd.Timestamp("2019-01-01"), 1, None, weather=w)["members"][0, 0, 0]
+    assert abs(r["prediction"] - direct) < 1e-6 and r["split"] == "validation" and r["observed"] is not None
+
+
+def test_ndvi_complete_batch_history_confidence():
+    nd = client.post("/api/v1/predictions/ndvi", json={"location": LOC, "period": "2020Q2"})
+    assert nd.status_code == 200 and -1 <= nd.json()["prediction"] <= 1
+    c = client.post("/api/v1/predictions/complete", json={"location": LOC, "quarter": "2024Q1"}).json()
+    assert len(c["soil_water"]) == 3 and "prediction" in c["ndvi"]
+    b = client.post("/api/v1/predictions/batch", json={"model": "sm_root_monthly", "items": [sm_features(), sm_features(rain_mm=-5)]}).json()
+    assert len(b["results"]) == 1 and b["errors"][0]["index"] == 1
+    cid = c["location"]["cell_id"]
+    h = client.get(f"/api/v1/predictions/{cid}/history", params={"from": "2017-11", "to": "2018-02"}).json()
+    assert [r["split"] for r in h["rows"]] == ["training", "training", "validation", "validation"]
+    conf = client.get(f"/api/v1/predictions/{cid}/confidence").json()
+    assert conf["historical_error"]["validation_2018_2022"]["rmse"] > 0 and conf["reliability"] in ("warning", "experimental")
+    assert client.post("/api/v1/predictions/soil-water", json={"location": LOC, "period": "1990-01"}).status_code == 400
+    assert client.get("/api/v1/predictions/0,0/history").status_code == 400
+
+
+def test_typed_simulations_share_one_engine():
+    d = client.post("/api/v1/simulations/drought", json={"location": LOC, "months": 3, "horizon": 6})
+    assert d.status_code == 200, d.text
+    d = d.json()
+    assert d["kind"] == "drought" and "lead months [1, 2, 3]" in d["modified_inputs"][0] and d["ndvi"]["periods"][0] == "2026Q1"
+    again = client.get(f"/api/v1/simulations/{d['simulation_id']}/results").json()
+    assert again["scenario"]["median"] == d["scenario"]["median"]
+    e = client.post("/api/v1/simulations/el-nino", json={"location": LOC}).json()
+    assert e["scenario"]["analog_years"] == [1998, 2016, 2017, 2023, 2024] and any(w["code"] == "few_analogs" for w in e["warnings"])
+    t = client.post("/api/v1/simulations/temperature", json={"location": LOC, "delta": 2}).json()
+    assert any(w["code"] == "pet_not_recomputed" for w in t["warnings"])
+    rec = client.post("/api/v1/simulations/recovery", json={"location": LOC, "drought_months": 2}).json()
+    assert len(rec["periods"]) == 12 and "recovery" in rec
+    cus = client.post("/api/v1/simulations/custom", json={"location": LOC, "scenario": {"t2m_delta": 2, "pet_factor": 0.8}}).json()
+    assert cus["reliability_level"] == "experimental" and any(w["code"] == "inconsistent" for w in cus["warnings"])
+    assert client.post("/api/v1/simulations/temperature", json={"location": LOC, "delta": 5}).status_code == 422
+    assert client.post("/api/v1/simulations/drought", json={"location": LOC, "months": 6, "horizon": 3}).status_code == 422
+    assert client.get("/api/v1/simulations/sim_unknown/results").status_code == 400
+
+
+def test_explanations_add_up_to_the_prediction():
+    p = client.post("/api/v1/predictions", json={"model": "sm_root_monthly", "features": sm_features()}).json()
+    ex = client.get(f"/api/v1/explanations/{p['prediction_id']}").json()
+    total = ex["base_value"] + sum(c["contribution"] for c in ex["contributions"])
+    assert abs(total - p["prediction"]) < 1e-4 and abs(ex["prediction"] - p["prediction"]) < 1e-4
+    assert client.get("/api/v1/explanations/pred_unknown").status_code == 400
+
+
+def test_territorial_analysis_and_alerts():
+    d = client.get("/api/v1/analysis/districts").json()
+    assert len(d["districts"]) >= 30 and all(r["cells"] >= 1 for r in d["districts"])
+    w = client.get("/api/v1/analysis/water-retention", params={"province": "Lambayeque"}).json()
+    b = client.get("/api/v1/projections").json()
+    ref = sorted([r for r in b["district_summary"] if r["scenario"] == "base"], key=lambda r: -r["dry_season_soil_water"])
+    names = [r["district"] for r in w["districts"]]
+    assert names == [r["district"] for r in ref if r["district"] in names]       # same order as the web's ranking
+    assert client.get("/api/v1/analysis/vegetation", params={"scenario": "el_nino"}).status_code == 200
+    r = client.get("/api/v1/analysis/drought-risk", params={"lead": 2}).json()
+    assert all(0 <= x["value"] <= 1 for x in r["districts"])
+    a = client.get("/api/v1/analysis/anomalies", params={"variable": "ndvi", "period": "2024Q1"}).json()
+    assert a["reliability"] == "experimental" and a["districts"]
+    assert client.get("/api/v1/analysis/hotspots").json()["reliability"] == "experimental"
+    al = client.get("/api/v1/alerts/drought", params={"month": "2023-03"}).json()
+    assert al["cells_checked"] > 1000 and 0 <= al["share_flagged"] <= 1
+    assert client.get("/api/v1/alerts/vegetation", params={"quarter": "2023Q2"}).status_code == 200
+    assert client.get("/api/v1/alerts/drought", params={"month": "1998-01"}).status_code == 400
+
+
+def test_monitoring():
+    assert client.get("/api/v1/models/health").json()["model_loaded"] is True
+    m = client.get("/api/v1/models/metrics").json()
+    assert "validation_2018_2022" in m["sm_root_monthly"]["metrics_by_period"]
+    v = client.get("/api/v1/models/validation").json()
+    assert v["sm_root_monthly"]["validation_2018_2022_criteria"][0]["criterion"] == "A"
+
+
+def test_cells_outside_lambayeque_are_served_with_their_own_validation():
+    from app.services import state
+    c = state.get().cube.cells
+    cid = c[(c.province == "outside")].cell_id.iloc[100]
+    r = client.post("/api/v1/predictions/soil-water", json={"location": {"cell_id": cid}, "period": "2020-03"}).json()
+    assert r["location"]["inside_lambayeque"] is False and any(w["code"] == "outside_lambayeque" for w in r["warning_details"])

@@ -183,29 +183,37 @@ def scenario_rain_factor(w: dict, factor: float, months: list[int] | None = None
 
 
 def scenario_adjust(w: dict, rain_factor: float = 1.0, t2m_delta: float = 0.0, rh_delta: float = 0.0,
-                    months: list[int] | None = None) -> dict:
+                    months: list[int] | None = None, pet_factor: float = 1.0, ws_delta: float = 0.0,
+                    allsky_delta: float = 0.0) -> dict:
     """The simulator's "buttons": rain × factor, temperature + delta (°C), relative humidity + delta (points, kept in
-    0-100), in the given lead months (all if None). Only the named input changes: potential evaporation and surface
-    soil water stay as in the analog year, so a temperature change shows only the model's direct temperature response
-    (no physics is derived). Check `out_of_training_range` before showing a result."""
+    0-100), potential evaporation × factor, wind + delta (m/s, ≥ 0), sunlight + delta (MJ/m²/day, ≥ 0), in the given
+    lead months (all if None). Only the named inputs change: nothing is derived from another input (no physics), so a
+    temperature change shows only the model's direct temperature response. Check `out_of_training_range` first."""
     out = {k: (v.copy() if isinstance(v, np.ndarray) else v) for k, v in w.items()}
     idx = range(out["rain_mm"].shape[2]) if months is None else [k - 1 for k in months]
     for k in idx:
         out["rain_mm"][:, :, k] *= rain_factor
         out["t2m_c"][:, :, k] += t2m_delta
         out["power_rh2m_pct"][:, :, k] = np.clip(out["power_rh2m_pct"][:, :, k] + rh_delta, 0, 100)
+        out["pet_mm"][:, :, k] *= pet_factor
+        out["power_ws2m_ms"][:, :, k] = np.maximum(out["power_ws2m_ms"][:, :, k] + ws_delta, 0)
+        out["power_allsky_mj_m2_day"][:, :, k] = np.maximum(out["power_allsky_mj_m2_day"][:, :, k] + allsky_delta, 0)
     return out
 
 
-def out_of_training_range(w: dict, bounds: dict) -> dict:
-    """Share of member-cell-months whose changed inputs fall outside the 1998-2017 training range (min-max): the model
-    has never seen such weather, so its answer there is an extrapolation."""
-    names = {"rain_mm": "rain_mm", "t2m_c": "t2m_c", "power_rh2m_pct": "power_rh2m_pct", "pet_mm": "pet_mm"}
+WEATHER_FEATURES = {"rain_mm": "rain_mm", "t2m_c": "t2m_c", "pet_mm": "pet_mm", "power_rh2m_pct": "power_rh2m_pct",
+                    "power_ws2m_ms": "power_ws2m_ms", "power_allsky_mj_m2_day": "power_allsky_mj_m2_day"}
+
+
+def out_of_training_range(w: dict, bounds: dict, soft: bool = False) -> dict:
+    """Share of member-cell-months whose weather inputs fall outside the 1998-2017 training range: min-max (the model
+    has never seen such weather: an extrapolation) or, with soft=True, p01-p99 (unusual)."""
+    lo, hi = ("p01", "p99") if soft else ("min", "max")
     out = {}
-    for k, f in names.items():
-        if f in bounds:
+    for k, f in WEATHER_FEATURES.items():
+        if f in bounds and k in w:
             v = w[k]
-            out[k] = float(((v < bounds[f]["min"]) | (v > bounds[f]["max"])).mean())
+            out[k] = float(((v < bounds[f][lo]) | (v > bounds[f][hi])).mean())
     return out
 
 

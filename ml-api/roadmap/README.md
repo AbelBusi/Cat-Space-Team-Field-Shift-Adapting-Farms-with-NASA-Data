@@ -15,6 +15,30 @@
 | 🟣 **Propuesto (Fase 2)** | Requiere una validación nueva (hindcast, prueba de rangos o validación geográfica) antes de mostrarse como confiable |
 | 🔴 **Propuesto (Fase 3)** | Requiere datos o modelos nuevos |
 
+
+## Estado de implementación (actualizado el 15 de noviembre de 2026)
+
+Fases 1 y 2 implementadas en `ml-api/app/` (servicios en `app/services/`, rutas en `app/routers/`, contratos en
+`app/schemas/`). 13 pruebas de integración con los modelos y datos reales (`ml-api/tests/test_api.py`). Las pruebas
+de la Fase 2 se corrieron con reglas escritas antes (`docs/ML_API_VALIDATION.md`, notebook 07).
+
+| Grupo | Endpoints | Nivel que devuelven |
+|---|---|---|
+| Predicciones | `POST /predictions`, `/predictions/soil-water`, `/ndvi`, `/complete`, `/batch`; `GET /predictions/{cell_id}/history` | `ok` / `warning` / `out_of_domain` según las entradas |
+| Confianza por lugar | `GET /predictions/{cell_id}/confidence` | `warning` (S10 **pasó**: ρ = 0.65) |
+| Simulaciones | `POST /simulations/climate`, `/custom`, `/drought`, `/el-nino`, `/temperature`, `/rainfall`, `/recovery`; `GET /simulations/{id}/results` | un solo motor; `experimental` si cambian temperatura (S1 falló), sequía (S2 falló), lluvia (S3 falló), recuperación (S4 falló) o evaporación/viento/radiación (sin validación); NDVI incluido cuando el inicio es fin de trimestre |
+| Análisis territorial | `GET /analysis/districts`, `/water-retention`, `/vegetation`, `/drought-risk`, `/anomalies`, `/hotspots` | rankings `warning`; riesgo de sequía `experimental` (S5 falló: sobreconfiado); anomalías de NDVI y focos `experimental` (S7 no comprobable) |
+| Alertas | `GET /alerts/drought`, `/alerts/vegetation` | `warning` (S6 **pasó**: 4.7 % y 3.7 % marcadas, 5 % esperado) |
+| Explicabilidad | `GET /explanations/{prediction_id}`, `POST /explanations` | TreeSHAP exacto; la suma da la predicción |
+| Monitoreo | `GET /health`, `/models/health`, `/model/info`, `/models/metrics`, `/models/validation` | — |
+| Celdas fuera de Lambayeque | todos los endpoints por celda | servidas con aviso (S8 **pasó**) |
+| Sprout | `POST /ask` | ahora recibe también el resultado completo de una simulación (`simulation_id`) o la explicación de una predicción (`prediction_id`) |
+
+**Fase 3 — no implementada:** necesita datos que no tenemos (precipitación ERA5-Land, superficies regadas, rendimientos,
+calendarios, precios, 2026 completo). Lo que las pruebas de la Fase 2 enseñan es concreto: el modelo actual responde poco
+y a veces al revés cuando se cambia una sola entrada, porque depende del agua del suelo del mes anterior; los
+simuladores necesitan un modelo v3 que reaccione a la lluvia y la temperatura (sección 6.4).
+
 ---
 
 ## Índice

@@ -1,4 +1,5 @@
-"""Write ml-api/data/cube.npz: the monthly inputs 1998-2025 of every Lambayeque 2 km cell, built with the same fs_ml
+"""Write ml-api/data/cube.npz: the monthly inputs 1998-2025 of every 2 km cell of the grid (Lambayeque, and the cells
+outside it, validated separately in check S8 of docs/ML_API_VALIDATION.md), built with the same fs_ml
 code as every phase. The ML API runs the tested models on it (projections and what-if scenarios) without the raw CSVs.
 
     FIELDSHIFT_RAW_DIR=... ml/.venv/bin/python ml/scripts/export_api_cube.py
@@ -35,8 +36,7 @@ def build(load_years, suffix, keep):
 parts = [build((1998, 2017), "", (1998, 2017)), build((2017, 2022), "_2018_2022", (2018, 2022)), build((2022, 2025), "_2023_2025", (2023, 2025))]
 MP = pd.concat([p[0] for p in parts], ignore_index=True)
 QP = pd.concat([p[1] for p in parts], ignore_index=True)
-inside = set(MP.loc[MP.province != "outside", "cell_id"])
-cube = P.build_cube(MP[MP.cell_id.isin(inside)], QP[QP.cell_id.isin(inside)])
+cube = P.build_cube(MP, QP)
 c = cube.cells
 pts = c[["lon", "lat"]].to_numpy()
 district = np.full(len(c), "", dtype=object)

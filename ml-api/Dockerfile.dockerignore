@@ -8,4 +8,7 @@
 !ml/artifacts/final_model
 !ml/artifacts/projections/projection_card.json
 !ml/artifacts/projections/hindcast_skill_by_lead.csv
+!ml/artifacts/api_validation/checks.json
+!ml/artifacts/phase2_validation
+!ml/artifacts/phase3_testing
 **/__pycache__

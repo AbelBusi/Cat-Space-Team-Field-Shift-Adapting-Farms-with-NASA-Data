@@ -26,18 +26,31 @@ def persona() -> str:
 
 
 def enrich(context: dict) -> dict:
-    """Add the tested model's projection for the user's cell (soil water, normal year), when there is one."""
-    from . import service
+    """Add the tested model's projections for the user's cell, and the full result of a simulation or the explanation
+    of a prediction when the web sends their ids, so Sprout interprets real numbers."""
+    from .services import projections, state as st
     ctx = dict(context or {})
     lat, lon = ctx.get("lat"), ctx.get("lon")
-    if service.STATE is not None and isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
+    if st.STATE is not None and ctx.get("simulation_id"):
+        from .services.scenario_engine import RESULTS
+        sim = RESULTS.get(ctx["simulation_id"])
+        if sim:
+            ctx["simulation_result"] = {k: sim[k] for k in ("kind", "modified_inputs", "periods", "baseline", "scenario", "comparison", "ndvi",
+                                                             "reliability_level", "warnings", "interpretation") if k in sim}
+    if st.STATE is not None and ctx.get("prediction_id"):
+        from .services import explanations
+        try:
+            ctx["prediction_explanation"] = explanations.by_id(ctx["prediction_id"])
+        except LookupError:
+            pass
+    if st.STATE is not None and isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
         from .schemas import Location
         try:
             proj = {}
             for scen, note in (("base", "a normal year (the weather of each past year 1998-2025)"),
                                ("el_nino", "only the coastal El Nino years 1998, 2016, 2017, 2023, 2024 (5 years, less sure)"),
                                ("drought_feb_mar", "a normal year with no rain in Feb and Mar")):
-                p = service.projection_at(Location(lat=lat, lon=lon), "soil_water", scen)
+                p = projections.projection_at(Location(lat=lat, lon=lon), "soil_water", scen)
                 proj[scen] = {"what": note, "months": p["periods"][:6], "median": p["median"][:6],
                               **({"low_90": p["low_90"][:6], "high_90": p["high_90"][:6]} if p["low_90"] else {})}
             proj["usual_1998_2025"] = p["usual"][:6]

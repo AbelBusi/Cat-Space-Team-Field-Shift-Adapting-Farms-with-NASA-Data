@@ -9,6 +9,9 @@ COPY ml/fs_ml ml/fs_ml
 COPY ml/artifacts/final_model ml/artifacts/final_model
 COPY ml/artifacts/projections/projection_card.json ml/artifacts/projections/hindcast_skill_by_lead.csv ml/artifacts/projections/
 COPY docs/SPROUT_PERSONA.md docs/SPROUT_PERSONA.md
+COPY ml/artifacts/api_validation/checks.json ml/artifacts/api_validation/checks.json
+COPY ml/artifacts/phase2_validation ml/artifacts/phase2_validation
+COPY ml/artifacts/phase3_testing ml/artifacts/phase3_testing
 COPY ml-api/app ml-api/app
 COPY ml-api/data ml-api/data
 WORKDIR /srv/ml-api

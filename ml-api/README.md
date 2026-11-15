@@ -27,8 +27,9 @@ imputation were used in training (XGBoost handles missing values natively), so n
 ```
 web (Vue 3, Leaflet) ──HTTP/JSON──► ml-api (FastAPI)
   web/src/lib/mlApi.js                app/main.py      routes, CORS, gzip, error handlers
-  web/src/lib/projections.js          app/schemas.py   Pydantic request/response models (extra fields rejected)
-  web/src/components/SimTuner.vue     app/service.py   loads models once, predictions, projections, simulation
+  web/src/lib/projections.js          app/schemas/     Pydantic contracts (requests reject unknown fields)
+  web/src/components/SimTuner.vue     app/services/    state (load once), prediction, projections, scenario_engine,
+                                                       analysis, alerts, explanations, monitoring · app/routers/ HTTP routes
                                       app/config.py    settings from environment variables
                                           │
                                           ├── ml/fs_ml/            same feature and projection code as the notebooks
@@ -42,13 +43,13 @@ web (Vue 3, Leaflet) ──HTTP/JSON──► ml-api (FastAPI)
   A failure is logged with its cause and reported by `/health`; inference endpoints then answer 503.
 - At startup the service also runs the projections of every Lambayeque cell (2.4 s): 12 months from December 2025 for a
   normal year, El Niño years and two dry months. A test checks they equal `ml/notebooks/06_projections.ipynb` cell by cell.
-- `data/cube.npz` (6 MB) is built from the team's raw data with `ml/scripts/export_api_cube.py`, so the API does not
+- `data/cube.npz` (11 MB, all 3,149 cells) is built from the team's raw data with `ml/scripts/export_api_cube.py`, so the API does not
   need the raw CSVs.
 
 ```
 ml-api/
-├── app/            main.py · config.py · schemas.py · service.py
-├── data/cube.npz   inputs per cell and month (rebuild: ml/scripts/export_api_cube.py)
+├── app/            main.py · config.py · ask.py · schemas/ · services/ · routers/
+├── data/cube.npz   inputs per cell and month, all 3,149 grid cells (rebuild: ml/scripts/export_api_cube.py)
 ├── tests/test_api.py
 ├── requirements.txt · .env.example · Dockerfile · Dockerfile.dockerignore
 ```
@@ -101,13 +102,22 @@ Docker was not running there. Run it once before relying on it.)
 
 | Method | Path | What |
 |---|---|---|
-| GET | `/health` | API status, model loaded and available, service version, load error if any |
-| GET | `/model/info` | For each model: algorithm, version, SHA-256, target with unit and meaning, features in order, hyperparameters, metrics with 95 % CIs, interval and its tested coverage, known limitations. Training date: `null` (not stored in the artifacts, said explicitly) |
-| POST | `/predictions` | One prediction from a full feature set |
-| GET | `/projections` | The whole grid (used by the web): 12 months of soil water and 4 quarters of NDVI per cell and scenario, integers × 1000 |
-| GET | `/projections/cell?lat=&lon=&variable=&scenario=` | One cell's series in real units |
-| POST | `/simulations/climate` | **The simulator**: a what-if for one cell compared with a normal year |
-| POST | `/ask` | Sprout's open questions, answered by a chat model with Sprout's persona and the numbers on screen |
+| GET | `/health` · `/models/health` | API status, model loaded and available, model hashes, load error if any |
+| GET | `/model/info` · `/models/metrics` · `/models/validation` | Everything known about the models; historical metrics per period; acceptance criteria, projection skill and Phase 2 checks |
+| POST | `/predictions` | One prediction from a full feature set (either model), with `prediction_id` and `reliability` |
+| POST | `/predictions/soil-water` · `/predictions/ndvi` | The same, or for a cell and month/quarter of the data cube (features built as in training) |
+| POST | `/predictions/complete` · `/predictions/batch` | 3 months of soil water + the quarter's NDVI, chained · up to 1,000 rows |
+| GET | `/predictions/{cell_id}/history` · `/confidence` | Observed vs predicted 1998–2025 with the period of each row · historical error of the place (check S10 passed) |
+| GET | `/projections` · `/projections/cell` | The whole grid for the web (integers × 1000) · one cell in real units |
+| POST | `/simulations/climate` · `/custom` · `/drought` · `/el-nino` · `/temperature` · `/rainfall` · `/recovery` | **One scenario engine**; soil water monthly and NDVI quarterly; `reliability_level` and `warnings` in every answer |
+| GET | `/simulations/{simulation_id}/results` | A recent simulation by id (in memory) |
+| GET | `/analysis/districts` · `/water-retention` · `/vegetation` · `/drought-risk` · `/anomalies` · `/hotspots` | Territorial analysis by district (median of 2 km cells, OSM boundaries) |
+| GET | `/alerts/drought` · `/alerts/vegetation` | Cells below the band expected one step earlier (check S6 passed) |
+| GET | `/explanations/{prediction_id}` · POST `/explanations` | TreeSHAP contributions (base + contributions = prediction) |
+| POST | `/ask` | Sprout's open questions with the persona, the numbers on screen and, if sent, a simulation or prediction id |
+
+Status of every feature and the results of its validation: [`roadmap/README.md`](roadmap/README.md) (Spanish) and
+`docs/ML_API_VALIDATION.md`. Features whose check failed answer with `reliability_level: "experimental"`.
 
 ### POST /predictions
 

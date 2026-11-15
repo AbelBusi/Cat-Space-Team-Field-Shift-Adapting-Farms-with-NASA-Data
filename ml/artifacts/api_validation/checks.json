@@ -1,0 +1,208 @@
+{
+ "rules": "docs/ML_API_VALIDATION.md",
+ "model_sha256": {
+  "sm_root_monthly": "a4bbaf1397c43e2c46716aae323fe5522159449e4a86f28cb341304732a6701e",
+  "ndvi_quarterly": "effe57ea2506d5097fbecc4314c24a228e663285ec2b686db9ee87a0bb05b5e1"
+ },
+ "checks": {
+  "S1": {
+   "feature": "temperature what-if",
+   "raise_share_plus2": 0.09729984301412872,
+   "fall_share_minus2": 0.005693354264782837,
+   "strict_raise_share_plus2": 0.5475771847200419,
+   "mean_effect_plus2": 0.002416709259362947,
+   "mean_effect_minus2": 0.0012723015238833577,
+   "pass": false
+  },
+  "S2": {
+   "feature": "droughts of 1-6 months",
+   "table": [
+    {
+     "months": 1,
+     "mean_change_end": -0.0024166357716470413,
+     "mean_change_lead6": -0.001386340211380969,
+     "rise_share_end": 0.0,
+     "strict_rise_share_end": 0.3420617477760335
+    },
+    {
+     "months": 2,
+     "mean_change_end": -0.011699694460272508,
+     "mean_change_lead6": -0.002937989369802828,
+     "rise_share_end": 4.186289900575615e-05,
+     "strict_rise_share_end": 0.3236211407639979
+    },
+    {
+     "months": 3,
+     "mean_change_end": -0.01680335652829776,
+     "mean_change_lead6": -0.005547007833149875,
+     "rise_share_end": 0.001151229722658294,
+     "strict_rise_share_end": 0.32924123495552066
+    },
+    {
+     "months": 4,
+     "mean_change_end": -0.019895702319259672,
+     "mean_change_lead6": -0.010495054305149491,
+     "rise_share_end": 0.005484039769754055,
+     "strict_rise_share_end": 0.3175196232339089
+    },
+    {
+     "months": 5,
+     "mean_change_end": -0.021578630584383248,
+     "mean_change_lead6": -0.021716561257577986,
+     "rise_share_end": 0.013762428048142334,
+     "strict_rise_share_end": 0.30807953950811096
+    },
+    {
+     "months": 6,
+     "mean_change_end": -0.02339368640581143,
+     "mean_change_lead6": -0.02339368640581143,
+     "rise_share_end": 0.024793301936159078,
+     "strict_rise_share_end": 0.295447409733124
+    }
+   ],
+   "monotone_lead6": true,
+   "pass": false
+  },
+  "S3": {
+   "feature": "rain-only what-if",
+   "half_raise_share": 0.0014756671899529043,
+   "double_lower_share": 0.0046363160648874935,
+   "mean_effect_half": -0.0006221241054423875,
+   "mean_effect_double": 0.0005867312083236214,
+   "pass": false
+  },
+  "S4": {
+   "feature": "recovery after a 3-month drought",
+   "share_forgetting": 0.830922071940036,
+   "mean_change_lead3": -0.01680335652829776,
+   "mean_change_lead12": -0.0014931108434511565,
+   "pass": false
+  },
+  "S5": {
+   "feature": "drought risk (share of analogs below the cell's 20th percentile)",
+   "calibration": [
+    {
+     "bin": "0.0-0.2",
+     "cases": 199561,
+     "mean_predicted": 0.025178411349754817,
+     "observed": 0.05819273304904265
+    },
+    {
+     "bin": "0.2-0.4",
+     "cases": 46238,
+     "mean_predicted": 0.265795904940343,
+     "observed": 0.3035598425537437
+    },
+    {
+     "bin": "0.4-0.6",
+     "cases": 24097,
+     "mean_predicted": 0.4722784884774912,
+     "observed": 0.3183798813130265
+    },
+    {
+     "bin": "0.6-0.8",
+     "cases": 18508,
+     "mean_predicted": 0.6813602652622479,
+     "observed": 0.34574238167279014
+    },
+    {
+     "bin": "0.8-1.0",
+     "cases": 56746,
+     "mean_predicted": 0.9507739938080496,
+     "observed": 0.6545659605963416
+    }
+   ],
+   "brier": 0.14305071326730562,
+   "brier_ref_0_2": 0.1736184267709692,
+   "brier_skill": 0.17606261081945718,
+   "max_gap": 0.33561788358945777,
+   "pass": false
+  },
+  "S6": {
+   "feature": "alerts below the lead-1 band",
+   "flag_share_soil_water": 0.04722222222222222,
+   "flag_share_ndvi": 0.0369498705577783,
+   "pass": true
+  },
+  "S7": {
+   "feature": "NDVI greener than expected",
+   "pass": false,
+   "status": "not testable: no independent irrigated-area data",
+   "cells_with_3plus_of_8_quarters_above_error_2024_2025": 591,
+   "share_of_cells": 0.22862669245647968,
+   "by_province": {
+    "outside": 241,
+    "Lambayeque": 188,
+    "Chiclayo": 100,
+    "Ferre\u00f1afe": 62
+   }
+  },
+  "S8": {
+   "feature": "cells outside Lambayeque",
+   "sm_validation": {
+    "rows": 70560,
+    "best_rule": "climatology",
+    "skill": 0.5370786391104788,
+    "skill_ci": [
+     0.49795199047711186,
+     0.5818055658117779
+    ],
+    "rmse": 0.01393421735530366,
+    "bias": -0.0009169930013327184,
+    "worst_year_skill": 0.4782957961379364,
+    "pass": true
+   },
+   "ndvi_validation": {
+    "rows": 16040,
+    "best_rule": "climatology",
+    "skill": 0.12297403615395097,
+    "skill_ci": [
+     0.050511430071704444,
+     0.17991043854211675
+    ],
+    "rmse": 0.10606929857218032,
+    "bias": 0.0013325302056998451,
+    "worst_year_skill": 0.035175009482162456,
+    "pass": true
+   },
+   "sm_testing_report": {
+    "rows": 42336,
+    "best_rule": "climatology",
+    "skill": 0.41973825210052307,
+    "skill_ci": [
+     0.35666951213127884,
+     0.48286153322139336
+    ],
+    "rmse": 0.018033394070586524,
+    "bias": -0.0032121327731841694,
+    "worst_year_skill": 0.3259556387963469,
+    "pass": true
+   },
+   "ndvi_testing_report": {
+    "rows": 9433,
+    "best_rule": "climatology",
+    "skill": 0.1702723743833099,
+    "skill_ci": [
+     0.07339233427054913,
+     0.25214422164664396
+    ],
+    "rmse": 0.11774734317290059,
+    "bias": -0.027037134523456685,
+    "worst_year_skill": 0.11623184327257474,
+    "pass": true
+   },
+   "pass": true
+  },
+  "S10": {
+   "feature": "per-cell confidence",
+   "pixel_groups": 226,
+   "spearman_val_vs_test_rmse": 0.6539518927137344,
+   "pass": true
+  },
+  "S9": {
+   "feature": "adaptive ranges (CQR + monthly recalibration)",
+   "pass": false,
+   "status": "deferred: needs complete 2026 data"
+  }
+ }
+}
