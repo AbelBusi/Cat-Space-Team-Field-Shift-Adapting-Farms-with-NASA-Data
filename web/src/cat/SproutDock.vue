@@ -7,6 +7,7 @@ import { state, valueAt, placeLabel, chosen } from '../store.js'
 import { LAYER_KEYS } from '../content.js'
 import { blip, meow, meowLength, unlock } from '../lib/sound.js'
 import { t, lang } from '../i18n.js'
+import VoiceButton from '../voice/VoiceButton.vue'
 
 // Sprout's translator panel: typed lines, answers to pick, and a box for open questions.
 // A line is an English key, or a function for lines with names and numbers, so it re-translates when the language changes.
@@ -56,8 +57,14 @@ watch(() => [atEnd.value, guide.on, guide.choices, guide.asking, guide.open], ()
   if (guide.open && atEnd.value && !guide.on && !guide.choices && !guide.asking) restTimer = setTimeout(close, 7000)
 })
 
+const voiceContext = () => ({
+  lat: state.point?.lat, lon: state.point?.lon, district: state.area?.name, month: state.month + 1, topic: guide.screen,
+  readings: Object.fromEntries(LAYER_KEYS.map(k => [k, valueAt(k)])),
+})
+
 const question = ref(''), box = ref(null)
 watch(() => guide.asking, on => on && nextTick(() => box.value?.focus()))
+
 function send() {
   const q = question.value.trim()
   if (!q) return
@@ -91,6 +98,7 @@ onBeforeUnmount(() => { clearTimeout(timer); clearTimeout(restTimer); removeEven
           <span><span class="font-pixel text-[13px]">Sprout</span> · {{ t('translator') }}</span>
           <span class="flex gap-1 text-muted [&_button]:uppercase">
             <button type="button" class="px-1.5 py-1 hover:text-ink" data-tour="ask" :class="{ 'text-teal': guide.asking }" :aria-pressed="guide.asking" :aria-label="t('Ask Sprout anything')" :title="t('Ask Sprout anything')" @click="openAsk"><PixelIcon name="ai" color="currentColor" :size="1.25" /></button>
+            <VoiceButton :context="voiceContext" @reply="r => console.log('voz:', r)" @error="m => console.warn('voz:', m)" />
             <button type="button" class="px-1.5 py-1 hover:text-ink" data-tour="sound" :aria-pressed="!guide.muted" :aria-label="t(guide.muted ? 'Turn voice sound on' : 'Turn voice sound off')" :title="t(guide.muted ? 'Turn voice sound on' : 'Turn voice sound off')" @click="unlock(); guide.muted = !guide.muted"><PixelIcon :name="guide.muted ? 'speaker_off' : 'speaker'" color="currentColor" :size="1.25" /></button>
             <button type="button" class="px-1.5 py-1 hover:text-ink" data-tour="close" :aria-label="t('Close Sprout')" :title="t('Close Sprout')" @click="close"><PixelIcon name="close" color="currentColor" :size="1.25" /></button>
           </span>
