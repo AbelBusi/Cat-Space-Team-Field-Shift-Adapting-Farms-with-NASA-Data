@@ -8,7 +8,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import CatSprite from '../cat/CatSprite.vue'
 import { PALETTE, UFO, UFO_SIZE } from '../cat/sprites.js'
 import { state } from '../store.js'
-import { guide, line, tell, openAsk } from '../guide.js'
+import { guide, line, tell, openAsk, tutorial } from '../guide.js'
 import { SCRIPTS } from '../content.js'
 import { meow, unlock } from '../lib/sound.js'
 import PixelIcon from './PixelIcon.vue'
@@ -45,6 +45,7 @@ function greet() {
     { label: 'Yes, please guide me', run: () => begin(true) },
     { label: "No thanks, I'll explore on my own", run: () => begin(false) },
     { label: 'I want to ask something else', run: openAsk },
+    { label: 'Show me how everything works (tutorial)', run: tutorial },
   ] })
 }
 function wave(ms = 1600) {
@@ -74,13 +75,13 @@ function pet() {
     <h1 class="mt-3 text-[30px] text-sky-ink md:text-[40px]">{{ t('Your field is already talking.') }}<br>{{ t("Let's learn to listen.") }}</h1>
     <p class="mt-3 max-w-[620px] text-sky-muted [@media(max-height:720px)]:hidden">{{ t('NASA satellites measure heat, rain, soil wetness and plant greenness for every field on Earth. Sprout translates them so you can choose what to plant next.') }}</p>
     <div class="mt-5 flex flex-wrap items-center justify-center gap-2">
-      <button type="button" class="btn btn-fire !min-h-11 !px-6" @click="start('today')">{{ t('Explore your field') }}</button>
-      <button type="button" class="btn !min-h-11 !px-5" :title="t('Projections and what-if scenarios from our models trained on NASA data')" @click="start('ahead')">
+      <button type="button" class="btn btn-fire !min-h-11 !px-6" data-tour="explore" @click="start('today')">{{ t('Explore your field') }}</button>
+      <button type="button" class="btn !min-h-11 !px-5" data-tour="ahead" :title="t('Projections and what-if scenarios from our models trained on NASA data')" @click="start('ahead')">
         <PixelIcon name="calendar" :size="1" />{{ t("See what's ahead") }}
       </button>
     </div>
     <!-- For judges and researchers: the code and the paper on the models. -->
-    <div class="mt-2 flex flex-wrap items-center justify-center gap-2">
+    <div class="mt-2 flex flex-wrap items-center justify-center gap-2" data-tour="links">
       <a class="btn !min-h-8 text-xs" :href="REPO" target="_blank" rel="noopener">[ {{ t('View repository') }} ]</a>
       <a class="btn !min-h-8 text-xs" :href="PAPER" target="_blank" rel="noopener">[ {{ t('Read the paper') }} ]</a>
     </div>
@@ -91,7 +92,7 @@ function pet() {
         <rect v-for="[x, y, w, c] in UFO" :key="`${x},${y}`" :x="x" :y="y" :width="w" height="1" :fill="PALETTE[c]" />
       </svg>
       <div v-if="phase === 'beam' || phase === 'land'" class="beam absolute bottom-0 left-1/2 h-[300px] w-[150px]" aria-hidden="true" />
-      <button type="button" class="sprout relative block w-full transition-transform active:scale-95" :aria-label="t('Pet Sprout')" @click="pet">
+      <button type="button" data-tour="sprout" class="sprout relative block w-full transition-transform active:scale-95" :aria-label="t('Pet Sprout')" @click="pet">
         <CatSprite :mood="mood" :pose="waving ? 'wave' : 'sit'" :talking="guide.talking && phase === 'here'" :size="150" full class="mx-auto max-sm:!w-[120px]" />
       </button>
     </div>

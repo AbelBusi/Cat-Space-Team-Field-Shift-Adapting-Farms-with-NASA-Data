@@ -4,6 +4,7 @@
 import { reactive, computed } from 'vue'
 import { SCRIPTS } from './content.js'
 import { ask } from './lib/ask.js'
+import { tour, startTour, goStep, endTour } from './lib/tour.js'
 
 const saved = (() => { try { return localStorage.getItem('fs-guide') } catch { return null } })()
 export const guide = reactive({
@@ -39,7 +40,7 @@ export function tell(lines, { choices = null, level = 'info' } = {}) {
 export const say = (text, mood = 'neutral', more = [], opts) => tell([[text, mood], ...more], opts)
 
 export function next() { if (hasNext.value) guide.i++ }
-export function close() { guide.open = false; guide.asking = false }
+export function close() { guide.open = false; guide.asking = false; endTour() }
 
 // A screen came into view: explain it once if the guide is on.
 export function enter(id) {
@@ -64,9 +65,24 @@ export function setGuide(on) {
   }
 }
 
+// The tutorial: the screen dims, one part at a time stays lit, and Sprout explains it (lib/tour.js, Tour.vue).
+export function tutorial() {
+  if (!startTour()) return show([["There's nothing to point at on this screen yet.", 'shy']])
+  tourStep()
+}
+function tourStep() {
+  const [, text, mood] = tour.steps[tour.i], last = tour.i === tour.steps.length - 1
+  show([[text, mood]], [
+    { label: last ? 'Finish the tutorial' : 'Next', run: () => { if (last) close(); else { goStep(tour.i + 1); tourStep() } } },
+    ...(tour.i ? [{ label: 'Back', run: () => { goStep(tour.i - 1); tourStep() } }] : []),
+    ...(last ? [] : [{ label: 'End the tutorial', run: close }]),
+  ])
+}
+
 function menu(first) {
   show([[first, 'happy']], [
     { label: 'Explain this screen', run: explain },
+    { label: 'Show me how this screen works', run: tutorial },
     guide.on ? { label: "Stop explaining, I'll call you", run: () => setGuide(false) } : { label: 'Guide me from now on', run: () => setGuide(true) },
     { label: 'I want to ask something else', run: openAsk },
     { label: 'Never mind', run: close },

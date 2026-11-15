@@ -31,7 +31,7 @@ function setTrack(track) {
         <FieldShiftLogo :size="1.5" /><span :class="{ 'max-sm:hidden': state.stage !== 'intro' }">Field Shift</span>
       </button>
 
-      <nav v-if="state.stage !== 'intro'" class="flex min-w-0 items-center gap-1 font-mono text-xs uppercase tracking-wider text-muted" :aria-label="t('Where you are')">
+      <nav v-if="state.stage !== 'intro'" data-tour="where" class="flex min-w-0 items-center gap-1 font-mono text-xs uppercase tracking-wider text-muted" :aria-label="t('Where you are')">
         <span aria-hidden="true">/</span>
         <button type="button" class="truncate hover:text-teal" @click="pick()">Lambayeque</button>
         <template v-if="state.stage === 'explore' && state.area?.kind === 'district'">
@@ -49,22 +49,22 @@ function setTrack(track) {
       </nav>
 
       <div class="ml-auto flex items-center gap-2">
-        <div class="seg" role="group" :aria-label="t('Language')">
+        <div class="seg" data-tour="lang" role="group" :aria-label="t('Language')">
           <button v-for="[code, label, name] in LANGS" :key="code" type="button" :aria-pressed="lang === code" :title="name" @click="setLang(code)">{{ label }}</button>
         </div>
         <button type="button" class="btn md:hidden" :aria-expanded="menu" :aria-label="t('Settings')" @click="menu = !menu">≡</button>
         <div class="items-center gap-2 md:flex" :class="menu ? 'absolute right-2 top-12 z-50 flex flex-col items-stretch border border-line bg-panel p-2' : 'hidden'">
-          <div v-if="state.stage === 'explore'" class="seg" role="group" :aria-label="t('Today or ahead')">
+          <div v-if="state.stage === 'explore'" class="seg" data-tour="track" role="group" :aria-label="t('Today or ahead')">
             <button type="button" :aria-pressed="state.track === 'today'" :title="t('What the satellites see today')" @click="setTrack('today')">{{ t('Today') }}</button>
             <button type="button" :aria-pressed="state.track === 'ahead'" :title="t('Projections and what-if scenarios')" @click="setTrack('ahead')">{{ t('Ahead') }}</button>
           </div>
-          <div v-if="state.stage === 'explore'" class="seg" role="group" :aria-label="t('View mode')">
+          <div v-if="state.stage === 'explore'" class="seg" data-tour="mode" role="group" :aria-label="t('View mode')">
             <button type="button" :aria-pressed="state.mode === 'farmer'" @click="setMode('farmer')">{{ t('Farmer') }}</button>
             <button type="button" :aria-pressed="state.mode === 'pro'" @click="setMode('pro')">{{ t('Pro') }}</button>
           </div>
-          <button v-if="state.stage === 'explore' && state.area?.kind === 'district'" type="button" class="btn" :title="t('Open the whole department and tap anywhere')" @click="enterFree()">{{ t('Free mode') }}</button>
-          <button type="button" class="btn" :aria-pressed="guide.on" :title="t('Sprout explains each screen by itself')" @click="setGuide(!guide.on)">Sprout: {{ t(guide.on ? 'on' : 'off') }}</button>
-          <button v-if="state.stage === 'explore'" type="button" class="btn" :title="t('Print the report or save it as a PDF')" @click="print">PDF</button>
+          <button v-if="state.stage === 'explore' && state.area?.kind === 'district'" type="button" class="btn" data-tour="free" :title="t('Open the whole department and tap anywhere')" @click="enterFree()">{{ t('Free mode') }}</button>
+          <button type="button" class="btn" data-tour="guide" :aria-pressed="guide.on" :title="t('Sprout explains each screen by itself')" @click="setGuide(!guide.on)">Sprout: {{ t(guide.on ? 'on' : 'off') }}</button>
+          <button v-if="state.stage === 'explore'" type="button" class="btn" data-tour="pdf" :title="t('Print the report or save it as a PDF')" @click="print">PDF</button>
         </div>
       </div>
     </div>

@@ -7,7 +7,7 @@ import { formatArea } from '../lib/geo.js'
 </script>
 
 <template>
-  <div class="pointer-events-auto flex flex-wrap items-center justify-center gap-1">
+  <div data-tour="maptools" class="pointer-events-auto flex flex-wrap items-center justify-center gap-1">
     <template v-if="mapUi.drawing">
       <span class="border border-fire bg-panel/90 px-2 py-1.5 font-mono text-xs">{{ mapUi.corners < 3 ? t('Tap at least 3 corners (you have {n}).', { n: mapUi.corners }) : t('{n} corners. Press Finish when done.', { n: mapUi.corners }) }}</span>
       <button type="button" class="btn" :disabled="!mapUi.corners" @click="mapApi.undoCorner()">{{ t('Undo') }}</button>

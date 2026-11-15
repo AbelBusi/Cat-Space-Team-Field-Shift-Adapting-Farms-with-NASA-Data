@@ -123,7 +123,7 @@ function findMe() {
 <template>
   <section class="absolute inset-0 z-10 flex flex-col items-center gap-3 px-3 pb-40 pt-16 lg:flex-row lg:justify-center lg:gap-8 lg:px-16">
     <div class="relative min-h-0 w-full flex-1 lg:h-full lg:max-w-[720px]">
-      <svg ref="svg" class="region size-full" :viewBox="view.map(v => v.toFixed(1)).join(' ')" preserveAspectRatio="xMidYMid meet" role="group" :aria-label="t('Map of Lambayeque')">
+      <svg ref="svg" data-tour="picker-map" class="region size-full" :viewBox="view.map(v => v.toFixed(1)).join(' ')" preserveAspectRatio="xMidYMid meet" role="group" :aria-label="t('Map of Lambayeque')">
         <g v-for="(p, pi) in provinces" :key="p.name" :style="{ opacity: focus && focus !== p ? 0.12 : 1, transition: 'opacity .5s', pointerEvents: focus && focus !== p ? 'none' : 'auto' }">
           <path v-for="(d, di) in p.districts" :key="d.name" class="unit" :d="d.d" :fill="p.color" :stroke="focus === p ? 'var(--sky-bg)' : p.color"
                 :stroke-width="focus === p ? 1.2 : 0.4" :style="{ '--i': pi * 6 + di }"
@@ -147,7 +147,7 @@ function findMe() {
 
     <HudCard class="w-full shrink-0 lg:w-[340px]" :title="t(focus ? 'Which district?' : 'Where do you farm?')">
       <p class="text-muted">{{ t(focus ? 'Tap your district on the map or in this list.' : 'Tap your province on the map or in this list.') }}</p>
-      <div class="grid max-h-[26dvh] grid-cols-2 gap-1 overflow-y-auto lg:max-h-[38dvh]">
+      <div data-tour="province-list" class="grid max-h-[26dvh] grid-cols-2 gap-1 overflow-y-auto lg:max-h-[38dvh]">
         <template v-if="focus">
           <button v-for="d in focus.districts" :key="d.name" type="button" class="btn !justify-start !normal-case !tracking-normal" :aria-pressed="hover === d.name"
                   @mouseenter="hover = d.name" @mouseleave="hover = null" @focus="hover = d.name" @click="open(focus, d)">{{ d.name }}</button>
@@ -159,7 +159,7 @@ function findMe() {
           </button>
         </template>
       </div>
-      <form class="relative flex flex-col gap-1 border-t border-line pt-2" role="search" @submit.prevent="go(found[0])">
+      <form class="relative flex flex-col gap-1 border-t border-line pt-2" data-tour="search" role="search" @submit.prevent="go(found[0])">
         <label for="place-search" class="label">{{ t('Find a place') }}</label>
         <div class="flex items-center border border-line bg-bg/70 focus-within:border-teal">
           <svg class="ml-2 size-4 shrink-0 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></svg>
@@ -179,8 +179,8 @@ function findMe() {
       </form>
       <div class="flex flex-wrap gap-2 border-t border-line pt-2">
         <button v-if="focus" type="button" class="btn" @click="state.province = null">‹ Lambayeque</button>
-        <button type="button" class="btn btn-fire" :disabled="finding" @click="findMe">{{ t(finding ? 'Searching…' : 'Use my location') }}</button>
-        <button type="button" class="btn" :title="t('Open the whole department and tap anywhere')" @click="enterFree()">{{ t('Free mode') }}</button>
+        <button type="button" class="btn btn-fire" data-tour="locate" :disabled="finding" @click="findMe">{{ t(finding ? 'Searching…' : 'Use my location') }}</button>
+        <button type="button" class="btn" data-tour="free-picker" :title="t('Open the whole department and tap anywhere')" @click="enterFree()">{{ t('Free mode') }}</button>
       </div>
       <p class="font-mono text-[10px] text-muted">{{ ADMIN_SOURCE }}</p>
     </HudCard>

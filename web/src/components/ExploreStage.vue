@@ -47,7 +47,7 @@ watch(() => state.slide, () => enter(slide.value.id), { immediate: true })
     <Transition name="stage"><Field3D v-if="view3d" :key="state.parcel.areaM2" /></Transition>
 
     <div data-hud-top class="pointer-events-none absolute inset-x-0 top-14 z-20 mx-auto flex flex-col items-center gap-1.5 px-2 lg:max-w-[calc(100vw-2*(clamp(280px,27vw,380px)+64px))]">
-      <nav class="hud pointer-events-auto flex items-center gap-3 bg-panel/90 px-3 py-1" :aria-label="t('Topics')">
+      <nav data-tour="topics" class="hud pointer-events-auto flex items-center gap-3 bg-panel/90 px-3 py-1" :aria-label="t('Topics')">
         <button type="button" class="btn !min-h-8 !px-2 lg:hidden" :disabled="state.slide === 0" :aria-label="t('Previous topic')" @click="go(-1)">‹</button>
         <div class="text-center">
           <Transition name="flip" mode="out-in"><h2 :key="slide.id" class="text-base md:text-lg">{{ t(slide.title) }}</h2></Transition>

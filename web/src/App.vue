@@ -6,6 +6,7 @@ import RegionPicker from './components/RegionPicker.vue'
 import ExploreStage from './components/ExploreStage.vue'
 import ReportSheet from './components/ReportSheet.vue'
 import SproutDock from './cat/SproutDock.vue'
+import Tour from './components/Tour.vue'
 import { state } from './store.js'
 
 // One screen, three stages: Sprout says hello → where do you farm → the map with one topic over it at a time.
@@ -21,6 +22,7 @@ import { state } from './store.js'
       <ExploreStage v-else :key="state.area?.kind" />
     </Transition>
   </main>
+  <Tour />
   <SproutDock />
   <ReportSheet />
 </template>
