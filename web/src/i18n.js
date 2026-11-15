@@ -23,6 +23,8 @@ export function t(s, params) {
 }
 
 const ES = {
+  "W": "O",
+  "Compass · tap to put north up": "Brújula · toca para poner el norte arriba",
   "About {m} m above the sea": "Unos {m} m sobre el mar",
   "Mean slope {deg}°": "Pendiente media {deg}°",
   "3D view of your field": "Vista 3D de tu terreno",
@@ -394,6 +396,8 @@ const ES = {
 }
 
 const QU = {
+  "W": "O",
+  "Compass · tap to put north up": "Brújula · llamiy chinchayta hanaqman churanaykipaq",
   "About {m} m above the sea": "Quchamanta {m} m hina hanaqpi",
   "Mean slope {deg}°": "Chawpi qhata {deg}°",
   "3D view of your field": "Chakraykip 3D rikchaynin",

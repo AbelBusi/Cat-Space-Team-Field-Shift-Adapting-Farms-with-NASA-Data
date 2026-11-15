@@ -158,8 +158,8 @@ function drawParcel() {
   parcelLayer.clearLayers()
   mapUi.corners = corners.length
   const C = PAL.fire   // the outlined field is the one thing to look at
-  if (corners.length >= 3) L.polygon(corners, { color: C, weight: 3, fillColor: C, fillOpacity: 0.18, interactive: false }).addTo(parcelLayer)
-  else if (corners.length === 2) L.polyline(corners, { color: C, weight: 3, interactive: false }).addTo(parcelLayer)
+  if (corners.length >= 3) L.polygon(corners, { pane: 'field', color: C, weight: 3, fillColor: C, fillOpacity: mapUi.view3d ? 0 : 0.18, interactive: false }).addTo(parcelLayer)
+  else if (corners.length === 2) L.polyline(corners, { pane: 'field', color: C, weight: 3, interactive: false }).addTo(parcelLayer)
   if (mapUi.drawing) corners.forEach(p => L.circleMarker(p, { radius: 5, color: PAL.bg, weight: 2, fillColor: C, fillOpacity: 1, interactive: false }).addTo(parcelLayer))
 }
 function setDrawing(on) {
@@ -176,7 +176,7 @@ function highlightField(on) {
   shade = null
   if (!on || !state.parcel) return
   const b = L.latLngBounds(boundsOf(state.area.rings)).pad(1), around = [b.getSouthWest(), b.getNorthWest(), b.getNorthEast(), b.getSouthEast()]
-  shade = L.polygon([around, state.parcel.ring], { stroke: false, fillColor: PAL.bg, fillOpacity: 0.6, interactive: false }).addTo(map)
+  shade = L.polygon([around, state.parcel.ring], { pane: 'shade', stroke: false, fillColor: PAL.bg, fillOpacity: 0.86, interactive: false }).addTo(map)
 }
 const HEIGHTS = 'Heights: NASA SRTM 30 m (Terrain Tiles)'
 Object.assign(mapApi, {
@@ -267,6 +267,8 @@ onMounted(() => {
   }).addTo(map)
   map.createPane('data').style.zIndex = 350   // NASA data images sit under the squares and the field outline
   map.createPane('labels').style.zIndex = 450  // names above the squares, under the point and the field corners
+  map.createPane('shade').style.zIndex = 470   // 3D view: the dark veil around the field covers everything but the field
+  map.createPane('field').style.zIndex = 480   // the field's outline stays sharp above the veil
   map.attributionControl.setPosition('bottomleft')
   map.attributionControl.addAttribution('Boundaries © OpenStreetMap contributors')
   L.control.scale({ imperial: false, position: 'bottomright' }).addTo(map)
@@ -298,6 +300,7 @@ watch(() => [state.layer, state.month, state.scen, db.power, db.ndvi], paint)
 watch(() => mapUi.data, () => { showData(); paint() })
 watch(() => mapUi.view3d && !!state.parcel, on => {
   highlightField(on)
+  drawParcel()   // the field's own tint goes away in 3D: the photo shows through clean
   map.attributionControl[on ? 'addAttribution' : 'removeAttribution'](HEIGHTS)
   if (!on && state.parcel) map.flyToBounds(L.latLngBounds(state.parcel.ring), { ...padding(), duration: 0.9, maxZoom: 17 })
 })

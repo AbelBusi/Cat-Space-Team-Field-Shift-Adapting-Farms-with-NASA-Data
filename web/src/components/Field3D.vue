@@ -20,7 +20,7 @@ const box = ref({ left: 0, top: 0, right: 0, bottom: 0 })
 const beam = ref(null)
 
 let THREE, renderer, scene, camera, controls, raf = 0, observer, data
-let piece, surface, sides, rim, notes, intro = 0, bottomRing = []
+let piece, surface, sides, rim, notes, intro = 0, bottomRing = [], turn = null
 const UNITS = 1000            // the field's square is 1000 units wide, whatever its size in meters
 const BASE = 70               // depth of the soil block below the surface, in units
 const INTRO_MS = 1600
@@ -200,6 +200,11 @@ function frame(now) {
       controls.autoRotate = !reduce
       controls.update()
     }
+  } else if (turn) {
+    // The compass was tapped: swing round until north points up again (seen from the south).
+    const k = Math.min(1, (now - turn.t0) / 700), e = 1 - (1 - k) ** 3
+    aim(turn.polar, turn.from + (turn.to - turn.from) * e, turn.dist)
+    if (k >= 1) { turn = null; controls.update() }
   } else {
     controls.update()
     if (!reduce) piece.position.y = Math.sin(now / 1700) * 7   // it floats
@@ -271,6 +276,14 @@ async function build() {
   }
 }
 
+function northUp() {
+  if (!controls || intro) return
+  controls.autoRotate = false
+  const o = camera.position.clone().sub(controls.target), dist = o.length()
+  let from = Math.atan2(o.x, o.z)
+  from -= Math.round(from / (2 * Math.PI)) * 2 * Math.PI   // the short way round
+  turn = { t0: performance.now(), from, to: 0, polar: Math.acos(o.y / dist), dist }
+}
 const onResize = () => placeBox()
 onMounted(() => { placeBox(); addEventListener('resize', onResize); build() })
 onBeforeUnmount(() => {
@@ -302,9 +315,18 @@ onBeforeUnmount(() => {
       <span ref="slopeTag" class="pointer-events-none absolute left-0 top-0 whitespace-nowrap border-l-2 border-teal bg-bg/80 px-1.5 py-0.5 font-mono text-xs leading-tight text-ink">
         {{ state.mode === 'pro' ? t('Mean slope {deg}°', { deg: info.slope }) : t(info.slope < 2 ? 'Flat ground' : info.slope < 6 ? 'Gentle slope' : 'Steep ground') }}
       </span>
-      <span class="pointer-events-none absolute right-1 top-1 flex flex-col items-center font-mono text-[10px] leading-none text-fire" :title="t('North')">
-        <span ref="needle" class="flex flex-col items-center"><b>N</b><i class="block h-3 w-0.5 bg-fire" /></span>
-      </span>
+      <button type="button" class="hud absolute right-1 top-1 size-[68px] bg-bg/85 p-1" :title="t('Compass · tap to put north up')" :aria-label="t('Compass · tap to put north up')" @click="northUp">
+        <svg ref="needle" viewBox="-34 -34 68 68" class="size-full" aria-hidden="true">
+          <circle r="26" fill="none" stroke="var(--muted)" stroke-opacity=".5" />
+          <g stroke="var(--muted)"><line y1="-26" y2="-22" /><line y1="22" y2="26" /><line x1="-26" x2="-22" /><line x1="22" x2="26" /></g>
+          <path d="M0 -20 L5 0 L0 3 L-5 0 Z" fill="var(--fire)" />
+          <path d="M0 20 L5 0 L0 -3 L-5 0 Z" fill="var(--muted)" />
+          <g font-family="IBM Plex Mono, monospace" font-size="9.5" text-anchor="middle" dominant-baseline="central">
+            <text y="-30" fill="var(--fire)" font-weight="700">N</text><text y="30" fill="var(--muted)">S</text>
+            <text x="30" fill="var(--muted)">E</text><text x="-30" fill="var(--muted)">{{ t('W') }}</text>
+          </g>
+        </svg>
+      </button>
     </template>
     <div v-if="phase === 'loading'" class="absolute inset-0 flex items-center justify-center gap-2 font-mono text-xs uppercase tracking-wider text-sky-muted">
       <span class="block size-2.5 animate-ping bg-teal" aria-hidden="true" />{{ t('Building the 3D view…') }}

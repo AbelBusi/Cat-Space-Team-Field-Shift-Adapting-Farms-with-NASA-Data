@@ -101,12 +101,14 @@ Line icons (stroke SVG) are allowed only for UI controls (play, sound, close), d
 - NASA data are **optional overlays** on top, with the ramps above, a legend and an opacity control.
 - **3D view of an outlined field:** it opens by itself when a field is finished; the 2D / 3D switch next to the field size is
   the only control (no extra panel, titles or buttons). The cards stay on screen. On the map the field stays lit and everything
-  around it gets darker; the field moves to the lower part of the free space and **the field rises out of it as a floating
+  around it goes almost dark; the field moves to the lower part of the free space and **the field rises out of it as a floating
   block of land**, joined to it by a faint `--teal` beam, like a projection, but the block is full quality: the satellite photo
   over the real relief, soil layers on the sides, the `--fire` outline on top. It floats gently and turns slowly (drag to turn,
   wheel or pinch to zoom). Measurements are drawn, not written: a `--teal` height line on the uphill side and the slope angle
   (level line dashed, land line solid, an arc between) on the downhill side, each with a short label. Small relief is raised and
-  the factor is always shown (`Relief ×N`); the height source is in the map credits.
+  the factor is always shown (`Relief ×N`); the height source is in the map credits. Everything on the map except the field
+  sits under a dark veil (86 %), so only the field and its block stand out; the cards stay readable. A compass rose turns with
+  the view; tapping it swings the block back to north up.
 
 ## 7. One screen, like a game (layout since Nov 15, 2026)
 
