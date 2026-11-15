@@ -39,7 +39,12 @@ const xz = (u, v) => [(u - 0.5) * UNITS, (v - 0.5) * UNITS]
 // part; the field sits on the map in its lower part.
 function freeBox() {
   const hud = document.querySelector('[data-hud-top]')?.getBoundingClientRect().bottom ?? 140
-  if (innerWidth < 1024) return { left: 8, right: innerWidth - 8, top: hud + 8, bottom: innerHeight * 0.56 - 10 }
+  // Phones: the free band between the top strip of cards and the bottom one (SlideFrame)
+  if (innerWidth < 1024) {
+    const edge = (sel, side, fb) => document.querySelector(sel)?.getBoundingClientRect()[side] ?? fb
+    const top = Math.max(hud, edge('.col-left', 'bottom', hud)) + 16, bottom = Math.min(innerHeight - 10, edge('.col-right', 'top', innerHeight * 0.7)) - 16
+    return { left: 8, right: innerWidth - 8, top, bottom: Math.max(bottom, top + 220) }
+  }
   const col = Math.min(380, Math.max(280, innerWidth * 0.27))
   return { left: 56 + col + 20, right: innerWidth - 56 - col - 20, top: hud + 8, bottom: innerHeight - 110 }
 }

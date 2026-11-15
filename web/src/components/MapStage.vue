@@ -59,7 +59,8 @@ function followZoom(e) {
 function padding() {
   const edge = (sel, side, fallback) => document.querySelector(sel)?.getBoundingClientRect()[side] ?? fallback
   const top = edge('[data-hud-top]', 'bottom', 150) + 14
-  if (innerWidth < 1024) return { paddingTopLeft: [12, top], paddingBottomRight: [12, innerHeight * 0.44 + 12] }
+  // Phones: the map sits between the top strip of cards and the bottom one
+  if (innerWidth < 1024) return { paddingTopLeft: [12, edge('.col-left', 'bottom', top) + 18], paddingBottomRight: [12, innerHeight - edge('.col-right', 'top', innerHeight * 0.7) + 12] }
   return { paddingTopLeft: [edge('.col-left', 'right', 380) + 16, top], paddingBottomRight: [innerWidth - edge('.col-right', 'left', innerWidth - 380) + 16, 150] }
 }
 function showArea() {

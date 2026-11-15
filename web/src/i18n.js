@@ -429,6 +429,7 @@ const ES = {
   'You know how much water you get, so fewer surprises.': 'Sabes cuánta agua te toca, así hay menos sorpresas.', "We don't know how much water you get per season.": 'No sabemos cuánta agua te toca por campaña.',
   'You have never grown this here: try it on a small plot first.': 'Nunca sembraste esto aquí: pruébalo primero en un terreno pequeño.', 'An El Niño year is harder to predict.': 'Un año de El Niño es más difícil de prever.',
   // What's ahead (projections, ml/)
+  "Card {n}": "Tarjeta {n}",
   "Show me how everything works (tutorial)": "Muéstrame cómo funciona todo (tutorial)",
   "Show me how this screen works": "Muéstrame cómo funciona esta pantalla",
   "Back": "Atrás",
@@ -1080,6 +1081,7 @@ const QU = {
   "I know it sounds like a lot... but don't worry! We'll go one step at a time, together. Scroll down whenever you're ready.": 'Achkha hinam, yachani... ¡ama llakikuychu! Huk-hukmanta purisunchik, kuska. Listo kaspaykiqa, urayman puriy.',
   "And remember: I'm only a helper. You and your local agronomist always have the final word.": 'Yuyariy: ñuqaqa yanapaqllam kani. Qam, agronomuykiwan kuska, qhipa simita rimankichik.',
   // What's ahead (projections, ml/): beta, to be reviewed by native speakers like the rest
+  "Card {n}": "{n} tarjeta",
   "Show me how everything works (tutorial)": "Llapanta imayna llamk'asqanta rikuchiway (yachachiy)",
   "Show me how this screen works": "Kay pantalla imayna llamk'asqanta rikuchiway",
   "Back": "Ñawpaqman",

@@ -84,7 +84,7 @@ onBeforeUnmount(() => { clearTimeout(timer); clearTimeout(restTimer); removeEven
 
 <template>
   <div class="pointer-events-none fixed inset-x-0 z-50 flex justify-center px-2 print:hidden"
-       :class="state.stage === 'intro' ? 'bottom-[calc(13%+190px)]' : state.stage === 'explore' ? 'bottom-3 max-lg:bottom-[calc(44dvh+8px)]' : 'bottom-3'">
+       :class="state.stage === 'intro' ? 'bottom-[calc(13%+190px)]' : state.stage === 'explore' ? 'bottom-3 max-lg:bottom-2' : 'bottom-3'">
     <Transition name="dock" mode="out-in">
       <aside v-if="guide.open && line" key="panel" class="hud pointer-events-auto w-[min(620px,100%)] !border-teal/50 bg-panel font-mono text-ink" :aria-label="t('Sprout, your guide')">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-1 text-xs uppercase tracking-wider text-teal">
@@ -95,10 +95,10 @@ onBeforeUnmount(() => { clearTimeout(timer); clearTimeout(restTimer); removeEven
             <button type="button" class="px-1.5 py-1 hover:text-ink" data-tour="close" :aria-label="t('Close Sprout')" :title="t('Close Sprout')" @click="close"><PixelIcon name="close" color="currentColor" :size="1.25" /></button>
           </span>
         </div>
-        <div class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2.5" @click="advance">
-          <div v-if="state.stage !== 'intro'" class="-mb-2.5 -mt-4 self-end max-sm:w-16"><CatSprite :mood="line[1]" :talking="guide.talking" :size="88" bust class="max-sm:!h-auto max-sm:!w-16" /></div>
+        <div class="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2.5 max-sm:gap-2 max-sm:py-1.5" @click="advance">
+          <div v-if="state.stage !== 'intro'" class="-mb-2.5 -mt-4 self-end max-sm:-mb-1.5 max-sm:-mt-2 max-sm:w-11"><CatSprite :mood="line[1]" :talking="guide.talking" :size="88" bust class="max-sm:!h-auto max-sm:!w-11" /></div>
           <span v-else />
-          <p class="min-h-[3.1em] text-[14.5px] leading-normal" aria-hidden="true">{{ typed }}<span v-if="!done" class="animate-[caret_.8s_steps(2)_infinite] text-teal">▌</span></p>
+          <p class="min-h-[3.1em] text-[14.5px] leading-normal max-sm:min-h-0 max-sm:text-[13px] max-sm:leading-snug" aria-hidden="true">{{ typed }}<span v-if="!done" class="animate-[caret_.8s_steps(2)_infinite] text-teal">▌</span></p>
           <p class="sr-only" aria-live="polite">{{ shown }}</p>
           <button v-if="!atEnd" type="button" class="btn self-end !min-h-8" :class="state.stage === 'intro' ? 'btn-fire' : '!border-teal !text-teal'" @click.stop="advance">{{ t(done ? '[ next ]' : '[ skip ]') }}</button>
         </div>
