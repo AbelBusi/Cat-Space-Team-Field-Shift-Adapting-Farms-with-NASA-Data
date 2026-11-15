@@ -4,7 +4,7 @@ import { PALETTE, SIZE, BODY, ANTENNAE, FACES } from './sprites.js'
 
 // Sprout, drawn from pixel runs (see sprites.js). It blinks, its tail sways, its mouth moves while it talks, and the
 // whole cat squashes a little when its mood changes.
-// full: the whole sitting cat; otherwise a bust (head and chest) for small spots. pose: 'sit' or 'wave' (a paw up).
+// full: the whole sitting cat (the first screen); otherwise only the head, for the dialogue. pose: 'sit' or 'wave' (a paw up).
 const props = defineProps({
   mood: { type: String, default: 'neutral' },
   talking: Boolean,
@@ -19,7 +19,7 @@ const mouthOpen = ref(false), blinking = ref(false), wag = ref(false)
 const body = computed(() => BODY[`${props.pose === 'wave' ? 'wave' : 'sit'}_${wag.value ? 'wag' : 'up'}`])
 const face = computed(() => blinking.value ? f.value.blink : props.talking && mouthOpen.value ? f.value.talk : f.value.face)
 const ant = computed(() => ANTENNAE[f.value.ant])
-const box = computed(() => props.full ? `0 0 ${SIZE[0]} ${SIZE[1]}` : '3 -1 38 38')
+const box = computed(() => props.full ? `0 0 ${SIZE[0]} ${SIZE[1]}` : '4 -1 36 30')   // the head: ears, antennae and cheeks
 
 let talkTimer, blinkTimer, wagTimer
 watch(() => props.talking, on => {
@@ -41,7 +41,7 @@ onBeforeUnmount(() => { clearInterval(talkTimer); clearTimeout(blinkTimer); clea
 </script>
 
 <template>
-  <svg class="cat" :class="{ talking }" :width="size" :height="full ? size * SIZE[1] / SIZE[0] : size" :viewBox="box"
+  <svg class="cat" :class="{ talking, '!overflow-hidden': !full }" :width="size" :height="full ? size * SIZE[1] / SIZE[0] : size" :viewBox="box"
        shape-rendering="crispEdges" role="img" :aria-label="t('Sprout the alien cat, looking ' + mood)">
     <g class="cat-body" :key="mood">
       <rect v-for="[x, y, w, c] in body" :key="`b${x},${y}`" :x="x" :y="y" :width="w" height="1" :fill="PALETTE[c]" />

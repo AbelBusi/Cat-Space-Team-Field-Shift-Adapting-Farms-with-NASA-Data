@@ -119,7 +119,7 @@ click on the map ──► grid cells around the point (lib/nasa.js → gridCell
 - Gentle, patient and encouraging. It explains one thing at a time and is honest about what the satellites cannot see.
 - A full-body sitting alien cat (48 × 50 px, original pixel art) with 10 moods: `neutral`, `happy`, `excited`, `surprised`, `worried`,
   `thinking`, `sad`, `shy`, `determined`, `sleepy`, two poses (`sit`, `wave`) and four antenna shapes. It blinks, wags its tail, bobs,
-  and moves its mouth while text types. Small spots show only its bust.
+  and moves its mouth while text types. The dialogue shows only its head.
 - **Arrival:** on each visit its saucer glides in, opens a beam and sets Sprout down by the campfire; it lands, waves, the saucer
   leaves and only then it talks (skipped with reduced motion).
 - Its voice is a synthesized meow (`web/src/lib/sound.js`, no audio files): one meow per mood change, tiny mews while text types, and a meow when you tap it at the top of the page. Tune the `MEOW` table by ear.
