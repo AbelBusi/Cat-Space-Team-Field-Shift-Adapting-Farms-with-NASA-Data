@@ -84,6 +84,6 @@ def test_ask_without_ai_says_so_and_enriches_context():
     r = client.post("/api/v1/ask", json={"question": "¿Cómo estará mi suelo?", "lang": "es", "context": {"lat": -6.42, "lon": -79.73}})
     assert r.status_code == 503 and r.json()["error"] == "ai_unavailable"
     ctx = sprout.enrich({"lat": -6.42, "lon": -79.73})
-    assert len(ctx["model_projection_soil_water_28_100cm_m3m3"]["median"]) == 6
+    assert len(ctx["model_projection_soil_water"]["el_nino"]["median"]) == 6
     assert "Sprout" in sprout.persona() and "---" not in sprout.persona()[:5]
     assert client.post("/api/v1/ask", json={"question": ""}).status_code == 422

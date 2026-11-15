@@ -2,7 +2,7 @@
 import PixelIcon from '../components/PixelIcon.vue'
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import CatSprite from './CatSprite.vue'
-import { guide, line, hasNext, next, close, summon, submitQuestion } from '../guide.js'
+import { guide, line, hasNext, next, close, summon, submitQuestion, openAsk } from '../guide.js'
 import { state, valueAt, placeLabel, chosen } from '../store.js'
 import { LAYER_KEYS } from '../content.js'
 import { blip, meow, meowLength, unlock } from '../lib/sound.js'
@@ -90,6 +90,7 @@ onBeforeUnmount(() => { clearTimeout(timer); clearTimeout(restTimer); removeEven
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-1 text-xs uppercase tracking-wider text-teal">
           <span><span class="font-pixel text-[13px]">Sprout</span> · {{ t('translator') }}</span>
           <span class="flex gap-1 text-muted [&_button]:uppercase">
+            <button type="button" class="px-1.5 py-1 hover:text-ink" :class="{ 'text-teal': guide.asking }" :aria-pressed="guide.asking" :aria-label="t('Ask Sprout anything')" :title="t('Ask Sprout anything')" @click="openAsk"><PixelIcon name="ai" color="currentColor" :size="1.25" /></button>
             <button type="button" class="px-1.5 py-1 hover:text-ink" :aria-pressed="!guide.muted" :aria-label="t(guide.muted ? 'Turn voice sound on' : 'Turn voice sound off')" :title="t(guide.muted ? 'Turn voice sound on' : 'Turn voice sound off')" @click="unlock(); guide.muted = !guide.muted"><PixelIcon :name="guide.muted ? 'speaker_off' : 'speaker'" color="currentColor" :size="1.25" /></button>
             <button type="button" class="px-1.5 py-1 hover:text-ink" :aria-label="t('Close Sprout')" :title="t('Close Sprout')" @click="close"><PixelIcon name="close" color="currentColor" :size="1.25" /></button>
           </span>

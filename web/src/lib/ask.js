@@ -21,10 +21,10 @@ const TOPICS = [
 ]
 
 // Returns Sprout's lines: [[text, mood], ...]. Server answers are wrapped in a function so they are shown as they come.
-export async function ask(question, context = {}) {
+export async function ask(question, context = {}, history = []) {
   if (ENDPOINT) {
     try {
-      const r = await fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, lang: lang.value, context }) })
+      const r = await fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, lang: lang.value, context, history }) })
       const answer = r.ok && (await r.json()).answer
       if (answer) return [[() => String(answer), 'happy']]
     } catch { /* fall through to the local topics */ }

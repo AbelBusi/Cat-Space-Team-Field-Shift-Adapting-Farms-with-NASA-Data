@@ -105,7 +105,7 @@ def simulate(req: SimulationRequest):
 def ask(req: AskRequest):
     """Sprout answers an open question with the persona in docs/SPROUT_PERSONA.md and the numbers on screen."""
     try:
-        return {"answer": sprout.answer(req.question, req.lang, req.context), "model": settings.llm_model}
+        return {"answer": sprout.answer(req.question, req.lang, req.context, req.history), "model": settings.llm_model}
     except sprout.AskUnavailable as e:
         return JSONResponse(status_code=503, content={"error": "ai_unavailable", "detail": str(e)})
 

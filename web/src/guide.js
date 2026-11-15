@@ -78,14 +78,16 @@ export function summon() {
   menu("Here I am! What do you need?")
 }
 export function openAsk() {
-  show([['Of course! What would you like to know?', 'happy']])
+  show([[chat.length ? 'Sure! What else would you like to know?' : 'Of course! What would you like to know?', 'happy']])
   guide.asking = true
 }
+// The conversation with Sprout's AI: the last turns go with each question, so it can continue naturally.
+const chat = []
 export async function submitQuestion(question, context) {
   show([['Hmm, let me think...', 'thinking']])
-  const lines = await ask(question, context)
-  show(lines, [
-    { label: 'Ask another thing', run: openAsk },
-    { label: "Thanks, that's all", run: close },
-  ])
+  const lines = await ask(question, context, chat.slice(-8))
+  const text = lines.map(([l]) => typeof l === 'function' ? l() : l).join(' ')
+  chat.push({ role: 'user', content: question }, { role: 'assistant', content: text })
+  show(lines)
+  guide.asking = true            // the question box stays open: just keep writing
 }

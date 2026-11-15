@@ -5,6 +5,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# ml-api/.env (git-ignored) fills variables that are not already set: keys stay on the server, never in git.
+_env = ROOT / ".env"
+if _env.exists():
+    for _line in _env.read_text(encoding="utf-8").splitlines():
+        _k, _, _v = _line.partition("=")
+        if _k.strip() and not _k.lstrip().startswith("#") and _v.strip():
+            os.environ.setdefault(_k.strip(), _v.strip())
+
 
 def _path(name: str, default: str) -> Path:
     p = Path(os.environ.get(name, default))
@@ -30,6 +38,8 @@ class Settings:
     llm_base_url: str = field(default_factory=lambda: os.environ.get("LLM_BASE_URL", "http://localhost:11434/v1"))
     llm_model: str = field(default_factory=lambda: os.environ.get("LLM_MODEL", "qwen2.5:3b"))
     llm_api_key: str = field(default_factory=lambda: os.environ.get("LLM_API_KEY", ""))
+    # Only for reasoning models that accept it (e.g. openai/gpt-oss on Groq): low keeps answers fast
+    llm_reasoning_effort: str = field(default_factory=lambda: os.environ.get("LLM_REASONING_EFFORT", ""))
     llm_timeout: float = field(default_factory=lambda: float(os.environ.get("LLM_TIMEOUT", "60")))
 
 
