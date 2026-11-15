@@ -8,6 +8,9 @@ the models are read from `ml/artifacts/final_model/`, with the project's own fea
 from weather inputs. They are prototypes with measured errors (`docs/ML_PHASE3_TESTING.md`, `docs/ML_PROJECTIONS.md`),
 not crop-yield models and not certainties.
 
+> **Expansion plan (Spanish):** [`roadmap/README.md`](roadmap/README.md) — what exists, what is proposed (predictions,
+> simulations, territorial analysis, alerts, explanations, monitoring) and in which order.
+
 ## What the models predict
 
 | Model | Target | Unit | Features (exact order in `GET /model/info`) |
