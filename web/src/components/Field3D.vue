@@ -1,46 +1,58 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import { state, mapUi } from '../store.js'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { state, mapApi } from '../store.js'
 import { say } from '../guide.js'
 import { t } from '../i18n.js'
 import { PAL } from '../lib/palette.js'
-import { formatArea } from '../lib/geo.js'
 import { loadTerrain } from '../lib/terrain3d.js'
 
-// The outlined field in 3D, cut out like a block of land floating in the night: its surface is the satellite photo
-// over the real relief, and its sides show the soil. Only the field, nothing around it. The camera starts straight
-// above with north up, like the 2D map, then tilts down while the land rises, so it reads as the same place.
-// Drag to turn, wheel or pinch to zoom. three.js loads only when this opens.
+// The outlined field rises out of the map as a floating block of land, in the free space between the cards.
+// On the map the field stays lit and everything around it gets darker; a soft beam of light joins the field to the
+// block above it, like a projection, but the block itself is full quality: the satellite photo over the real relief,
+// soil layers on the sides, the orange outline on top. Two measurements are drawn in 3D and turn with it: a height
+// line on the uphill side and the slope angle on the downhill side. Drag to turn, wheel or pinch to zoom.
+// three.js loads only when this opens.
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
-const host = ref(null), pin = ref(null), needle = ref(null)
+const host = ref(null), heightTag = ref(null), slopeTag = ref(null), needle = ref(null)
 const phase = ref('loading')   // loading | ready | error
 const info = ref(null)
-const spinning = ref(!reduce)
-const top = ref(150)
+const box = ref({ left: 0, top: 0, right: 0, bottom: 0 })
+const beam = ref(null)
 
 let THREE, renderer, scene, camera, controls, raf = 0, observer, data
-let surface, sides, rim, intro = 0
+let piece, surface, sides, rim, notes, intro = 0, bottomRing = []
 const UNITS = 1000            // the field's square is 1000 units wide, whatever its size in meters
-const BASE = 70               // depth of the soil block below the lowest point, in units
+const BASE = 70               // depth of the soil block below the surface, in units
+const INTRO_MS = 1600
 
-// Heights in scene units, raised by `rise` (0 → flat like the map, 1 → full relief).
-const lift = (h, rise) => (h - data.min) * data.exaggeration * (UNITS / data.size) * rise
+const lift = (h, rise = 1) => (h - data.min) * data.exaggeration * (UNITS / data.size) * rise
 const xz = (u, v) => [(u - 0.5) * UNITS, (v - 0.5) * UNITS]
-const uvOf = (x, z) => [x / UNITS + 0.5, z / UNITS + 0.5]
 
-function placeHud() {
-  const hud = document.querySelector('[data-hud-top]')
-  top.value = (hud?.getBoundingClientRect().bottom ?? 140) + 10
+// The free space between the cards (wide screens) or above the bottom sheet (phones). The block floats in its upper
+// part; the field sits on the map in its lower part.
+function freeBox() {
+  const hud = document.querySelector('[data-hud-top]')?.getBoundingClientRect().bottom ?? 140
+  if (innerWidth < 1024) return { left: 8, right: innerWidth - 8, top: hud + 8, bottom: innerHeight * 0.56 - 10 }
+  const col = Math.min(380, Math.max(280, innerWidth * 0.27))
+  return { left: 56 + col + 20, right: innerWidth - 56 - col - 20, top: hud + 8, bottom: innerHeight - 110 }
+}
+const BLOCK_SHARE = 0.62
+const hostStyle = computed(() => {
+  const b = box.value
+  return { left: b.left + 'px', top: b.top + 'px', width: b.right - b.left + 'px', height: (b.bottom - b.top) * BLOCK_SHARE + 'px' }
+})
+function placeBox() {
+  box.value = freeBox()
+  mapApi.frameField?.(box.value)
 }
 
-// The side of the block: soil layers drawn in the palette (dark topsoil, sandy layers, pebbles), repeated along the edge.
+// The side of the block: soil layers drawn in the palette (dark topsoil, sandy layers, pebbles).
 function soilTexture() {
   const cv = document.createElement('canvas')
   cv.width = 256
   cv.height = 128
   const ctx = cv.getContext('2d')
-  const layers = [[0, 0.14, PAL.soil], [0.14, 0.45, '#8A6E44'], [0.45, 0.72, PAL.sand], [0.72, 1, '#6E5634']]
-  for (const [a, b, c] of layers) { ctx.fillStyle = c; ctx.fillRect(0, a * 128, 256, (b - a) * 128) }
+  for (const [a, b, c] of [[0, 0.14, PAL.soil], [0.14, 0.45, '#8A6E44'], [0.45, 0.72, PAL.sand], [0.72, 1, '#6E5634']]) { ctx.fillStyle = c; ctx.fillRect(0, a * 128, 256, (b - a) * 128) }
   let seed = 7
   const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647
   for (let k = 0; k < 900; k++) {
@@ -54,18 +66,18 @@ function soilTexture() {
   return tex
 }
 
-async function buildField() {
+async function buildBlock() {
   const { TessellateModifier } = await import('three/examples/jsm/modifiers/TessellateModifier.js')
-  // The surface: the field's outline, cut into small triangles so it can follow the relief.
-  const outline = data.fieldUV.map(([u, v]) => xz(u, v))
-  const shape = new THREE.Shape(outline.map(([x, z]) => new THREE.Vector2(x, z)))
-  let geo = new THREE.ShapeGeometry(shape)
-  geo = new TessellateModifier(UNITS / 70, 18).modify(geo)
+  piece = new THREE.Group()
+  scene.add(piece)
+
+  // Surface: the field's outline cut into small triangles, so it can follow the relief.
+  const shape = new THREE.Shape(data.fieldUV.map(([u, v]) => new THREE.Vector2(...xz(u, v))))
+  const geo = new TessellateModifier(UNITS / 70, 18).modify(new THREE.ShapeGeometry(shape))
   geo.deleteAttribute('normal')
-  const pos = geo.attributes.position, uv = new Float32Array(pos.count * 2), ground = new Float32Array(pos.count)
-  const p = data.photoUV
+  const pos = geo.attributes.position, uv = new Float32Array(pos.count * 2), ground = new Float32Array(pos.count), p = data.photoUV
   for (let k = 0; k < pos.count; k++) {
-    const x = pos.getX(k), z = pos.getY(k), [u, v] = uvOf(x, z)
+    const x = pos.getX(k), z = pos.getY(k), u = x / UNITS + 0.5, v = z / UNITS + 0.5
     pos.setXYZ(k, x, 0, z)
     ground[k] = data.sample(u, v)
     uv.set([p.u0 + u * p.su, 1 - (p.v0 + v * p.sv)], k * 2)
@@ -76,9 +88,9 @@ async function buildField() {
   photo.colorSpace = THREE.SRGBColorSpace
   photo.anisotropy = renderer.capabilities.getMaxAnisotropy()
   surface = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: photo, side: THREE.DoubleSide }))
-  scene.add(surface)
+  piece.add(surface)
 
-  // The sides: from the surface edge straight down to a flat bottom, with the soil texture.
+  // Sides: from the surface edge straight down to a flat bottom, with the soil texture.
   const edge = [], ring = [...data.fieldUV, data.fieldUV[0]]
   for (let k = 0; k < ring.length - 1; k++) {
     const [u0, v0] = ring[k], [u1, v1] = ring[k + 1], steps = Math.max(2, Math.ceil(Math.hypot(u1 - u0, v1 - v0) * 70))
@@ -88,10 +100,7 @@ async function buildField() {
   const sp = new Float32Array(edge.length * 6), suv = new Float32Array(edge.length * 4), si = []
   let along = 0
   edge.forEach(([u, v], n) => {
-    if (n) {
-      along += Math.hypot(u - edge[n - 1][0], v - edge[n - 1][1]) * 4
-      si.push(2 * n - 2, 2 * n - 1, 2 * n, 2 * n, 2 * n - 1, 2 * n + 1)
-    }
+    if (n) { along += Math.hypot(u - edge[n - 1][0], v - edge[n - 1][1]) * 4; si.push(2 * n - 2, 2 * n - 1, 2 * n, 2 * n, 2 * n - 1, 2 * n + 1) }
     suv.set([along, 1, along, 0], n * 4)
   })
   const sg = new THREE.BufferGeometry()
@@ -100,44 +109,81 @@ async function buildField() {
   sg.setIndex(si)
   sg.userData.edge = edge.map(([u, v]) => [u, v, data.sample(u, v)])
   sides = new THREE.Mesh(sg, new THREE.MeshLambertMaterial({ map: soilTexture(), side: THREE.DoubleSide }))
-  scene.add(sides)
+  piece.add(sides)
 
-  // A thin campfire line on the top edge: the same outline the farmer drew on the 2D map.
+  // The orange outline on the top edge: the same line the farmer drew on the 2D map.
   const rg = new THREE.BufferGeometry()
   rg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(edge.length * 3), 3))
   rim = new THREE.Line(rg, new THREE.LineBasicMaterial({ color: PAL.fire }))
-  scene.add(rim)
+  piece.add(rim)
 }
 
-// Puts every height in place for a given rise (the block grows from the flat map during the intro).
+// Puts every height in place for a given rise (the block grows out of the flat map during the intro).
 function setRise(rise) {
   const pos = surface.geometry.attributes.position, ground = surface.geometry.userData.ground
   for (let k = 0; k < pos.count; k++) pos.setY(k, lift(ground[k], rise))
   pos.needsUpdate = true
   surface.geometry.computeVertexNormals()
-  const bottom = -BASE * rise, sp = sides.geometry.attributes.position, rp = rim.geometry.attributes.position
+  const sp = sides.geometry.attributes.position, rp = rim.geometry.attributes.position
+  bottomRing = []
   sides.geometry.userData.edge.forEach(([u, v, h], n) => {
     const [x, z] = xz(u, v), y = lift(h, rise)
     sp.setXYZ(2 * n, x, y, z)
-    sp.setXYZ(2 * n + 1, x, bottom, z)
+    sp.setXYZ(2 * n + 1, x, -BASE * rise, z)
     rp.setXYZ(n, x, y + 0.8, z)
+    if (n % 4 === 0) bottomRing.push(new THREE.Vector3(x, -BASE * rise, z))
   })
   sp.needsUpdate = rp.needsUpdate = true
   sides.geometry.computeVertexNormals()
 }
 
-// Camera on a sphere around the center: polar 0 = straight above (north up, like the map).
+// The two measurements, drawn in teal so they read as notes, not as land.
+function buildNotes() {
+  notes = new THREE.Group()
+  const ink = new THREE.LineBasicMaterial({ color: PAL.teal })
+  const dash = new THREE.LineDashedMaterial({ color: PAL.teal, dashSize: 8, gapSize: 6 })
+  const line = (pts, mat = ink) => { const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat); l.computeLineDistances(); notes.add(l) }
+  const edge = sides.geometry.userData.edge, [du, dv] = data.field.downhill
+  const [cu, cv] = data.fieldUV.reduce((a, [u, v]) => [a[0] + u / data.fieldUV.length, a[1] + v / data.fieldUV.length], [0, 0])
+  const along = ([u, v]) => (u - cu) * du + (v - cv) * dv
+  const dir = new THREE.Vector3(du, 0, dv)
+  const side = new THREE.Vector3(-dv, 0, du)
+
+  // Height: a dimension line on the uphill side, from the bottom of the block to its surface.
+  const up = edge.reduce((a, b) => along(b) < along(a) ? b : a)
+  const [ux, uz] = xz(up[0], up[1]), top = lift(up[2]), out = dir.clone().multiplyScalar(-46)
+  const a = new THREE.Vector3(ux, -BASE, uz).add(out), b = new THREE.Vector3(ux, top, uz).add(out)
+  line([a, b])
+  for (const p of [a, b]) line([p.clone().addScaledVector(side, -12), p.clone().addScaledVector(side, 12)])
+  notes.userData.height = a.clone().lerp(b, 0.5).add(dir.clone().multiplyScalar(-14))
+
+  // Slope: on the downhill side, the level line (dashed) and the line of the land, with the angle between them.
+  const low = edge.reduce((a, b) => along(b) > along(a) ? b : a)
+  const [lx, lz] = xz(low[0], low[1]), o = new THREE.Vector3(lx, lift(low[2]) + 1, lz)
+  const seen = Math.atan(Math.tan(data.field.slope * Math.PI / 180) * data.exaggeration)   // as drawn, with the raised relief
+  const len = 150, down = new THREE.Vector3(0, -1, 0)
+  line([o, o.clone().addScaledVector(dir, len)], dash)
+  line([o, o.clone().addScaledVector(dir, len * Math.cos(seen)).addScaledVector(down, len * Math.sin(seen))])
+  const arc = []
+  for (let k = 0; k <= 16; k++) { const th = seen * k / 16; arc.push(o.clone().addScaledVector(dir, 90 * Math.cos(th)).addScaledVector(down, 90 * Math.sin(th))) }
+  line(arc)
+  notes.userData.slope = o.clone().addScaledVector(dir, len + 18)
+  piece.add(notes)
+}
+
 function aim(polar, azimuth, dist) {
   const t0 = controls.target
   camera.position.set(t0.x + dist * Math.sin(polar) * Math.sin(azimuth), t0.y + dist * Math.cos(polar), t0.z + dist * Math.sin(polar) * Math.cos(azimuth))
   camera.lookAt(t0)
 }
-const fitDistance = () => (UNITS / 2) / Math.tan(camera.fov * Math.PI / 360) * Math.max(1.0, 1.1 / camera.aspect)
-const INTRO_MS = 1600
-function start() {
-  intro = performance.now()
-  controls.enabled = false
-  controls.autoRotate = false
+const fitDistance = () => (UNITS * 0.46) / Math.tan(camera.fov * Math.PI / 360) * Math.max(1, 1.5 / camera.aspect)
+
+const toScreen = (v, rect) => { const p = v.clone().project(camera); return { x: rect.left + (p.x + 1) / 2 * rect.width, y: rect.top + (1 - p.y) / 2 * rect.height, z: p.z } }
+function place(el, v, rect, anchor) {
+  if (!el) return
+  const s = toScreen(v, rect)
+  el.style.transform = `translate(${(s.x - rect.left).toFixed(1)}px, ${(s.y - rect.top).toFixed(1)}px) ${anchor}`
+  el.style.opacity = s.z < 1 ? 1 : 0
 }
 
 function frame(now) {
@@ -146,20 +192,35 @@ function frame(now) {
   if (intro) {
     const k = Math.min(1, (now - intro) / INTRO_MS), e = reduce ? 1 : 1 - (1 - k) ** 3
     setRise(e)
-    aim(0.001 + e * 0.95, e * 0.55, fitDistance() * (1.05 - 0.1 * e))   // azimuth 0 = seen from the south, north up
-    if (k >= 1) { intro = 0; controls.enabled = true; controls.autoRotate = spinning.value; controls.update() }
-  } else controls.update()
+    aim(0.001 + e * 0.98, e * 0.55, fitDistance() * (1.1 - 0.1 * e))   // azimuth 0 = from the south: north up, like the map
+    if (k >= 1) {
+      intro = 0
+      buildNotes()
+      controls.enabled = true
+      controls.autoRotate = !reduce
+      controls.update()
+    }
+  } else {
+    controls.update()
+    if (!reduce) piece.position.y = Math.sin(now / 1700) * 7   // it floats
+  }
   renderer.render(scene, camera)
 
-  // The label floats over the middle of the field, and the compass follows the camera.
-  const w = host.value.clientWidth, h = host.value.clientHeight
-  const tip = new THREE.Vector3(0, lift(data.min + data.relief, 1) + 45, 0).project(camera)
-  if (pin.value) {
-    pin.value.style.transform = `translate(${((tip.x + 1) / 2 * w).toFixed(1)}px, ${((1 - tip.y) / 2 * h).toFixed(1)}px) translate(-50%, -100%)`
-    pin.value.style.opacity = tip.z < 1 ? 1 : 0
+  const rect = host.value.getBoundingClientRect()
+  if (notes) {
+    place(heightTag.value, notes.userData.height.clone().add(piece.position), rect, 'translate(-100%, -50%)')
+    place(slopeTag.value, notes.userData.slope.clone().add(piece.position), rect, 'translate(0, -50%)')
   }
   const c = controls.target.clone().project(camera), n = controls.target.clone().add(new THREE.Vector3(0, 0, -100)).project(camera)
-  if (needle.value) needle.value.style.transform = `rotate(${Math.atan2((n.x - c.x) * w, (n.y - c.y) * h)}rad)`
+  if (needle.value) needle.value.style.transform = `rotate(${Math.atan2((n.x - c.x) * rect.width, (n.y - c.y) * rect.height)}rad)`
+
+  // The beam: from the field's top edge on the map up to the bottom of the floating block.
+  const field = mapApi.fieldOnScreen?.()
+  if (field && bottomRing.length) {
+    const pts = bottomRing.map(v => toScreen(v.clone().add(piece.position), rect))
+    const l = Math.min(...pts.map(p => p.x)), r = Math.max(...pts.map(p => p.x)), y = Math.max(...pts.map(p => p.y))
+    beam.value = field.top > y + 4 ? { pts: `${l},${y} ${r},${y} ${field.right},${field.top} ${field.left},${field.top}`, l, r, y, field } : null
+  }
 }
 
 async function build() {
@@ -183,10 +244,10 @@ async function build() {
     sun.position.set(-600, 900, -400)
     scene.add(sun)
     controls = new orbit.OrbitControls(camera, renderer.domElement)
-    Object.assign(controls, { enableDamping: true, dampingFactor: 0.08, autoRotateSpeed: 0.6, minPolarAngle: 0.15, maxPolarAngle: 1.35, enablePan: false })
-    controls.addEventListener('start', () => { spinning.value = false; controls.autoRotate = false })
-    await buildField()
-    controls.target.set(0, lift(data.min + data.relief / 2, 1) - BASE / 2, 0)   // the middle of the block
+    Object.assign(controls, { enableDamping: true, dampingFactor: 0.08, autoRotateSpeed: 0.5, minPolarAngle: 0.15, maxPolarAngle: 1.35, enablePan: false })
+    controls.addEventListener('start', () => { controls.autoRotate = false })
+    await buildBlock()
+    controls.target.set(0, lift(data.min + data.relief / 2) - BASE / 2, 0)   // the middle of the block
     const resize = () => {
       const w = host.value.clientWidth, h = host.value.clientHeight
       renderer.setSize(w, h, false)
@@ -200,7 +261,8 @@ async function build() {
     resize()
     setRise(0)
     phase.value = 'ready'
-    start()
+    intro = performance.now()
+    controls.enabled = false
     raf = requestAnimationFrame(frame)
     say(() => t('Here is your field in 3D, cut out like a block of land. I raised the relief ×{n} so small slopes show; the real heights are in the card.', { n: data.exaggeration }), 'surprised', [], { level: 'note' })
   } catch (e) {
@@ -208,16 +270,12 @@ async function build() {
     phase.value = 'error'
   }
 }
-function toggleSpin() {
-  spinning.value = !spinning.value
-  if (controls) controls.autoRotate = spinning.value
-}
-const resetView = () => controls && start()
 
-onMounted(() => { placeHud(); addEventListener('resize', placeHud); build() })
+const onResize = () => placeBox()
+onMounted(() => { placeBox(); addEventListener('resize', onResize); build() })
 onBeforeUnmount(() => {
   cancelAnimationFrame(raf)
-  removeEventListener('resize', placeHud)
+  removeEventListener('resize', onResize)
   observer?.disconnect()
   controls?.dispose()
   scene?.traverse(o => { o.geometry?.dispose(); o.material?.map?.dispose(); o.material?.dispose() })
@@ -226,40 +284,34 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <!-- The 2D map stays behind, dimmed, so the place keeps its context. -->
-  <div class="pointer-events-none absolute inset-0 z-[5] bg-bg/60" aria-hidden="true" />
-  <section class="hud absolute inset-x-2 bottom-24 z-[12] flex flex-col bg-bg/85 sm:inset-x-6 lg:inset-x-14"
-           :style="{ top: top + 'px' }" :aria-label="t('3D view of your field')">
-    <header class="flex items-center gap-2 border-b border-line px-3 py-1.5">
-      <h3 class="label min-w-0 flex-1 truncate">{{ t('3D view · your field') }}</h3>
-      <button type="button" class="btn !min-h-7 !px-2" :aria-pressed="spinning" :disabled="phase !== 'ready'" @click="toggleSpin">⟳ {{ t('Turn') }}</button>
-      <button type="button" class="btn !min-h-7 !px-2" :disabled="phase !== 'ready'" @click="resetView">{{ t('Reset view') }}</button>
-      <button type="button" class="btn !min-h-7 !px-2" :aria-label="t('Back to 2D')" @click="mapUi.view3d = false">2D ✕</button>
-    </header>
+  <svg class="pointer-events-none fixed inset-0 z-[11] size-full" aria-hidden="true">
+    <template v-if="beam">
+      <polygon :points="beam.pts" fill="var(--teal)" fill-opacity=".07" />
+      <line :x1="beam.l" :y1="beam.y" :x2="beam.field.left" :y2="beam.field.top" stroke="var(--teal)" stroke-opacity=".35" />
+      <line :x1="beam.r" :y1="beam.y" :x2="beam.field.right" :y2="beam.field.top" stroke="var(--teal)" stroke-opacity=".35" />
+    </template>
+  </svg>
 
-    <div ref="host" class="relative min-h-0 flex-1 overflow-hidden" role="img"
-         :aria-label="info ? t('3D view of your field. Height {min} to {max} m, mean slope {deg}°.', { min: info.min, max: info.max, deg: info.slope }) : t('3D view of your field')">
-      <div v-if="phase === 'ready'" ref="pin" class="pointer-events-none absolute left-0 top-0 whitespace-nowrap border border-fire bg-bg/90 px-2 py-0.5 font-mono text-xs text-ink transition-opacity">
-        {{ t('Your field') }} · {{ formatArea(state.parcel.areaM2) }}
-      </div>
-      <div v-if="phase === 'ready'" class="pointer-events-none absolute right-3 top-3 flex size-11 items-center justify-center border border-line bg-bg/80" :title="t('North')">
-        <span ref="needle" class="flex flex-col items-center font-mono text-[10px] leading-none text-fire"><b>N</b><i class="block h-4 w-0.5 bg-fire" /></span>
-      </div>
-      <div v-if="phase === 'loading'" class="absolute inset-0 flex flex-col items-center justify-center gap-2 font-mono text-xs uppercase tracking-wider text-muted">
-        <span class="block size-3 animate-ping bg-teal" aria-hidden="true" />{{ t('Building the 3D view…') }}
-      </div>
-      <div v-else-if="phase === 'error'" class="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center">
-        <p>{{ t('I couldn\'t build the 3D view. Check the connection and try again.') }}</p>
-        <button type="button" class="btn" @click="build">{{ t('Try again') }}</button>
-      </div>
+  <div ref="host" class="absolute z-[12]" :style="hostStyle" role="img"
+       :aria-label="info ? t('3D view of your field. Height {min} to {max} m, mean slope {deg}°.', { min: info.min, max: info.max, deg: info.slope }) : t('3D view of your field')">
+    <template v-if="phase === 'ready' && info">
+      <span ref="heightTag" class="pointer-events-none absolute left-0 top-0 whitespace-nowrap border-l-2 border-teal bg-bg/80 px-1.5 py-0.5 text-right font-mono text-xs leading-tight text-ink">
+        {{ state.mode === 'pro' ? t('Height {min}–{max} m', { min: info.min, max: info.max }) : t('About {m} m above the sea', { m: Math.round((info.min + info.max) / 2) }) }}
+        <span v-if="info.ex > 1" class="block text-[10px] text-muted">{{ t('Relief ×{n}', { n: info.ex }) }}</span>
+      </span>
+      <span ref="slopeTag" class="pointer-events-none absolute left-0 top-0 whitespace-nowrap border-l-2 border-teal bg-bg/80 px-1.5 py-0.5 font-mono text-xs leading-tight text-ink">
+        {{ state.mode === 'pro' ? t('Mean slope {deg}°', { deg: info.slope }) : t(info.slope < 2 ? 'Flat ground' : info.slope < 6 ? 'Gentle slope' : 'Steep ground') }}
+      </span>
+      <span class="pointer-events-none absolute right-1 top-1 flex flex-col items-center font-mono text-[10px] leading-none text-fire" :title="t('North')">
+        <span ref="needle" class="flex flex-col items-center"><b>N</b><i class="block h-3 w-0.5 bg-fire" /></span>
+      </span>
+    </template>
+    <div v-if="phase === 'loading'" class="absolute inset-0 flex items-center justify-center gap-2 font-mono text-xs uppercase tracking-wider text-sky-muted">
+      <span class="block size-2.5 animate-ping bg-teal" aria-hidden="true" />{{ t('Building the 3D view…') }}
     </div>
-
-    <footer v-if="info" class="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-line px-3 py-1.5 font-mono text-xs text-muted">
-      <span v-if="state.mode === 'pro'" class="text-ink">{{ t('Height {min}–{max} m', { min: info.min, max: info.max }) }} · {{ t('mean slope {deg}°', { deg: info.slope }) }}</span>
-      <span v-else class="text-ink">{{ t(info.slope < 2 ? 'Flat ground' : info.slope < 6 ? 'Gentle slope' : 'Steep ground') }}</span>
-      <span>{{ t('Relief ×{n}', { n: info.ex }) }}</span>
-      <span class="max-sm:hidden">{{ t('Drag to turn · wheel or pinch to zoom') }}</span>
-      <span class="ml-auto">{{ t('Elevation: NASA SRTM 30 m (Terrain Tiles)') }}</span>
-    </footer>
-  </section>
+    <div v-else-if="phase === 'error'" class="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center">
+      <p class="bg-bg/80 px-2 py-1">{{ t('I couldn\'t build the 3D view. Check the connection and try again.') }}</p>
+      <button type="button" class="btn" @click="build">{{ t('Try again') }}</button>
+    </div>
+  </div>
 </template>

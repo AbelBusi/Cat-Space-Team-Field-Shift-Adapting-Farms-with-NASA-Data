@@ -99,13 +99,14 @@ Line icons (stroke SVG) are allowed only for UI controls (play, sound, close), d
 - Town and village names (OpenStreetMap) sit on the photo like on a road map: `--sky-ink` text with a thin dark outline. This text
   outline is the one allowed "shadow", because a label must read on any ground. Bigger places first, no overlapping names.
 - NASA data are **optional overlays** on top, with the ramps above, a legend and an opacity control.
-- **3D view of an outlined field:** it opens by itself when a field is finished (2D / 3D switch next to the field size). It is an
-  inspection mode, so the topic cards step aside. **Only the field is shown**, cut out like a block of land floating in the
-  night: the satellite photo on top over the real relief, soil layers (palette browns and sand) on the sides, and a thin
-  `--fire` line on the top edge, the same outline drawn on the 2D map. The camera starts straight above with north up, like
-  the map, then tilts while the block rises, so it reads as the same place. A label with the field's size floats over it and a
-  north arrow follows the camera. Small relief is raised and the factor is always shown (`Relief ×N`), with the real heights
-  and the source next to it.
+- **3D view of an outlined field:** it opens by itself when a field is finished; the 2D / 3D switch next to the field size is
+  the only control (no extra panel, titles or buttons). The cards stay on screen. On the map the field stays lit and everything
+  around it gets darker; the field moves to the lower part of the free space and **the field rises out of it as a floating
+  block of land**, joined to it by a faint `--teal` beam, like a projection, but the block is full quality: the satellite photo
+  over the real relief, soil layers on the sides, the `--fire` outline on top. It floats gently and turns slowly (drag to turn,
+  wheel or pinch to zoom). Measurements are drawn, not written: a `--teal` height line on the uphill side and the slope angle
+  (level line dashed, land line solid, an arc between) on the downhill side, each with a short label. Small relief is raised and
+  the factor is always shown (`Relief ×N`); the height source is in the map credits.
 
 ## 7. One screen, like a game (layout since Nov 15, 2026)
 

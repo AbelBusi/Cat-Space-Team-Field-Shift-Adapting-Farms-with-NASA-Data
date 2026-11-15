@@ -99,7 +99,7 @@ export async function loadTerrain(ring) {
   const fieldUV = ring.map(toUV)
 
   // The field's numbers, from a 60 × 60 net of points inside it.
-  const n = 60, step = f.size / n, hs = [], slopes = []
+  const n = 60, step = f.size / n, hs = [], slopes = [], fall = [0, 0]
   for (let i = 0; i <= n; i++) for (let j = 0; j <= n; j++) {
     const u = j / n, v = i / n
     if (!insideRing(toLatLon(u, v), ring)) continue
@@ -107,6 +107,7 @@ export async function loadTerrain(ring) {
     hs.push(sample(u, v))
     const gx = (sample(u + d, v) - sample(u - d, v)) / (2 * step), gy = (sample(u, v + d) - sample(u, v - d)) / (2 * step)
     slopes.push(Math.atan(Math.hypot(gx, gy)) * 180 / Math.PI)
+    fall[0] -= gx; fall[1] -= gy   // downhill, in u, v
   }
   if (!hs.length) { hs.push(sample(0.5, 0.5)); slopes.push(0) }
   const lo = Math.min(...hs), hi = Math.max(...hs), relief = hi - lo
@@ -115,6 +116,9 @@ export async function loadTerrain(ring) {
 
   return {
     size: f.size, sample, photo, photoUV, fieldUV, min: lo, relief, exaggeration,
-    field: { min: Math.round(lo), max: Math.round(hi), slope: +(slopes.reduce((a, b) => a + b, 0) / slopes.length).toFixed(1) },
+    field: {
+      min: Math.round(lo), max: Math.round(hi), slope: +(slopes.reduce((a, b) => a + b, 0) / slopes.length).toFixed(1),
+      downhill: Math.hypot(...fall) > 1e-9 ? fall.map(c => c / Math.hypot(...fall)) : [1, 0],   // unit direction the land falls to
+    },
   }
 }

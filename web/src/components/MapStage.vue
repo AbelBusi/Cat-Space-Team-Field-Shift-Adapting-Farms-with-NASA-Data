@@ -20,7 +20,7 @@ import PLACES from '../data/lambayeque_places.json'
 const props = defineProps({ tint: Boolean, squares: Boolean })
 
 const mapEl = ref(null)
-let map, edgeLayer, cellLayer, pointLayer, parcelLayer, coverLayer, dataLayer
+let map, edgeLayer, cellLayer, pointLayer, parcelLayer, coverLayer, dataLayer, shade
 const rects = {}
 const L_ = computed(() => LAYERS[state.layer])
 const latlngs = rings => rings.map(r => r.map(([lon, lat]) => [lat, lon]))
@@ -169,7 +169,30 @@ function setDrawing(on) {
   drawParcel()
 }
 function addCorner(ll) { corners = [...corners, [ll.lat, ll.lng]]; drawParcel() }
+// 3D view: everything but the field gets darker, and the field moves to the bottom of the free box, so the floating
+// block above it reads as rising out of it.
+function highlightField(on) {
+  shade?.remove()
+  shade = null
+  if (!on || !state.parcel) return
+  const b = L.latLngBounds(boundsOf(state.area.rings)).pad(1), around = [b.getSouthWest(), b.getNorthWest(), b.getNorthEast(), b.getSouthEast()]
+  shade = L.polygon([around, state.parcel.ring], { stroke: false, fillColor: PAL.bg, fillOpacity: 0.6, interactive: false }).addTo(map)
+}
+const HEIGHTS = 'Heights: NASA SRTM 30 m (Terrain Tiles)'
 Object.assign(mapApi, {
+  highlightField,
+  // box: the free screen area { left, top, right, bottom } in pixels; the field goes into its lower part.
+  frameField(box) {
+    if (!state.parcel) return
+    const lower = box.top + (box.bottom - box.top) * 0.62
+    map.flyToBounds(L.latLngBounds(state.parcel.ring), { paddingTopLeft: [box.left + 10, lower], paddingBottomRight: [innerWidth - box.right + 10, innerHeight - box.bottom + 8], duration: 0.9, maxZoom: 18 })
+  },
+  // The field's top edge on screen: where the light that holds the 3D block starts.
+  fieldOnScreen() {
+    if (!state.parcel) return null
+    const pts = state.parcel.ring.map(p => map.latLngToContainerPoint(p))
+    return { left: Math.min(...pts.map(p => p.x)), right: Math.max(...pts.map(p => p.x)), top: Math.min(...pts.map(p => p.y)) }
+  },
   zoomIn: () => map.zoomIn(), zoomOut: () => map.zoomOut(), refit: () => showArea(),
   zoomTo: c => map.flyToBounds(L.latLngBounds(c.bounds).pad(0.4), { duration: 0.8, maxZoom: 17 }),
   startOutline() {
@@ -188,8 +211,7 @@ Object.assign(mapApi, {
     setDrawing(false)
     const [lat, lon] = vertexCenter(corners)
     selectPoint(lat, lon, 'Your field')
-    map.flyToBounds(L.latLngBounds(corners).pad(0.8), { duration: 0.9, maxZoom: 17 })
-    mapUi.view3d = true   // a new field opens straight in 3D
+    mapUi.view3d = true   // a new field opens straight in 3D (Field3D then frames it)
   },
   locateMe() {
     if (!navigator.geolocation) return say('This browser can\'t share its location. You can tap the map instead.', 'sad', [], { level: 'force' })
@@ -274,6 +296,11 @@ watch(() => [state.point, props.squares, props.tint], drawPoint)
 watch(() => cell.value?.squares, drawCover)
 watch(() => [state.layer, state.month, state.scen, db.power, db.ndvi], paint)
 watch(() => mapUi.data, () => { showData(); paint() })
+watch(() => mapUi.view3d && !!state.parcel, on => {
+  highlightField(on)
+  map.attributionControl[on ? 'addAttribution' : 'removeAttribution'](HEIGHTS)
+  if (!on && state.parcel) map.flyToBounds(L.latLngBounds(state.parcel.ring), { ...padding(), duration: 0.9, maxZoom: 17 })
+})
 watch(() => [state.month, state.scen], () => { if (mapUi.data === 'grid') showData() })
 watch(() => mapUi.intensity, v => dataLayer?.setOpacity(v))
 </script>

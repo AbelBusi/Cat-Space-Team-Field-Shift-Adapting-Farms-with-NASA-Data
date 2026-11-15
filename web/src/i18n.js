@@ -23,11 +23,9 @@ export function t(s, params) {
 }
 
 const ES = {
+  "About {m} m above the sea": "Unos {m} m sobre el mar",
+  "Mean slope {deg}°": "Pendiente media {deg}°",
   "3D view of your field": "Vista 3D de tu terreno",
-  "3D view · your field": "Vista 3D · tu terreno",
-  "Turn": "Girar",
-  "Reset view": "Volver a empezar",
-  "Back to 2D": "Volver a 2D",
   "3D view of your field. Height {min} to {max} m, mean slope {deg}°.": "Vista 3D de tu terreno. Altura de {min} a {max} m, pendiente media {deg}°.",
   "North": "Norte",
   "Building the 3D view…": "Armando la vista 3D…",
@@ -36,8 +34,6 @@ const ES = {
   "Height {min}–{max} m": "Altura {min}–{max} m",
   "mean slope {deg}°": "pendiente media {deg}°",
   "Relief ×{n}": "Relieve ×{n}",
-  "Drag to turn · wheel or pinch to zoom": "Arrastra para girar · rueda o pellizca para acercar",
-  "Elevation: NASA SRTM 30 m (Terrain Tiles)": "Altura: NASA SRTM 30 m (Terrain Tiles)",
   "View of your field": "Vista de tu terreno",
   "See your field in 3D, with its relief": "Mira tu terreno en 3D, con su relieve",
   "Here is your field in 3D, cut out like a block of land. I raised the relief ×{n} so small slopes show; the real heights are in the card.": "¡Aquí está tu terreno en 3D, recortado como un bloque de tierra! Levanté el relieve ×{n} para que se noten las pendientes pequeñas; las alturas reales están en la tarjeta.",
@@ -398,11 +394,9 @@ const ES = {
 }
 
 const QU = {
+  "About {m} m above the sea": "Quchamanta {m} m hina hanaqpi",
+  "Mean slope {deg}°": "Chawpi qhata {deg}°",
   "3D view of your field": "Chakraykip 3D rikchaynin",
-  "3D view · your field": "3D rikchay · chakrayki",
-  "Turn": "Muyuchiy",
-  "Reset view": "Qallariyman kutichiy",
-  "Back to 2D": "2Dman kutiy",
   "3D view of your field. Height {min} to {max} m, mean slope {deg}°.": "Chakraykip 3D rikchaynin. Hanaq kaynin {min}manta {max} m kama, chawpi qhata {deg}°.",
   "North": "Chinchay",
   "Building the 3D view…": "3D rikchayta ruwachkani…",
@@ -411,8 +405,6 @@ const QU = {
   "Height {min}–{max} m": "Hanaq kaynin {min}–{max} m",
   "mean slope {deg}°": "chawpi qhata {deg}°",
   "Relief ×{n}": "Allpap sayaynin ×{n}",
-  "Drag to turn · wheel or pinch to zoom": "Aysay muyuchinaykipaq · rueda utaq iskay dedowan qayllachiy",
-  "Elevation: NASA SRTM 30 m (Terrain Tiles)": "Hanaq kaynin: NASA SRTM 30 m (Terrain Tiles)",
   "View of your field": "Chakraykip rikchaynin",
   "See your field in 3D, with its relief": "Chakraykita 3Dpi qhaway, sayayninwan",
   "Here is your field in 3D, cut out like a block of land. I raised the relief ×{n} so small slopes show; the real heights are in the card.": "¡Kaypim chakrayki 3Dpi, huk allpa k'urpa hina kuchusqa! Allpap sayayninta ×{n} wichachini huch'uy qhatakuna rikukunanpaq; chiqap hanaq kayninkunaqa kartapim.",
