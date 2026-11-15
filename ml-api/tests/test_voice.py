@@ -48,3 +48,14 @@ def test_open_topic_returns_facts_computed_by_the_api():
 def test_chat_rejects_bad_input_before_calling_the_model():
     assert client.post("/api/v1/assistant/chat", json={"message": ""}).status_code == 422
     assert client.post("/api/v1/assistant/chat", json={"message": "hi", "lang": "fr"}).status_code == 422
+
+
+def test_speak_returns_sprouts_voice_or_tells_the_browser_to_speak():
+    import io
+    import wave
+    r = client.post("/api/v1/assistant/speak", json={"text": "Miau, hola. Soy Sprout.", "lang": "es"})
+    assert r.status_code in (200, 204, 503)
+    if r.status_code == 200:
+        w = wave.open(io.BytesIO(r.content))
+        assert r.headers["content-type"] == "audio/wav" and w.getnframes() / w.getframerate() > 0.5
+    assert client.post("/api/v1/assistant/speak", json={"text": "", "lang": "es"}).status_code == 422

@@ -20,6 +20,13 @@ class ScreenContext(BaseModel):
     track: str | None = Field(None, max_length=10)
 
 
+class SpeakRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(min_length=1, max_length=600)
+    lang: Literal["es", "en"] = "es"
+
+
 class HistoryTurn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

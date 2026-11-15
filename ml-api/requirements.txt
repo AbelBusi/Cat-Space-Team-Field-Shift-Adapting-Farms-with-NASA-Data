@@ -12,6 +12,6 @@ httpx==0.28.1
 
 # Sprout's voice assistant (ml-api/voice_assistant). The LLM and Whisper go through httpx (above) with LLM_API_KEY.
 python-multipart==0.0.33  # audio uploads (POST /assistant/voice)
-# Optional, only for STT_ENGINE=local or TTS_ENGINE=piper (see ml-api/README.md, "Sprout's voice"):
+piper-tts==1.8.0          # Sprout's spoken voice (voices: bash voice_assistant/download_voices.sh)
+# Optional, only for STT_ENGINE=local (speech to text on this machine instead of the cloud):
 # faster-whisper==1.1.1
-# piper-tts==1.3.0

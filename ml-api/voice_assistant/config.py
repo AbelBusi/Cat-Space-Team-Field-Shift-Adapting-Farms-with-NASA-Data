@@ -93,11 +93,11 @@ def load_settings() -> Settings:
         stt_cloud_model=os.getenv("STT_CLOUD_MODEL", "whisper-large-v3-turbo"),
         stt_device=os.getenv("STT_DEVICE", "cpu"),
         stt_compute_type=os.getenv("STT_COMPUTE_TYPE", "int8"),
-        tts_engine=os.getenv("TTS_ENGINE", "browser").strip().lower(),
+        tts_engine=os.getenv("TTS_ENGINE", "piper").strip().lower(),   # without voices or piper-tts, the web falls back to the browser voice
         tts_enabled=_bool("TTS_ENABLED", True),
         piper_voices={"es": _path(os.getenv("PIPER_VOICE_ES", "voice_assistant/models/es_MX-claude-high.onnx")),
                       "en": _path(os.getenv("PIPER_VOICE_EN", "voice_assistant/models/en_US-amy-medium.onnx"))},
-        tts_pitch=float(os.getenv("TTS_PITCH", "1.3")),
+        tts_pitch=float(os.getenv("TTS_PITCH", "1.35")),
         places_dir=_path(os.getenv("VOICE_PLACES_DIR", "../web/src/data")),
         api_prefix=os.getenv("ASSISTANT_API_PREFIX", "/api/v1").rstrip("/"),
         max_tool_rounds=int(os.getenv("ASSISTANT_MAX_TOOL_ROUNDS", "4")),

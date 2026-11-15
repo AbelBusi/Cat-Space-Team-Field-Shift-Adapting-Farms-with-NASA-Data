@@ -25,3 +25,6 @@ paper/*.aux
 paper/*.log
 paper/*.out
 paper/*.pdf
+
+# Piper voice files (download with ml-api/voice_assistant/download_voices.sh)
+ml-api/voice_assistant/models/

@@ -32,3 +32,32 @@ export function speak(text, { lang = 'es', onStart, onEnd } = {}) {
   window.speechSynthesis.speak(u)
   return { stop() { window.speechSynthesis.cancel(); end() } }
 }
+
+// Sprout's own voice: Piper on the ML API (POST /assistant/speak, a soft voice pitched up like a kitten, in Spanish or
+// English). If the server has no voice (204) or cannot be reached, the browser's voice says it instead.
+import { ML_API } from '../lib/mlApi.js'
+let serverVoice = true          // turns false after a failure, so Sprout does not wait on a dead server for every line
+
+export function voiceLine(text, { lang = 'es', onStart, onEnd } = {}) {
+  let ended = false, audio = null, browser = null
+  const ctrl = new AbortController()
+  const end = () => { if (!ended) { ended = true; onEnd?.() } }
+  const handle = { stop() { ctrl.abort(); audio?.pause(); browser?.stop(); end() } }
+  const fallback = () => { if (!ended && !ctrl.signal.aborted) browser = speak(text, { lang, onStart, onEnd: end }) }
+  if (!text) { end(); return handle }
+  if (!serverVoice || !ML_API) { fallback(); return handle }
+  fetch(`${ML_API}/assistant/speak`, { method: 'POST', signal: ctrl.signal, headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: text.slice(0, 600), lang: lang === 'en' ? 'en' : 'es' }) })
+    .then(async r => {
+      if (r.status === 204) return fallback()
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      const url = URL.createObjectURL(await r.blob())
+      if (ctrl.signal.aborted) return URL.revokeObjectURL(url)
+      audio = new Audio(url)
+      audio.onplay = () => onStart?.()
+      audio.onended = audio.onerror = () => { URL.revokeObjectURL(url); end() }
+      await audio.play().catch(() => { URL.revokeObjectURL(url); end() })   // autoplay blocked until the first tap
+    })
+    .catch(e => { if (e.name !== 'AbortError') { serverVoice = false; fallback() } })
+  return handle
+}

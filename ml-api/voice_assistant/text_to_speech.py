@@ -52,7 +52,13 @@ def _synthesize_sync(text: str, lang: str) -> bytes:
     raw = io.BytesIO()
     with wave.open(raw, "wb") as wav:
         if hasattr(voice, "synthesize_wav"):   # piper-tts >= 1.3
-            voice.synthesize_wav(text, wav)
+            try:
+                from piper import SynthesisConfig
+                # speak slower by the same factor the pitch speeds it up: higher voice, normal pace
+                cfg = SynthesisConfig(length_scale=settings.tts_pitch * 0.92, noise_scale=0.6, noise_w_scale=0.7)
+                voice.synthesize_wav(text, wav, syn_config=cfg)
+            except ImportError:
+                voice.synthesize_wav(text, wav)
         else:                                  # piper-tts 1.2
             voice.synthesize(text, wav)
     raw.seek(0)

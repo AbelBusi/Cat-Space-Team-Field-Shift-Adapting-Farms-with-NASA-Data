@@ -4,14 +4,14 @@ from __future__ import annotations
 import base64
 import logging
 
-from fastapi import APIRouter, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Query, Request, Response, UploadFile
 from pydantic import TypeAdapter, ValidationError
 
 from . import speech_to_text, text_to_speech
 from .assistant import Assistant
 from .config import settings
 from .language_model import LLMError, available_models, is_configured
-from .schemas import (ChatRequest, ChatResponse, HistoryTurn, ScreenContext,
+from .schemas import (ChatRequest, ChatResponse, HistoryTurn, ScreenContext, SpeakRequest,
                       StatusResponse, VoiceResponse)
 from .tools import TOOLS
 
@@ -51,6 +51,28 @@ async def _answer(request: Request, message: str, context, history, speak: bool,
         raise _llm_http_error(exc)
     return {"text": result.text, "mood": result.mood, "actions": result.actions, "tools_used": result.tools_used,
             "lang": lang, **(await _voice(result.text, lang, speak))}
+
+
+_SPOKEN: dict[tuple[str, str], bytes] = {}   # Sprout repeats its guide lines: keep the last ones ready
+
+
+@router.post("/speak", response_class=Response, responses={200: {"content": {"audio/wav": {}}}})
+async def speak(body: SpeakRequest) -> Response:
+    """Sprout's voice for any line it says (guide lines included). 204 when the browser should speak instead."""
+    key = (body.lang, body.text)
+    wav = _SPOKEN.get(key)
+    if wav is None:
+        try:
+            wav = await text_to_speech.synthesize(body.text, body.lang)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("TTS falló: %s", exc)
+            raise HTTPException(status_code=503, detail="Sprout's voice is not available on the server.")
+        if not wav:
+            return Response(status_code=204)
+        if len(_SPOKEN) > 300:
+            _SPOKEN.pop(next(iter(_SPOKEN)))
+        _SPOKEN[key] = wav
+    return Response(content=wav, media_type="audio/wav", headers={"Cache-Control": "public, max-age=86400"})
 
 
 @router.get("/status", response_model=StatusResponse)

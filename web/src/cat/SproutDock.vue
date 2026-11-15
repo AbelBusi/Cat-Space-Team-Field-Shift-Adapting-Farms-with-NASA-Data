@@ -2,14 +2,15 @@
 import PixelIcon from '../components/PixelIcon.vue'
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import CatSprite from './CatSprite.vue'
-import { guide, line, hasNext, next, close, summon, submitQuestion, openAsk, say } from '../guide.js'
+import { guide, line, hasNext, next, close, summon, submitQuestion, openAsk, say, tell } from '../guide.js'
 import { state, valueAt, placeLabel, chosen } from '../store.js'
 import { LAYER_KEYS } from '../content.js'
 import { blip, meow, meowLength, unlock } from '../lib/sound.js'
 import { t, lang } from '../i18n.js'
 import VoiceButton from '../voice/VoiceButton.vue'
 import { runActions } from '../voice/actions.js'
-import { askByText, toVoiceContext, playReply } from '../voice/voiceApi.js'
+import { askByText, toVoiceContext } from '../voice/voiceApi.js'
+import { voiceLine } from '../voice/speech.js'
 
 // Sprout's translator panel: typed lines, answers to pick, and a box for open questions.
 // A line is an English key, or a function for lines with names and numbers, so it re-translates when the language changes.
@@ -20,12 +21,21 @@ const typed = ref('')
 let timer, restTimer, lastMood = null
 
 // Typewriter: letters appear one by one, with short pauses after punctuation.
+// Sprout's voice: every line it types is also spoken (Piper on the ML API, or the browser), unless the sound is off.
+let voice = null
+const stopVoice = () => { voice?.stop(); voice = null; guide.voicing = false }
+watch(() => guide.muted, m => m && stopVoice())
 watch([line, lang, () => guide.open], ([l, , open]) => {
   clearTimeout(timer)
   guide.talking = false
+  stopVoice()
   if (!l || !open) return
-  const [en, mood] = l
+  const [en, mood, lineLang] = l
   const text = resolve(en)
+  if (!guide.muted && text) {
+    guide.voicing = true             // set now, so the typing blips stay quiet while the voice is fetched
+    voice = voiceLine(text, { lang: lineLang || (lang.value === 'en' ? 'en' : 'es'), onEnd: () => { guide.voicing = false } })
+  }
   const meows = mood !== lastMood && !guide.muted && !guide.voicing   // a meow when the mood changes, then the text starts
   lastMood = mood
   if (meows) meow(mood)
@@ -74,11 +84,9 @@ function onReply(r) {
   if (r.transcript) voiceTurns.push({ role: 'user', content: r.transcript })
   voiceTurns.push({ role: 'assistant', content: r.text })
   voiceTurns.splice(0, Math.max(0, voiceTurns.length - 10))
-  guide.voicing = !guide.muted
-  say(() => r.text, r.mood || 'neutral', [], { level: 'force' })
+  tell([[() => r.text, r.mood || 'neutral', r.lang]], { level: 'force' })   // the line watcher speaks it in that language
   runActions(r.actions)
 }
-const onSpeaking = on => { guide.voicing = on }
 const onVoiceError = m => { guide.voicing = false; say(() => m, 'worried', [], { level: 'force' }) }
 
 const question = ref(''), box = ref(null)
@@ -86,7 +94,6 @@ watch(() => guide.asking, on => on && nextTick(() => box.value?.focus()))
 
 // Typed questions go to the same assistant as the voice (it can move the map and open topics); if it does not answer,
 // the plain chat (/ask) takes over.
-let typedPlayer = null
 async function send() {
   const q = question.value.trim()
   if (!q) return
@@ -95,8 +102,6 @@ async function send() {
   try {
     const r = await askByText(q, { context: toVoiceContext(voiceContext()), history: voiceTurns, lang: lang.value === 'en' ? 'en' : 'es' })
     onReply({ ...r, transcript: q })
-    typedPlayer?.stop()
-    typedPlayer = playReply(r, { silent: guide.muted, onStart: () => onSpeaking(true), onEnd: () => onSpeaking(false) })
     return
   } catch (e) { console.warn('assistant chat failed, using /ask:', e.message) }
   submitQuestion(q, {
@@ -128,8 +133,8 @@ onBeforeUnmount(() => { clearTimeout(timer); clearTimeout(restTimer); removeEven
           <span><span class="font-pixel text-[13px]">Sprout</span> · {{ t('translator') }}</span>
           <span class="flex gap-1 text-muted [&_button]:uppercase">
             <button type="button" class="px-1.5 py-1 hover:text-ink" data-tour="ask" :class="{ 'text-teal': guide.asking }" :aria-pressed="guide.asking" :aria-label="t('Ask Sprout anything')" :title="t('Ask Sprout anything')" @click="openAsk"><PixelIcon name="ai" color="currentColor" :size="1.25" /></button>
-            <VoiceButton :context="voiceContext" :history="voiceHistory" :muted="guide.muted" data-tour="voice"
-                         @listening="onListening" @thinking="onThinking" @reply="onReply" @speaking="onSpeaking" @error="onVoiceError" />
+            <VoiceButton :context="voiceContext" :history="voiceHistory" :speak="false" :muted="true" data-tour="voice"
+                         @listening="onListening" @thinking="onThinking" @reply="onReply" @error="onVoiceError" />
             <button type="button" class="px-1.5 py-1 hover:text-ink" data-tour="sound" :aria-pressed="!guide.muted" :aria-label="t(guide.muted ? 'Turn voice sound on' : 'Turn voice sound off')" :title="t(guide.muted ? 'Turn voice sound on' : 'Turn voice sound off')" @click="unlock(); guide.muted = !guide.muted"><PixelIcon :name="guide.muted ? 'speaker_off' : 'speaker'" color="currentColor" :size="1.25" /></button>
             <button type="button" class="px-1.5 py-1 hover:text-ink" data-tour="close" :aria-label="t('Close Sprout')" :title="t('Close Sprout')" @click="close"><PixelIcon name="close" color="currentColor" :size="1.25" /></button>
           </span>

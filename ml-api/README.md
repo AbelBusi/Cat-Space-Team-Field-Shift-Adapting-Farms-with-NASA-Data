@@ -214,19 +214,25 @@ web**: fly to a province, district or town of Lambayeque, or open a screen or in
 web: Sprout types the answer, speaks it (browser voice, pitch 1.75) and runs the actions (map, topic)
 ```
 
-**Quick local run** (no download beyond `pip install -r requirements.txt`; one key for everything):
+**Sprout's voice:** every line Sprout says (the guide, typed answers, spoken answers) is also spoken with
+[Piper](https://github.com/rhasspy/piper) on the API (`POST /assistant/speak`, cached): a soft Spanish voice
+(`es_MX-claude-high`) and a soft English one (`en_US-amy-medium`), pitched up by `TTS_PITCH` (1.35) with the pace kept
+normal, so it sounds like a kitten. Get the voices once with `bash voice_assistant/download_voices.sh` (~126 MB, ignored
+by git). Without them, or with `TTS_ENGINE=browser`, the browser's own voice speaks instead. The speaker button in
+Sprout's panel turns the voice off.
 
+**Quick local run** (one key for everything):
+
+0. `pip install -r requirements.txt` and `bash voice_assistant/download_voices.sh` (once).
 1. In `ml-api/.env`: `LLM_BASE_URL=https://api.groq.com/openai/v1`, `LLM_API_KEY=<your Groq key>`,
    `VOICE_LLM_MODEL=openai/gpt-oss-20b` (fast, with its own rate limit). Defaults: `STT_ENGINE=groq` (Whisper in the
-   cloud with the same key) and `TTS_ENGINE=browser` (the browser speaks).
+   cloud with the same key) and `TTS_ENGINE=piper` (Sprout's voice on the API).
 2. Start the API and the web as above; open http://localhost:5173 (the microphone needs `localhost` or https).
 3. Tap 🎙️ in Sprout's panel, speak, tap again. Try: *"Llévame a Olmos"*, *"Take me to the Towards 2030 insight"*,
    *"¿Qué tan seguro estás?"*, *"¿Cómo estará el agua del suelo en marzo?"*. Check: `GET /api/v1/assistant/status?check=true`.
 
-**Fully local (optional):** `STT_ENGINE=local` uses `faster-whisper` (model `small`, ~460 MB the first time);
-`TTS_ENGINE=piper` speaks on the server with `piper-tts` and one voice per language
-(`PIPER_VOICE_ES`, `PIPER_VOICE_EN`, from [rhasspy/piper-voices](https://huggingface.co/rhasspy/piper-voices)),
-raised by `TTS_PITCH` (1.3 ≈ 4.5 semitones) to sound like a kitten.
+**Fully local (optional):** `STT_ENGINE=local` uses `faster-whisper` (model `small`, ~460 MB the first time) instead
+of Whisper in the cloud.
 
 **Free tier limits:** Groq's free models allow about 8,000 tokens per minute each; one question uses 2–4 thousand. The
 assistant keeps prompts short, waits once when Groq asks for a short pause, and switches to `LLM_MODEL` when the voice
