@@ -81,7 +81,7 @@ onBeforeUnmount(() => { clearTimeout(timer); clearTimeout(restTimer); removeEven
 
 <template>
   <div class="pointer-events-none fixed inset-x-0 z-50 flex justify-center px-2 print:hidden"
-       :class="state.stage === 'intro' ? 'bottom-[calc(13%+136px)]' : state.stage === 'explore' ? 'bottom-3 max-lg:bottom-[calc(44dvh+8px)]' : 'bottom-3'">
+       :class="state.stage === 'intro' ? 'bottom-[calc(13%+190px)]' : state.stage === 'explore' ? 'bottom-3 max-lg:bottom-[calc(44dvh+8px)]' : 'bottom-3'">
     <Transition name="dock" mode="out-in">
       <aside v-if="guide.open && line" key="panel" class="hud pointer-events-auto w-[min(620px,100%)] !border-teal/50 bg-panel font-mono text-ink" :aria-label="t('Sprout, your guide')">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-1 text-xs uppercase tracking-wider text-teal">

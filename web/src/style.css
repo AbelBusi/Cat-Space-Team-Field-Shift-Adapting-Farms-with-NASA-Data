@@ -65,7 +65,7 @@
   .px-icon { display: inline-block; flex: none; }
   .cat { display: block; overflow: visible; animation: bob 1.2s steps(2) infinite; }
   .cat-ant { animation: bob-ant 1.2s steps(2) infinite; }
-  .cat-body { animation: pop .28s var(--ease-out); transform-origin: 16px 28px; }
+  .cat-body { animation: pop .28s var(--ease-out); transform-origin: 24px 48px; }
   .cat.talking { animation-duration: .5s; }
 
   /* Sky scene */
@@ -191,3 +191,21 @@
   .report { --bg: #fff; --panel: #fff; --line: #cfc8b8; --muted: #555d78; --ink: #141B38; --teal: #1d6f68; --fire: #9a5a09; color: var(--ink); }
   .report section { break-inside: avoid; }
 }
+
+/* Sprout's arrival on the first screen: the saucer flies in, a beam opens, Sprout floats down and lands. */
+.arrival .ufo { animation: ufo-in 1.5s cubic-bezier(.2, .8, .3, 1) both, ufo-hover 1.6s ease-in-out 1.5s infinite alternate; }
+.arrival[data-phase="land"] .ufo { animation: ufo-out .9s cubic-bezier(.6, 0, .9, .4) .25s both; }
+.arrival .beam { clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%); transform-origin: top;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--teal) 55%, transparent), color-mix(in srgb, var(--teal) 12%, transparent));
+  animation: beam-open .35s ease-out both; }
+.arrival[data-phase="land"] .beam { animation: beam-close .35s ease-in both; }
+.arrival[data-phase="fly"] .sprout { opacity: 0; }
+.arrival[data-phase="beam"] .sprout { animation: sprout-descend 1.45s cubic-bezier(.35, 0, .3, 1) .2s both; }
+.arrival[data-phase="land"] .sprout { animation: sprout-land .45s cubic-bezier(.2, .9, .3, 1.4) both; transform-origin: 50% 100%; }
+@keyframes ufo-in { from { transform: translate(calc(-50% + 55vw), -55vh) scale(.5) rotate(-8deg); opacity: .3; } 60% { opacity: 1; } to { transform: translate(-50%, 0) scale(1) rotate(0); } }
+@keyframes ufo-hover { to { transform: translate(-50%, -6px); } }
+@keyframes ufo-out { from { transform: translate(-50%, 0); } to { transform: translate(calc(-50% - 60vw), -70vh) scale(.4) rotate(10deg); opacity: 0; } }
+@keyframes beam-open { from { transform: translateX(-50%) scaleY(0); opacity: 0; } to { transform: translateX(-50%) scaleY(1); opacity: 1; } }
+@keyframes beam-close { to { transform: translateX(-50%) scaleY(0); opacity: 0; } }
+@keyframes sprout-descend { from { transform: translateY(-250px) scale(.8) rotate(-6deg); opacity: 0; } 25% { opacity: 1; } 60% { transform: translateY(-90px) scale(.95) rotate(5deg); } to { transform: translateY(0) scale(1) rotate(0); opacity: 1; } }
+@keyframes sprout-land { 0% { transform: scale(1.12, .86); } 55% { transform: scale(.94, 1.08); } 100% { transform: scale(1); } }

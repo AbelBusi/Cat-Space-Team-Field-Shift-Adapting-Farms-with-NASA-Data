@@ -114,14 +114,19 @@ click on the map ──► grid cells around the point (lib/nasa.js → gridCell
 
 ## Sprout, the guide
 
-![Sprout's 7 moods: neutral, happy, surprised, worried, thinking, sad, shy](docs/sprout-moods.png)
+![Sprout's 10 moods, sitting and waving: neutral, happy, excited, surprised, worried, thinking, sad, shy, determined, sleepy](docs/sprout-moods.png)
 
 - Gentle, patient and encouraging. It explains one thing at a time and is honest about what the satellites cannot see.
-- 7 moods: `neutral`, `happy`, `surprised`, `worried`, `thinking`, `sad`, `shy`. It blinks, bobs, and moves its mouth while text types.
+- A full-body sitting alien cat (48 × 50 px, original pixel art) with 10 moods: `neutral`, `happy`, `excited`, `surprised`, `worried`,
+  `thinking`, `sad`, `shy`, `determined`, `sleepy`, two poses (`sit`, `wave`) and four antenna shapes. It blinks, wags its tail, bobs,
+  and moves its mouth while text types. Small spots show only its bust.
+- **Arrival:** on each visit its saucer glides in, opens a beam and sets Sprout down by the campfire; it lands, waves, the saucer
+  leaves and only then it talks (skipped with reduced motion).
 - Its voice is a synthesized meow (`web/src/lib/sound.js`, no audio files): one meow per mood change, tiny mews while text types, and a meow when you tap it at the top of the page. Tune the `MEOW` table by ear.
 - **Add or edit a line:** `SCRIPTS` in `web/src/content.js`, one entry per screen. Each line is `[text, mood]`; add its Spanish
   and Quechua in `web/src/i18n.js`. Keep it short: the screen already shows the data, Sprout only explains it.
-- **Redraw the cat:** edit the character rows in `web/src/cat/sprites.js` (one character = one pixel, `.` = transparent, colors in `PALETTE`).
+- **Redraw the cat:** edit `pipeline/draw_sprout.py` (shapes for the body, small stamps for each face) and run
+  `python pipeline/draw_sprout.py web/src/cat/sprites.js docs/sprout-moods.png`.
 - Visitors can turn the guide off (top bar or Sprout's answers), mute the voice blips, or minimize the box. With *reduced
   motion* enabled in the operating system, text and charts appear without animation.
 

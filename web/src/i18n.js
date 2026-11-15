@@ -23,6 +23,7 @@ export function t(s, params) {
 }
 
 const ES = {
+  "Sprout the alien cat, looking determined": "Sprout, el gato alienígena, decidido",
   "Average of {place}, weighted by area: {p} NASA POWER squares and {r} rain squares. Greenness: at the center.": "Promedio de {place}, ponderado por área: {p} cuadrantes de NASA POWER y {r} de lluvia. Verdor: en el centro.",
   "Average of your field, weighted by area: {p} NASA POWER squares and {r} rain squares. Greenness: at the center.": "Promedio de tu terreno, ponderado por área: {p} cuadrantes de NASA POWER y {r} de lluvia. Verdor: en el centro.",
   "At the spot you tapped. The whole view button brings back the average of {place}.": "En el punto que tocaste. El botón de vista completa vuelve al promedio de {place}.",
@@ -418,6 +419,7 @@ const ES = {
 }
 
 const QU = {
+  "Sprout the alien cat, looking determined": "Sprout, hanaq pacha misi, sinchi sunqu",
   "Average of {place}, weighted by area: {p} NASA POWER squares and {r} rain squares. Greenness: at the center.": "{place}p chawpinchasqan, hatun kayninman hina: {p} NASA POWER tawa k'uchu, {r} para tawa k'uchu. Q'umir kay: chawpinpi.",
   "Average of your field, weighted by area: {p} NASA POWER squares and {r} rain squares. Greenness: at the center.": "Chakraykip chawpinchasqan, hatun kayninman hina: {p} NASA POWER tawa k'uchu, {r} para tawa k'uchu. Q'umir kay: chawpinpi.",
   "At the spot you tapped. The whole view button brings back the average of {place}.": "Llamisqayki kitipi. Llapan rikuy botonqa {place}p chawpinchasqanman kutichin.",
