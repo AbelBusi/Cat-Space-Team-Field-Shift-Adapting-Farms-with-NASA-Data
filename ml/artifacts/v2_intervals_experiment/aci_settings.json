@@ -1,0 +1,22 @@
+{
+  "sm_root_monthly|v1": {
+    "gamma": 0.1,
+    "window_periods": 36,
+    "start": "2020-01"
+  },
+  "sm_root_monthly|cqr": {
+    "gamma": 0.2,
+    "window_periods": 36,
+    "start": "2020-01"
+  },
+  "ndvi_quarterly|v1": {
+    "gamma": 0.0,
+    "window_periods": 12,
+    "start": "2020-01"
+  },
+  "ndvi_quarterly|cqr": {
+    "gamma": 0.2,
+    "window_periods": 12,
+    "start": "2020-01"
+  }
+}

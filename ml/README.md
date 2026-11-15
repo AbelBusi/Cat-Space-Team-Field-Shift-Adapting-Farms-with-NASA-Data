@@ -5,6 +5,7 @@
 | 1 Training | 1998–2017 | done | [`docs/ML_PHASE1_TRAINING.md`](../docs/ML_PHASE1_TRAINING.md) (data irregularities, acceptance criteria) |
 | 2 Validation | 2018–2022 | done, both models accepted | [`docs/ML_PHASE2_VALIDATION.md`](../docs/ML_PHASE2_VALIDATION.md) |
 | 3 Testing | 2023–2025 (2026 incomplete, excluded) | done: accuracy passes, intervals overconfident | [`docs/ML_PHASE3_TESTING.md`](../docs/ML_PHASE3_TESTING.md) |
+| v2 experiment | 2023–2025 (second look) | error ranges reach 90 % with CQR + monthly recalibration; not adopted yet | [`docs/ML_V2_INTERVALS_EXPERIMENT.md`](../docs/ML_V2_INTERVALS_EXPERIMENT.md) |
 
 **Standard models to use:** `artifacts/final_model/` through `fs_ml.predict` (`load`, `predict`).
 

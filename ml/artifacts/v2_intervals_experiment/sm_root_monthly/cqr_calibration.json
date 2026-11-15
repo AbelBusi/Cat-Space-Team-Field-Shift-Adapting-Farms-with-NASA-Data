@@ -1,0 +1,76 @@
+{
+  "method": "conformalized quantile regression (Romano et al., 2019): XGBoost quantiles 5% and 95% trained on 1998-2017, corrected on Validation 2018-2022",
+  "nominal": 0.9,
+  "variant": "season",
+  "correction_global": -3.97619273927452e-05,
+  "correction_by_season": {
+    "dry May-Dec": -0.0004404582964476489,
+    "wet Jan-Apr": 0.0011939385107585382
+  },
+  "quantile_trees": 727,
+  "features_in_order": [
+    "rain_mm",
+    "rain_mm_lag1",
+    "rain_mm_lag2",
+    "rain_mm_sum6",
+    "t2m_c",
+    "pet_mm",
+    "pet_mm_lag1",
+    "sm_root_m3m3_lag1",
+    "sm_surface_m3m3_lag1",
+    "power_rh2m_pct",
+    "power_ws2m_ms",
+    "power_allsky_mj_m2_day",
+    "month_sin",
+    "month_cos",
+    "soil_nutrient_low_class",
+    "soil_oxygen_low_class",
+    "soil_lime_gypsum_class",
+    "soil_salinity_sodicity_class",
+    "soil_rooting_class"
+  ],
+  "point_model": "unchanged v1 (artifacts/final_model)",
+  "test_2023_2025": [
+    {
+      "model": "sm_root_monthly",
+      "interval": "v1 (tested)",
+      "coverage": 0.8158633681666311,
+      "ci_low": 0.7926271427713902,
+      "ci_high": 0.8401067640826895,
+      "mean_width": 0.03676971397040479,
+      "interval_score": 0.10152376758795262,
+      "passes_F": false
+    },
+    {
+      "model": "sm_root_monthly",
+      "interval": "v2 CQR",
+      "coverage": 0.8231054951304472,
+      "ci_low": 0.8095700981461716,
+      "ci_high": 0.8365837035953824,
+      "mean_width": 0.039435196400662384,
+      "interval_score": 0.08184744571822676,
+      "passes_F": false
+    },
+    {
+      "model": "sm_root_monthly",
+      "interval": "v1 + monthly recalibration (ACI)",
+      "coverage": 0.9030265870477003,
+      "ci_low": 0.8866189115676417,
+      "ci_high": 0.9196057608688293,
+      "mean_width": 0.0631565467131142,
+      "interval_score": 0.09706725585553984,
+      "passes_F": true
+    },
+    {
+      "model": "sm_root_monthly",
+      "interval": "v2 CQR + monthly recalibration (ACI)",
+      "coverage": 0.9034353451340016,
+      "ci_low": 0.8913554474862672,
+      "ci_high": 0.9145795586870811,
+      "mean_width": 0.05121886730862774,
+      "interval_score": 0.0809363781693962,
+      "passes_F": true
+    }
+  ],
+  "status": "EXPERIMENT. 2023-2025 was already seen by Phase 3; confirm on complete 2026 data before adopting."
+}
