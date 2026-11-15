@@ -48,13 +48,15 @@ function freeBox() {
   const col = Math.min(380, Math.max(280, innerWidth * 0.27))
   return { left: 56 + col + 20, right: innerWidth - 56 - col - 20, top: hud + 8, bottom: innerHeight - 110 }
 }
-const BLOCK_SHARE = 0.62
+// Share of the free space for the floating block; the field sits on the map below it, after a small gap.
+const blockShare = () => innerWidth < 1024 ? 0.56 : 0.62
 const hostStyle = computed(() => {
   const b = box.value
-  return { left: b.left + 'px', top: b.top + 'px', width: b.right - b.left + 'px', height: (b.bottom - b.top) * BLOCK_SHARE + 'px' }
+  return { left: b.left + 'px', top: b.top + 'px', width: b.right - b.left + 'px', height: (b.bottom - b.top) * blockShare() + 'px' }
 })
 function placeBox() {
-  box.value = freeBox()
+  const b = freeBox()
+  box.value = { ...b, split: b.top + (b.bottom - b.top) * blockShare() + (innerWidth < 1024 ? 28 : 0) }
   mapApi.frameField?.(box.value)
 }
 
@@ -196,7 +198,8 @@ function aim(polar, azimuth, dist) {
   camera.position.set(t0.x + dist * Math.sin(polar) * Math.sin(azimuth), t0.y + dist * Math.cos(polar), t0.z + dist * Math.sin(polar) * Math.cos(azimuth))
   camera.lookAt(t0)
 }
-const fitDistance = () => (UNITS * 0.46) / Math.tan(camera.fov * Math.PI / 360) * Math.max(1, 1.5 / camera.aspect)
+// Phones are portrait: a looser width margin lets the block fill more of its space (the labels still fit).
+const fitDistance = () => (UNITS * 0.46) / Math.tan(camera.fov * Math.PI / 360) * Math.max(1, (innerWidth < 1024 ? 1.2 : 1.5) / camera.aspect)
 
 const toScreen = (v, rect) => { const p = v.clone().project(camera); return { x: rect.left + (p.x + 1) / 2 * rect.width, y: rect.top + (1 - p.y) / 2 * rect.height, z: p.z } }
 function place(el, v, rect, anchor) {

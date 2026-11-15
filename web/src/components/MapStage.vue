@@ -187,8 +187,9 @@ Object.assign(mapApi, {
   // box: the free screen area { left, top, right, bottom } in pixels; the field goes into its lower part.
   frameField(box) {
     if (!state.parcel) return
-    const lower = box.top + (box.bottom - box.top) * 0.62
-    map.flyToBounds(L.latLngBounds(state.parcel.ring), { paddingTopLeft: [box.left + 10, lower], paddingBottomRight: [innerWidth - box.right + 10, innerHeight - box.bottom + 8], duration: 0.9, maxZoom: 18 })
+    const lower = box.split ?? box.top + (box.bottom - box.top) * 0.62
+    const side = innerWidth < 1024 ? 48 : 10    // phones: the field a little smaller, with air around it
+    map.flyToBounds(L.latLngBounds(state.parcel.ring), { paddingTopLeft: [box.left + side, lower], paddingBottomRight: [innerWidth - box.right + side, innerHeight - box.bottom + (innerWidth < 1024 ? 20 : 8)], duration: 0.9, maxZoom: 18 })
   },
   // The field's top edge on screen: where the light that holds the 3D block starts.
   fieldOnScreen() {
