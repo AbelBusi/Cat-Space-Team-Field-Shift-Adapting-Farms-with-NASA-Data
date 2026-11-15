@@ -2,6 +2,7 @@
 import SlideFrame from '../components/SlideFrame.vue'
 import HudCard from '../components/HudCard.vue'
 import FieldRow from '../components/FieldRow.vue'
+import CropSequence from '../components/CropSequence.vue'
 import { CRIT, LEVELS, ICON } from '../content.js'
 import { state, ranking, risks } from '../store.js'
 import { say } from '../guide.js'
@@ -35,6 +36,7 @@ function bump(k) {
     <template #right>
       <HudCard :title="t('Best fit for you')">
         <Transition name="flip" mode="out-in"><div :key="ranking[0].r.id" class="font-display text-xl font-semibold text-fire">{{ t(ranking[0].r.name) }}</div></Transition>
+        <CropSequence :key="'c' + ranking[0].r.id" :cal="ranking[0].r.cal" />
         <FieldRow :key="ranking[0].r.id" :cal="ranking[0].r.cal" :score="ranking[0].score" :risks="risks" :month="state.month" :floods="!!ranking[0].r.floods" />
         <p><b class="text-teal">{{ t('You gain:') }}</b> {{ t(ranking[0].r.gain) }}</p>
         <p><b class="text-fire">{{ t('You risk:') }}</b> {{ t(ranking[0].r.lose) }}</p>

@@ -79,6 +79,7 @@ They speak the farmer's language: a plant that is fine, thirsty or dead says mor
 | `plant_dead` | Crop loss, high risk |
 | `seed` · `harvest` · `bare` | Sowing month · harvest month · bare soil |
 | `sun` · `drop` · `rain` · `frost` | Heat · irrigation water · heavy rain · frost |
+| `rice` · `maize` · `cowpea` · `sorghum` · `green_manure` | The crops of the example rotations (Lambayeque). Shown in order with their months (`CropSequence`) wherever a rotation is named |
 | `satellite` · `calendar` · `heart` · `compare` · `report` | The topics of the map screen: what the satellites see · year by year · what matters to you · compare with today · your report |
 | `up` · `down` · `flat` | Trend. Color = what it means for the crop: `--ember` worse, `--teal` better, `--ink` neutral |
 
@@ -124,6 +125,9 @@ No page scrolling. Three stages on the same night sky:
    edges (at most two per side, one idea per card), the topic title at the top over a path of pixel icons (one per topic: done
    in `--teal`, current in `--fire`, ahead dimmed) and a "Next: …" line, and large `‹ ›` arrows on the sides
    (keyboard arrows too). On phones the cards become one bottom sheet and the map stays on top.
+
+Prefer a pixel icon next to a short label over a paragraph: the signals, the satellites, the crops, gains (`up`) and risks
+(`down`) all carry one.
 
 Attention rule: never show everything at once. A topic shows only what its title promises; details go in a `<details>` or the
 printed report.

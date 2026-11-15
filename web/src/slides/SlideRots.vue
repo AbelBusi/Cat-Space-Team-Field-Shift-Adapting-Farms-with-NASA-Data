@@ -2,6 +2,7 @@
 import SlideFrame from '../components/SlideFrame.vue'
 import HudCard from '../components/HudCard.vue'
 import FieldRow from '../components/FieldRow.vue'
+import CropSequence from '../components/CropSequence.vue'
 import PixelIcon from '../components/PixelIcon.vue'
 import { CROP } from '../content.js'
 import { state, ranking, risks, chosen } from '../store.js'
@@ -28,6 +29,7 @@ const LEGEND = [['seed', 'Sowing'], ['plant_ok', 'Growing well'], ['plant_thirst
           <span v-if="x === ranking[0]" class="label bg-teal px-1.5 !text-on-accent">{{ t('Best fit for you') }}</span>
           <span v-if="x.r.id === 'current'" class="label border border-line px-1.5 !text-muted">{{ t('What you do today') }}</span>
         </span>
+        <CropSequence :cal="x.r.cal" compact />
         <FieldRow :cal="x.r.cal" :score="x.score" :risks="risks" :month="state.month" :floods="!!x.r.floods" />
         <span><b class="text-teal">{{ t('You gain:') }}</b> {{ t(x.r.gain) }}</span>
         <span><b class="text-fire">{{ t('You risk:') }}</b> {{ t(x.r.lose) }}</span>

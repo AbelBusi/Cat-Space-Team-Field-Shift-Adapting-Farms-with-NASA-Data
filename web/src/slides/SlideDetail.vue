@@ -2,10 +2,13 @@
 import SlideFrame from '../components/SlideFrame.vue'
 import HudCard from '../components/HudCard.vue'
 import TradeOffs from '../components/TradeOffs.vue'
+import CropSequence from '../components/CropSequence.vue'
+import PixelIcon from '../components/PixelIcon.vue'
 import { state, chosen, baseline, confidence } from '../store.js'
-import { fitWord } from '../content.js'
+import { fitWord, evidenceIcon } from '../content.js'
 import { say } from '../guide.js'
 import { t } from '../i18n.js'
+import { PAL } from '../lib/palette.js'
 
 // The chosen rotation against what the farmer does today, and how sure we can be.
 const CHECKS = [['soil', 'I have a recent soil test'], ['water', 'I know how much water I get per season'], ['tried', 'I have grown these crops before']]
@@ -20,15 +23,27 @@ function toggle(k, on) {
     <template #left>
       <HudCard :title="t('Chosen strategy') + ' · ' + (state.mode === 'pro' ? t('{n} out of 100', { n: chosen.score }) : t(fitWord(chosen.score)))">
         <Transition name="flip" mode="out-in"><div :key="chosen.r.id" class="font-display text-xl font-semibold">{{ t(chosen.r.name) }}</div></Transition>
+        <CropSequence :key="chosen.r.id" :cal="chosen.r.cal" />
         <p class="text-muted">{{ t(chosen.r.why) }}</p>
-        <div><b class="text-teal">{{ t('What you gain') }}</b><ul class="list-disc pl-5"><li v-for="b in chosen.r.ben" :key="b">{{ t(b) }}</li></ul></div>
-        <div><b class="text-fire">{{ t('What you risk') }}</b><ul class="list-disc pl-5"><li v-for="b in chosen.r.risks" :key="b">{{ t(b) }}</li></ul></div>
+        <div class="flex flex-col gap-1">
+          <b class="text-teal">{{ t('What you gain') }}</b>
+          <p v-for="b in chosen.r.ben" :key="b" class="flex items-start gap-2"><PixelIcon name="up" :color="PAL.teal" :size="1" class="mt-0.5" />{{ t(b) }}</p>
+        </div>
+        <div class="flex flex-col gap-1">
+          <b class="text-fire">{{ t('What you risk') }}</b>
+          <p v-for="b in chosen.r.risks" :key="b" class="flex items-start gap-2"><PixelIcon name="down" :color="PAL.ember" :size="1" class="mt-0.5" />{{ t(b) }}</p>
+        </div>
         <p v-for="f in chosen.flags" :key="f" class="border-l-2 border-ember pl-2 text-xs">{{ f }}</p>
       </HudCard>
       <HudCard>
-        <details>
+        <details open>
           <summary class="label cursor-pointer">{{ t('What the satellites say') }}</summary>
-          <ul class="mt-2 flex flex-col gap-1"><li v-for="e in chosen.r.evid" :key="e[0]"><b>{{ t(e[0]) }}:</b> {{ t(e[1]) }}</li></ul>
+          <ul class="mt-2 flex flex-col gap-2">
+            <li v-for="e in chosen.r.evid" :key="e[0]" class="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-2">
+              <span class="flex size-9 items-center justify-center border border-line bg-bg/60"><PixelIcon :name="evidenceIcon(e[0])" :size="2" /></span>
+              <span><b class="block font-mono text-[11px] uppercase tracking-wider text-teal">{{ t(e[0]) }}</b>{{ t(e[1]) }}</span>
+            </li>
+          </ul>
         </details>
       </HudCard>
     </template>

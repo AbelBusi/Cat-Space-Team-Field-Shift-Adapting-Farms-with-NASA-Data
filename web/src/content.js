@@ -93,13 +93,22 @@ export function levelWord(k, v) {
 export const fitWord = score => score >= 70 ? 'Good fit' : score >= 45 ? 'Could work' : 'Poor fit'
 
 export const CROP = {
-  A: { name: 'Rice', color: PAL.teal },
-  M: { name: 'Yellow maize', color: PAL.fire },
-  S: { name: 'Sorghum', color: PAL.sand },
-  L: { name: 'Cowpea', color: PAL.ghost },
-  V: { name: 'Green manure', color: PAL.sage },
-  B: { name: 'Bare soil', color: 'var(--fallow)' },
+  A: { name: 'Rice', color: PAL.teal, icon: 'rice' },
+  M: { name: 'Yellow maize', color: PAL.fire, icon: 'maize' },
+  S: { name: 'Sorghum', color: PAL.sand, icon: 'sorghum' },
+  L: { name: 'Cowpea', color: PAL.ghost, icon: 'cowpea' },
+  V: { name: 'Green manure', color: PAL.sage, icon: 'green_manure' },
+  B: { name: 'Bare soil', color: 'var(--fallow)', icon: 'bare' },
 }
+// A rotation's calendar ('AAAAAABBBBBB') as stretches of one crop: [{ crop, from, to }] with month indexes.
+export const stretches = cal => cal.split('').reduce((out, k, i) => {
+  if (out.length && out[out.length - 1].key === k) out[out.length - 1].to = i
+  else out.push({ key: k, crop: CROP[k], from: i, to: i })
+  return out
+}, [])
+// The source of each piece of satellite evidence, as a pixel icon.
+export const EVIDENCE_ICON = { Landsat: 'plant_ok', POWER: 'sun', SMAP: 'drop', ECOSTRESS: 'sun', GPM: 'rain', 'GRACE-FO': 'down' }
+export const evidenceIcon = name => EVIDENCE_ICON[Object.keys(EVIDENCE_ICON).find(k => name.includes(k))] || 'satellite'
 export const CRIT = [
   { k: 'water', label: 'Save water', icon: 'soil', hint: 'Use less irrigation water' },
   { k: 'income', label: 'Earn more', icon: 'coin', hint: 'More income per hectare' },

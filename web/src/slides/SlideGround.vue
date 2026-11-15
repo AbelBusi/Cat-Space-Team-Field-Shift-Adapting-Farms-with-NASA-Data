@@ -9,6 +9,16 @@ import { LAYERS } from '../content.js'
 import { state, db, climate, placeLabel, cell, mapApi } from '../store.js'
 import { t } from '../i18n.js'
 import { gridCells } from '../lib/nasa.js'
+
+// What each satellite measures and how often, with a pixel icon of what it sees.
+const SOURCE = {
+  power: { icon: 'sun', text: 'Climate from satellites and models, every month since 1981: heat, rain and soil wetness.' },
+  imerg: { icon: 'rain', text: 'Rain seen from space by the GPM satellites, every 30 minutes. Here: the 2001–2024 average.' },
+  smap: { icon: 'drop', text: 'Water in the top 5 cm of soil, measured with microwaves every 2–3 days, even through clouds.' },
+  modis: { icon: 'plant_ok', text: 'How green the plants are, every 16 days: sharp enough to see large fields.' },
+  hls: { icon: 'satellite', text: 'Landsat and Sentinel-2 together, every 2–3 days: sharp enough to see inside a small field.' },
+}
+const used = id => id === 'power' || id === 'modis' || (id === 'imerg' && !!cell.value)
 import { formatArea, formatShortDate } from '../lib/geo.js'
 
 // Where you are, the ground under it, the last 30 days, and how sharp each satellite sees compared with your field.
@@ -63,10 +73,15 @@ const lens = computed(() => {
         </div>
       </HudCard>
       <HudCard :title="t('The square of each satellite')">
-        <button v-for="c in cells" :key="c.id" type="button" class="flex items-center gap-2 text-left hover:text-teal" :title="t('Zoom to this square')" @click="mapApi.zoomTo(c)">
-          <i class="inline-block size-3 shrink-0 border-2" :style="{ borderColor: c.color }" />
-          <span class="min-w-0 flex-1 truncate"><b>{{ c.name }}</b> <span class="text-muted">{{ t(c.what) }}</span></span>
-          <span class="shrink-0 font-mono text-xs text-muted">{{ c.size }}</span>
+        <p class="text-xs text-muted">{{ t('Each satellite sees the ground in squares of its own size. Tap one to see its square on the map.') }}</p>
+        <button v-for="c in cells" :key="c.id" type="button" class="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-x-2.5 border-l-2 py-1 pl-2 text-left transition-colors hover:bg-teal/10"
+                :style="{ borderColor: c.color }" :title="t('Zoom to this square')" @click="mapApi.zoomTo(c)">
+          <span class="row-span-2 flex size-9 items-center justify-center border border-line bg-bg/60"><PixelIcon :name="SOURCE[c.id].icon" :size="2" /></span>
+          <span class="flex flex-wrap items-baseline gap-x-2">
+            <b>{{ c.name }}</b><span class="font-mono text-xs text-muted">{{ c.size }}</span>
+            <span class="font-mono text-[10px] uppercase tracking-wider" :class="used(c.id) ? 'text-teal' : 'text-muted'">{{ t(used(c.id) ? 'in use' : 'planned') }}</span>
+          </span>
+          <span class="text-xs text-muted">{{ t(SOURCE[c.id].text) }}</span>
         </button>
       </HudCard>
     </template>

@@ -18,7 +18,7 @@ import { melody } from '../lib/sound.js'
 const L = computed(() => LAYERS[state.layer])
 const value = computed(() => valueAt(state.layer))
 const current = computed(() => reading(state.layer, value.value))
-const shown = useTween(() => value.value)
+const shownAll = useTween(() => LAYER_KEYS.map(k => valueAt(k)))
 const legendStops = computed(() => { const sc = L.value.scale(), [a, b] = L.value.domain; return d3.range(0, 1.0001, 0.125).map(p => sc(a + p * (b - a))).join(',') })
 
 // One NASA image at a time on top of the photo: two color scales over each other are hard to read.
@@ -66,29 +66,29 @@ onBeforeUnmount(() => { clearInterval(playTimer); clearInterval(listenTimer) })
 <template>
   <SlideFrame>
     <template #left>
+      <!-- All five signals at once, one row each: the tool a farmer knows, its word or number, and how it moves in the
+           year (Pro). Tapping a row paints that signal on the map. -->
       <HudCard :title="t('Satellite signals')">
-        <div class="grid grid-cols-5 gap-1" role="group" :aria-label="t('Satellite signals')">
-          <button v-for="k in LAYER_KEYS" :key="k" type="button" class="btn !h-11 !px-0" :aria-pressed="k === state.layer" :aria-label="t(LAYERS[k].name)" :title="t(LAYERS[k].name)" @click="state.layer = k">
-            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" v-html="ICON[LAYERS[k].icon]" />
+        <div class="flex flex-col gap-1" role="radiogroup" :aria-label="t('Satellite signals')">
+          <button v-for="(k, i) in LAYER_KEYS" :key="k" type="button" role="radio" :aria-checked="k === state.layer"
+                  class="grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 border px-2 py-1.5 text-left transition-colors"
+                  :class="k === state.layer ? 'border-teal bg-teal/10' : 'border-line hover:border-muted'" @click="state.layer = k">
+            <span class="flex h-12 items-center justify-center">
+              <Instrument v-if="!LAYERS[k].pending" :kind="k" :value="valueAt(k)" :domain="LAYERS[k].domain" :size="2" />
+              <svg v-else class="size-5 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" v-html="ICON[LAYERS[k].icon]" />
+            </span>
+            <span class="min-w-0">
+              <span class="block font-mono text-[11px] uppercase tracking-wider" :class="k === state.layer ? 'text-teal' : 'text-muted'">{{ t(LAYERS[k].name) }}</span>
+              <span class="block font-display text-lg font-semibold leading-tight" :class="{ 'text-muted': valueAt(k) == null }">
+                {{ state.mode === 'farmer' ? t(levelWord(k, valueAt(k))) : formatValue(k, shownAll[i]) }}
+              </span>
+              <span class="block truncate text-[11px] text-muted">{{ readingNote(k) }}</span>
+            </span>
+            <Sparkline v-if="state.mode === 'pro' && series(k)" :values="series(k)" :domain="LAYERS[k].domain" :at="state.month" />
           </button>
         </div>
-        <div class="flex min-h-[104px] items-center gap-4" aria-live="polite">
-          <div class="flex w-16 shrink-0 justify-center">
-            <Instrument v-if="!L.pending" :key="state.layer" :kind="state.layer" :value="value" :domain="L.domain" :size="4" />
-          </div>
-          <div class="min-w-0">
-            <div class="font-mono text-xs text-muted">{{ t(L.name) }}</div>
-            <Transition name="flip" mode="out-in">
-              <div :key="state.layer + state.mode" class="font-display text-[26px] font-semibold leading-tight" :class="{ 'text-muted': value == null }">
-                {{ state.mode === 'farmer' ? t(levelWord(state.layer, value)) : formatValue(state.layer, shown) }}
-              </div>
-            </Transition>
-            <div class="text-xs text-muted">{{ readingNote(state.layer) }}</div>
-            <Sparkline v-if="state.mode === 'pro' && series(state.layer)" class="mt-1" :values="series(state.layer)" :domain="L.domain" :at="state.month" />
-          </div>
-        </div>
         <p v-if="db.error" class="border border-ember p-2 text-ember" role="alert">{{ t('No NASA POWER data for this spot.') }}</p>
-        <p v-else>{{ t(current[0]) }}</p>
+        <p v-else class="border-l-2 border-teal pl-2" aria-live="polite"><b>{{ t(L.name) }}:</b> {{ t(current[0]) }}</p>
       </HudCard>
     </template>
 

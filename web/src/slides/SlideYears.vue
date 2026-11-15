@@ -12,7 +12,20 @@ import { PAL, RAMP } from '../lib/palette.js'
 // 44 years at this spot: warming stripes on one side, the three facts worth remembering on the other.
 // Stripes: one per year, colored by how far its afternoons were from this place's average. Lab keeps the middle tones clean.
 const stripeColor = d3.scaleLinear().domain([-0.9, 0, 0.45, 0.9]).range(RAMP.anomaly).interpolate(d3.interpolateLab).clamp(true)
-const W = 330, BH = 84
+const W = 330, BH = 110
+// Year marks every 7 years under the stripes and the bars (1981, 1988, … 2023).
+const ticks = computed(() => H.value ? H.value.years.map((d, i) => ({ y: d.y, at: (i + 0.5) / H.value.years.length })).filter(d => (d.y - 1981) % 7 === 0) : [])
+// The 44 years in 7-year stretches, top to bottom: average afternoon heat and rain of each.
+const blocks = computed(() => {
+  if (!H.value) return []
+  const out = []
+  for (let i = 0; i < H.value.years.length; i += 7) {
+    const ys = H.value.years.slice(i, i + 7), mean = f => ys.reduce((s, d) => s + f(d), 0) / ys.length
+    out.push({ from: ys[0].y, to: ys[ys.length - 1].y, heat: mean(d => d.heat), rain: Math.round(mean(d => d.rain)) })
+  }
+  const top = Math.max(...out.map(b => b.rain), 1)
+  return out.map(b => ({ ...b, share: b.rain / top, delta: b.heat - H.value.heatMean }))
+})
 const bars = computed(() => {
   if (!H.value) return []
   const n = H.value.years.length, max = H.value.wettest.rain || 1, bw = W / n
@@ -30,18 +43,38 @@ const times = computed(() => H.value ? Math.max(1, Math.round(H.value.wettest.ra
       <HudCard v-if="!H"><p class="text-muted">{{ t(db.error ? 'No NASA POWER data for this spot.' : 'Reading 44 years of NASA data…') }}</p></HudCard>
       <template v-else>
         <HudCard :title="t('Afternoon heat, 1981 to 2024')">
-          <div class="stripes" role="img" :aria-label="t('Warming stripes 1981 to 2024. Recent afternoons are {n} degrees warmer than in 1981 to 2000.', { n: H.warming })">
+          <div class="stripes !h-24" role="img" :aria-label="t('Warming stripes 1981 to 2024. Recent afternoons are {n} degrees warmer than in 1981 to 2000.', { n: H.warming })">
             <i v-for="(d, i) in H.years" :key="d.y" :style="{ background: stripeColor(d.heat - H.heatMean), '--i': i }" :title="`${d.y}: ${d.heat.toFixed(1)} °C`" />
           </div>
-          <div class="flex justify-between font-mono text-[10px] text-muted"><span>{{ H.years[0].y }}</span><span>{{ H.years[H.years.length - 1].y }}</span></div>
+          <div class="relative h-4 font-mono text-[10px] text-muted" aria-hidden="true">
+            <span v-for="k in ticks" :key="k.y" class="absolute top-0 -translate-x-1/2 border-l border-muted/60 pl-0.5" :style="{ left: k.at * 100 + '%' }">{{ k.y }}</span>
+          </div>
           <p class="text-xs text-muted">{{ t('Each stripe is one year · turquoise = cooler afternoons · campfire = hotter') }}</p>
+        </HudCard>
+        <HudCard :title="t('Every 7 years')">
+          <div class="grid grid-cols-[4.75rem_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-2 gap-y-1.5 text-xs">
+            <span />
+            <span class="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-muted"><PixelIcon name="sun" :size="1" />{{ t('Afternoons') }}</span>
+            <span class="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-muted"><PixelIcon name="rain" :size="1" />{{ t('Rain a year') }}</span>
+            <template v-for="b in blocks" :key="b.from">
+              <span class="font-mono text-muted">{{ b.from }}–{{ String(b.to).slice(2) }}</span>
+              <span class="flex items-center gap-1.5">
+                <i class="inline-block h-3.5 w-5 shrink-0" :style="{ background: stripeColor(b.delta) }" />
+                <span>{{ state.mode === 'pro' ? b.heat.toFixed(1) + ' °C' : t(b.delta > 0.2 ? 'Hotter' : b.delta < -0.2 ? 'Cooler' : 'Usual') }}</span>
+              </span>
+              <span class="flex items-center gap-1.5">
+                <i class="block h-2.5 bg-teal/70" :style="{ width: Math.max(4, b.share * 60) + '%' }" />
+                <span v-if="state.mode === 'pro'" class="shrink-0 font-mono">{{ b.rain }} mm</span>
+              </span>
+            </template>
+          </div>
         </HudCard>
         <HudCard v-if="state.mode === 'pro'" :title="t('Annual rain, NASA POWER (~55 km cell)')">
           <svg :viewBox="`0 0 ${W} ${BH + 34}`" class="w-full" role="img" :aria-label="t('Annual rain per year. Wettest {w}, driest {d}.', { w: H.wettest.y, d: H.driest.y })">
             <line x1="0" :x2="W" :y1="BH + 14" :y2="BH + 14" :stroke="PAL.line" />
             <rect v-for="(b, i) in bars" :key="b.y" class="bar" :x="b.x" :y="BH + 14 - b.h" :width="b.w" :height="b.h" :fill="b.fill" :fill-opacity="b.op" :style="{ '--i': i }" />
             <template v-for="b in bars" :key="'l' + b.y"><text v-if="b.hi || b.lo" :x="b.cx" :y="b.hi ? 10 : BH + 8 - b.h" text-anchor="middle" class="bar-label" :fill="b.hi ? PAL.fire : PAL.sand">{{ b.y }} · {{ b.rain }} mm</text></template>
-            <text x="0" :y="BH + 30" class="bar-axis">{{ H.years[0].y }}</text><text :x="W" :y="BH + 30" text-anchor="end" class="bar-axis">{{ H.years[H.years.length - 1].y }}</text>
+            <text v-for="k in ticks" :key="k.y" :x="k.at * W" :y="BH + 30" text-anchor="middle" class="bar-axis">{{ k.y }}</text>
           </svg>
         </HudCard>
       </template>
