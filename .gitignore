@@ -20,3 +20,8 @@ __pycache__/
 ml-api/.venv/
 ml-api/.env
 web/.env.local
+paper/*.zip
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.pdf
