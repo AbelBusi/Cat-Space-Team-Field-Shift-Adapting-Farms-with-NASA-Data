@@ -140,7 +140,7 @@ function drawLabels() {
   const z = map.getZoom(), size = map.getSize(), taken = []
   const order = [...labels].sort((a, b) => a.rank - b.rank || b.on - a.on)
   for (const l of order) {
-    let show = mapUi.labels && z >= MIN_ZOOM[l.rank]
+    let show = z >= MIN_ZOOM[l.rank]
     if (show) {
       const p = map.latLngToContainerPoint(l.marker.getLatLng())
       const box = [p.x - l.w / 2, p.y - l.h / 2, p.x + l.w / 2, p.y + l.h / 2]
@@ -269,7 +269,6 @@ onMounted(() => {
 onBeforeUnmount(() => { cancelAnimationFrame(following); removeEventListener('resize', onResize); mapUi.drawing = false; map?.remove() })
 
 watch(() => state.area, () => { mapApi.clearOutline(); showArea(); findPlaces(); drawLabels() })
-watch(() => mapUi.labels, () => drawLabels())
 watch(() => [state.point, props.squares, props.tint], drawPoint)
 watch(() => cell.value?.squares, drawCover)
 watch(() => [state.layer, state.month, state.scen, db.power, db.ndvi], paint)

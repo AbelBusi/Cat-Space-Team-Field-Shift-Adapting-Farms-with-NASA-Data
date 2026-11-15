@@ -217,7 +217,7 @@ export function readingNote(k) {
 }
 
 // Map tools shared between the map and the HUD buttons. The map fills `mapApi` with its actions when it mounts.
-export const mapUi = reactive({ drawing: false, corners: 0, data: null, intensity: 0.7, labels: true })
+export const mapUi = reactive({ drawing: false, corners: 0, data: null, intensity: 0.7 })
 export const mapApi = {}
 
 // Entering the map: one district (only its territory shows) or free mode (the whole department).
